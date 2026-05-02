@@ -30,6 +30,48 @@ def test_cors_allows_localhost_dev():
     assert "access-control-allow-origin" in response.headers
 
 
+def test_cors_allows_investa_beta_production_alias():
+    client = TestClient(app)
+    response = client.options(
+        "/api/health",
+        headers={
+            "Origin": "https://investa-beta.vercel.app",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "https://investa-beta.vercel.app"
+
+
+def test_cors_allows_vercel_preview_via_regex():
+    """Preview deploys with branch in URL must be allowed via regex."""
+    client = TestClient(app)
+    preview_origin = "https://investa-git-feat-fase3-visao-geral-logomes-projects.vercel.app"
+    response = client.options(
+        "/api/health",
+        headers={
+            "Origin": preview_origin,
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == preview_origin
+
+
+def test_cors_rejects_unknown_origin():
+    """Origins not matching the static list or regex must NOT get CORS headers."""
+    client = TestClient(app)
+    response = client.options(
+        "/api/health",
+        headers={
+            "Origin": "https://malicious.example.com",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    # Without matching origin, FastAPI's CORSMiddleware doesn't add allow-origin
+    assert response.headers.get("access-control-allow-origin") != "https://malicious.example.com"
+
+
 def test_validation_error_returns_structured_400():
     """Pydantic validation errors should be returned in the documented format."""
     client = TestClient(app)

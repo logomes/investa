@@ -16,14 +16,21 @@ app = FastAPI(
 
 # ---------- CORS ----------
 
+# Static origins (production and local dev)
 ALLOWED_ORIGINS = [
     "https://investa.vercel.app",
+    "https://investa-beta.vercel.app",
     "http://localhost:3000",
 ]
+
+# Regex for Vercel preview deploys: investa-{anything}-logomes-projects.vercel.app
+# and any sub-branch URL like investa-git-feat-xxx-logomes-projects.vercel.app
+ALLOWED_ORIGIN_REGEX = r"https://investa(-[a-z0-9-]+)?-logomes-projects\.vercel\.app"
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=ALLOWED_ORIGIN_REGEX,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
     allow_credentials=False,
