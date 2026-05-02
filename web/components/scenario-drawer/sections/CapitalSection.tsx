@@ -40,7 +40,7 @@ export function CapitalSection() {
               max={30}
               step={1}
               value={[field.value]}
-              onValueChange={(v) => field.onChange(v[0])}
+              onValueChange={(v) => field.onChange((v as number[])[0])}
             />
           )}
         />

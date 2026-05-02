@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { Bell, Search, Settings, Sparkles } from "lucide-react";
 import { NAV_BY_HREF } from "@/lib/nav";
 import { Button } from "@/components/ui/button";
+import { useScenarioStore } from "@/lib/store";
 
 function deriveTitle(pathname: string): string {
   if (pathname === "/") return "Visão geral";
@@ -14,6 +15,7 @@ function deriveTitle(pathname: string): string {
 export function Topbar() {
   const pathname = usePathname();
   const title = deriveTitle(pathname);
+  const setDrawerOpen = useScenarioStore((s) => s.setDrawerOpen);
 
   return (
     <header className="h-16 sticky top-0 z-10 backdrop-blur-[8px] bg-bg-1/60 border-b border-line-soft flex items-center px-6 gap-4">
@@ -58,6 +60,7 @@ export function Topbar() {
           <Settings className="w-4 h-4" />
         </button>
         <Button
+          onClick={() => setDrawerOpen(true)}
           className="h-[38px] rounded-[10px] text-bg-0 font-semibold shadow-glow hover:scale-[1.02] transition-transform"
           style={{ background: "linear-gradient(135deg, #2af0c4 0%, #00b894 100%)" }}
         >

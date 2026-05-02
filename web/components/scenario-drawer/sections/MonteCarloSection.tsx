@@ -28,7 +28,7 @@ export function MonteCarloSection() {
               max={50_000}
               step={100}
               value={[field.value]}
-              onValueChange={(v) => field.onChange(v[0])}
+              onValueChange={(v) => field.onChange((v as number[])[0])}
             />
           )}
         />

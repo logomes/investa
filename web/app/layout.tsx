@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { Topbar } from "@/components/shell/Topbar";
+import { ScenarioDrawer } from "@/components/scenario-drawer/ScenarioDrawer";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -50,6 +51,7 @@ export default function RootLayout({
               <div className="flex-1 px-8 py-6">{children}</div>
             </main>
           </div>
+          <ScenarioDrawer />
         </Providers>
       </body>
     </html>
