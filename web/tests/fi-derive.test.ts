@@ -91,7 +91,7 @@ describe("fi-derive", () => {
     const positions = [
       pos({ purchaseDate: "2025-12-25", initialAmount: 100 }),  // ≤180d
       pos({ purchaseDate: "2025-06-01", initialAmount: 200 }),  // 181-360d
-      pos({ purchaseDate: "2024-01-01", initialAmount: 300 }),  // 361-720d
+      pos({ purchaseDate: "2024-06-01", initialAmount: 300 }),  // ~579d → 361-720d bracket
       pos({ purchaseDate: "2022-01-01", initialAmount: 400 }),  // >720d
       pos({ purchaseDate: "2025-01-01", initialAmount: 500, isTaxExempt: true }),
     ];

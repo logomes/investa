@@ -4,7 +4,7 @@ import type { MacroOut } from "./api-types";
 const HOLDING_BRACKETS = [
   { maxDays: 180, rate: 0.225, label: "Até 180 dias" },
   { maxDays: 360, rate: 0.20, label: "181 a 360 dias" },
-  { maxDays: 730, rate: 0.175, label: "361 a 720 dias" },
+  { maxDays: 720, rate: 0.175, label: "361 a 720 dias" },
   { maxDays: Infinity, rate: 0.15, label: "Acima de 720 dias" },
 ];
 
