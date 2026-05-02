@@ -1,7 +1,7 @@
 """FastAPI application entry point."""
 from fastapi import FastAPI
 
-from routers import health, macro
+from routers import health, macro, portfolio
 
 app = FastAPI(
     title="investa API",
@@ -11,3 +11,4 @@ app = FastAPI(
 
 app.include_router(health.router)
 app.include_router(macro.router)
+app.include_router(portfolio.router)
