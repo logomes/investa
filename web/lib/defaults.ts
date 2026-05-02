@@ -36,8 +36,11 @@ export const DEFAULT_SCENARIO: SimulateInput = {
   },
 };
 
+// 2000 trajectories balances precision and Render free-tier compute budget.
+// 10000+ tends to time out (~30s) and return 500 on free tier. Users can bump
+// up via the drawer if they upgrade to a paid Render plan.
 export const DEFAULT_MC: MonteCarloInput = {
-  nTrajectories: 10_000,
+  nTrajectories: 2_000,
   seed: null,
   targetPatrimony: 0,
 };

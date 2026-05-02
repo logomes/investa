@@ -36,7 +36,9 @@ export const useScenarioStore = create<ScenarioStore>()(
         }),
     }),
     {
-      name: "investa-scenario-v1",
+      // v2: bumped from v1 to invalidate stale state with nTrajectories=10000
+      // (caused 500s on Render free tier; default lowered to 2000).
+      name: "investa-scenario-v2",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         scenario: state.scenario,
