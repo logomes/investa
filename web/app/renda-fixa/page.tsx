@@ -1,5 +1,5 @@
-import { ConstructionCard } from "@/components/placeholder/ConstructionCard";
+import { RendaFixaPageContent } from "@/components/renda-fixa/RendaFixaPageContent";
 
 export default function RendaFixaPage() {
-  return <ConstructionCard pageTitle="Renda Fixa" fase={5} />;
+  return <RendaFixaPageContent />;
 }
