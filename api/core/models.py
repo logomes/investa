@@ -1,0 +1,854 @@
+"""Financial simulation engine for scenario comparison.
+
+Computes patrimony evolution, monthly income progression, and sensitivity
+analysis for real estate vs portfolio scenarios.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import date
+from typing import Iterable
+
+import numpy as np
+import pandas as pd
+
+from .config import (
+    BenchmarkParams,
+    FinancingParams,
+    FixedIncomePosition,
+    MacroParams,
+    MonteCarloParams,
+    PortfolioParams,
+    RealEstateParams,
+)
+
+
+@dataclass(slots=True)
+class SimulationResult:
+    years: np.ndarray
+    patrimony: np.ndarray            # Patrimony at end of each year
+    annual_income: np.ndarray        # Income generated in that year
+    cumulative_income: np.ndarray    # Total income accumulated
+    label: str
+    color: str
+    debt_balance: np.ndarray | None = None    # outstanding loan balance at end of each year (financed only)
+    internal_portfolio: np.ndarray | None = None  # internal portfolio buffer evolution (financed only)
+
+
+@dataclass(slots=True, frozen=True)
+class MonteCarloResult:
+    """Outcome of a Monte Carlo simulation: trajectories + summary stats."""
+    trajectories: np.ndarray         # shape (N, horizon+1) — patrimônio ano a ano
+    percentiles: dict                # {"p10","p50","p90"} — cada um shape (horizon+1,)
+    final_distribution: np.ndarray   # shape (N,) — patrimônio no ano final
+    max_drawdowns: np.ndarray        # shape (N,) — peak-to-trough drop por trajetória
+    label: str
+    color: str
+
+    def prob_target(self, target: float) -> float:
+        """Fração de trajetórias onde patrimônio final >= target."""
+        return float((self.final_distribution >= target).mean())
+
+
+@dataclass(slots=True, frozen=True)
+class FixedIncomeProjection:
+    """Year-by-year projection for a single fixed-income position."""
+    position: FixedIncomePosition
+    years: np.ndarray              # 0, 1, ..., horizon
+    gross_values: np.ndarray       # nominal value at end of each year
+    net_values: np.ndarray         # value after IR (== gross if isento)
+    matured: np.ndarray            # bool — True from the maturity year onward
+
+
+@dataclass(slots=True, frozen=True)
+class FixedIncomePortfolio:
+    """Aggregate of all fixed-income projections plus per-year totals."""
+    projections: list[FixedIncomeProjection]
+    total_gross: np.ndarray
+    total_net: np.ndarray
+    total_initial: float
+
+
+def simulate_fixed_income(
+    positions: list[FixedIncomePosition],
+    macro: MacroParams,
+    horizon_years: int,
+    start_date: date | None = None,
+) -> FixedIncomePortfolio:
+    """Project each position year-by-year, applying regressive IR and maturity.
+
+    Year 0 corresponds to start_date. Position values at year 0 already reflect
+    accumulated growth from purchase_date to start_date. Macro values are held
+    constant for the entire horizon.
+    """
+    if start_date is None:
+        start_date = date.today()
+    n_points = horizon_years + 1
+    years = np.arange(n_points)
+
+    projections: list[FixedIncomeProjection] = []
+    total_gross = np.zeros(n_points)
+    total_net = np.zeros(n_points)
+    total_initial = 0.0
+
+    for pos in positions:
+        r = pos.effective_annual_rate(macro)
+        gross = np.zeros(n_points)
+        net = np.zeros(n_points)
+        matured = np.zeros(n_points, dtype=bool)
+
+        # Pre-compute frozen value at maturity if applicable.
+        # applicable_ir_rate returns 0 when isento, so the same formula works for both.
+        frozen_gross = None
+        frozen_net = None
+        if pos.maturity_date is not None:
+            mat_holding = max(0, (pos.maturity_date - pos.purchase_date).days)
+            frozen_gross = pos.initial_amount * (1 + r) ** (mat_holding / 365)
+            ir_at_mat = pos.applicable_ir_rate(pos.maturity_date)
+            frozen_net = pos.initial_amount + (frozen_gross - pos.initial_amount) * (1 - ir_at_mat)
+
+        for t in range(n_points):
+            current_date = _add_years(start_date, t)
+            if pos.maturity_date is not None and current_date >= pos.maturity_date:
+                gross[t] = frozen_gross
+                net[t] = frozen_net
+                matured[t] = True
+            else:
+                holding = pos.holding_days(current_date)
+                gross[t] = pos.initial_amount * (1 + r) ** (holding / 365)
+                ir = pos.applicable_ir_rate(current_date)
+                net[t] = pos.initial_amount + (gross[t] - pos.initial_amount) * (1 - ir)
+
+        projections.append(FixedIncomeProjection(
+            position=pos,
+            years=years.copy(),
+            gross_values=gross,
+            net_values=net,
+            matured=matured,
+        ))
+        total_gross += gross
+        total_net += net
+        total_initial += pos.initial_amount
+
+    return FixedIncomePortfolio(
+        projections=projections,
+        total_gross=total_gross,
+        total_net=total_net,
+        total_initial=total_initial,
+    )
+
+
+def _add_years(d: date, years: int) -> date:
+    """Return d + N years, falling back to Feb 28 if Feb 29 is invalid in target year."""
+    try:
+        return d.replace(year=d.year + years)
+    except ValueError:  # Feb 29 in non-leap target year
+        return d.replace(year=d.year + years, day=28)
+
+
+def _draw_normal_returns(
+    rng: np.random.Generator,
+    mean: float,
+    sigma: float,
+    shape: tuple,
+) -> np.ndarray:
+    """Generate normal random returns with given shape, mean, and sigma."""
+    return rng.normal(loc=mean, scale=sigma, size=shape)
+
+
+def _compute_percentiles(trajectories: np.ndarray) -> dict:
+    """Compute p10/p50/p90 across trajectories (axis=0) for each year."""
+    return {
+        "p10": np.percentile(trajectories, 10, axis=0),
+        "p50": np.percentile(trajectories, 50, axis=0),
+        "p90": np.percentile(trajectories, 90, axis=0),
+    }
+
+
+def _compute_max_drawdowns(trajectories: np.ndarray) -> np.ndarray:
+    """Peak-to-trough relative drop per trajectory.
+
+    Returns positive fractions in [0, 1]. A trajectory that only grows has drawdown 0.
+    """
+    running_max = np.maximum.accumulate(trajectories, axis=1)
+    # Avoid divide-by-zero: where running_max == 0, drawdown is 0
+    safe_max = np.where(running_max == 0, 1.0, running_max)
+    drawdowns = (running_max - trajectories) / safe_max
+    return drawdowns.max(axis=1)
+
+
+@dataclass(slots=True, frozen=True)
+class AmortizationSchedule:
+    """Monthly amortization schedule for a fixed-rate loan."""
+    payments: np.ndarray   # total payment (interest + principal) per month
+    interest: np.ndarray   # interest portion per month
+    principal: np.ndarray  # principal amortization per month
+    balance: np.ndarray    # outstanding balance at END of each month
+
+
+def _sac_schedule(principal: float, monthly_rate: float, n_months: int) -> AmortizationSchedule:
+    """Sistema de Amortização Constante: principal constant per month."""
+    amortization = principal / n_months
+    principal_arr = np.full(n_months, amortization)
+    # Balance at the START of month k (0-indexed): principal - k * amortization
+    balance_start = principal - np.arange(n_months) * amortization
+    interest = balance_start * monthly_rate
+    payments = principal_arr + interest
+    balance_end = balance_start - principal_arr
+    # SAC final balance is algebraically zero; no drift cleanup needed.
+    return AmortizationSchedule(
+        payments=payments,
+        interest=interest,
+        principal=principal_arr,
+        balance=balance_end,
+    )
+
+
+def _price_schedule(principal: float, monthly_rate: float, n_months: int) -> AmortizationSchedule:
+    """Price (French) system: constant payment per month."""
+    if monthly_rate == 0:
+        amortization = principal / n_months
+        return AmortizationSchedule(
+            payments=np.full(n_months, amortization),
+            interest=np.zeros(n_months),
+            principal=np.full(n_months, amortization),
+            balance=principal - np.arange(1, n_months + 1) * amortization,
+        )
+
+    factor = (1 + monthly_rate) ** n_months
+    pmt = principal * monthly_rate * factor / (factor - 1)
+
+    payments = np.full(n_months, pmt)
+    interest = np.zeros(n_months)
+    principal_arr = np.zeros(n_months)
+    balance = np.zeros(n_months)
+
+    saldo = principal
+    for k in range(n_months):
+        interest[k] = saldo * monthly_rate
+        principal_arr[k] = pmt - interest[k]
+        saldo -= principal_arr[k]
+        balance[k] = saldo
+    # Numerical drift cleanup
+    balance[-1] = 0.0
+    return AmortizationSchedule(
+        payments=payments,
+        interest=interest,
+        principal=principal_arr,
+        balance=balance,
+    )
+
+
+def build_schedule(financing: FinancingParams, principal: float) -> AmortizationSchedule:
+    """Dispatch to SAC or Price based on financing.system."""
+    n_months = financing.term_years * 12
+    if financing.system == "SAC":
+        return _sac_schedule(principal, financing.monthly_rate, n_months)
+    if financing.system == "Price":
+        return _price_schedule(principal, financing.monthly_rate, n_months)
+    raise ValueError(f"unknown amortization system: {financing.system}")
+
+
+def simulate_real_estate(
+    params: RealEstateParams,
+    horizon_years: int,
+    reinvest_income: bool = True,
+    capital_initial: float | None = None,
+    internal_portfolio_rate: float = 0.0,
+) -> SimulationResult:
+    """Top-level dispatcher for real estate scenario.
+
+    Routes to the cash variant (Phase 1, no financing) or the financed
+    variant based on `params.financing`.
+    """
+    if horizon_years <= 0:
+        raise ValueError("horizon_years must be positive")
+    if params.financing is None:
+        return _simulate_real_estate_cash(params, horizon_years, reinvest_income)
+    if capital_initial is None:
+        capital_initial = params.property_value
+    return _simulate_real_estate_financed(
+        params, horizon_years, reinvest_income, capital_initial, internal_portfolio_rate,
+    )
+
+
+def _simulate_real_estate_cash(
+    params: RealEstateParams,
+    horizon_years: int,
+    reinvest_income: bool,
+) -> SimulationResult:
+    """Cash purchase: original Phase 1 behavior, untouched."""
+    years = np.arange(0, horizon_years + 1)
+
+    property_values = params.property_value * (1 + params.annual_appreciation) ** years
+
+    annual_net_income = np.array([
+        params.net_annual_income() * (1 + params.annual_appreciation) ** y
+        for y in years
+    ])
+
+    if reinvest_income:
+        rate = params.total_return()
+        accumulated = np.zeros_like(years, dtype=float)
+        for i in range(1, len(years)):
+            accumulated[i] = accumulated[i - 1] * (1 + rate) + annual_net_income[i]
+        patrimony = property_values + accumulated
+    else:
+        patrimony = property_values
+
+    cumulative_income = np.cumsum(annual_net_income)
+
+    return SimulationResult(
+        years=years,
+        patrimony=patrimony,
+        annual_income=annual_net_income,
+        cumulative_income=cumulative_income,
+        label="Imóvel",
+        color="#C0392B",
+    )
+
+
+def _simulate_real_estate_financed(
+    params: RealEstateParams,
+    horizon_years: int,
+    reinvest_income: bool,
+    capital_initial: float,
+    internal_portfolio_rate: float,
+) -> SimulationResult:
+    """Financed purchase: entry + monthly amortization, surplus invested at internal_portfolio_rate."""
+    fin = params.financing
+    if fin is None:
+        raise ValueError(
+            "_simulate_real_estate_financed requires params.financing to be set; "
+            "use simulate_real_estate() dispatcher instead."
+        )
+
+    entry = params.property_value * fin.entry_pct
+    if capital_initial < entry:
+        raise ValueError(
+            f"capital_initial ({capital_initial:.2f}) is below the required "
+            f"entry ({entry:.2f}) at entry_pct={fin.entry_pct:.0%}."
+        )
+
+    loan_principal = params.property_value - entry
+    initial_buffer = capital_initial - entry
+
+    # Build full schedule for term_years × 12 months
+    schedule = build_schedule(fin, loan_principal)
+
+    # Pad/truncate to horizon_years × 12 months
+    n_months_horizon = horizon_years * 12
+    n_months_term = fin.term_years * 12
+    if n_months_horizon > n_months_term:
+        pad = n_months_horizon - n_months_term
+        payments_full = np.concatenate([schedule.payments, np.zeros(pad)])
+        balance_full = np.concatenate([schedule.balance, np.zeros(pad)])
+    elif n_months_horizon < n_months_term:
+        payments_full = schedule.payments[:n_months_horizon]
+        balance_full = schedule.balance[:n_months_horizon]
+    else:
+        payments_full = schedule.payments
+        balance_full = schedule.balance
+
+    # Aggregate monthly → annual
+    payments_annual = payments_full.reshape(horizon_years, 12).sum(axis=1)
+
+    # Insurance: applied on balance at START of each month (before that month's amortization)
+    balance_at_month_start = np.concatenate([[loan_principal], balance_full[:-1]])
+    insurance_monthly = balance_at_month_start * fin.monthly_insurance_rate
+    insurance_annual = insurance_monthly.reshape(horizon_years, 12).sum(axis=1)
+
+    # Annual rent net (Phase 1 logic, grows with appreciation)
+    annual_net_income = np.array([
+        params.net_annual_income() * (1 + params.annual_appreciation) ** y
+        for y in range(horizon_years + 1)
+    ])
+    # net cash flow per year (year 0 has no payment activity; index 1.. of net_income aligns)
+    net_cash_flow = annual_net_income[1:] - payments_annual - insurance_annual
+
+    # Internal portfolio: starts at initial_buffer; PMT-end semantics (rate first, then cash flow)
+    rate = internal_portfolio_rate if reinvest_income else 0.0
+    internal_portfolio = np.zeros(horizon_years + 1)
+    internal_portfolio[0] = initial_buffer
+    for y in range(1, horizon_years + 1):
+        internal_portfolio[y] = internal_portfolio[y - 1] * (1 + rate) + net_cash_flow[y - 1]
+
+    # Property value evolution
+    years = np.arange(0, horizon_years + 1)
+    property_values = params.property_value * (1 + params.annual_appreciation) ** years
+
+    # Debt balance at end of each year
+    debt_balance = np.zeros(horizon_years + 1)
+    debt_balance[0] = loan_principal
+    for y in range(1, horizon_years + 1):
+        idx = 12 * y - 1
+        if idx < len(balance_full):
+            debt_balance[y] = balance_full[idx]
+        else:
+            debt_balance[y] = 0.0
+
+    patrimony = property_values - debt_balance + internal_portfolio
+    cumulative_income = np.cumsum(annual_net_income)
+
+    return SimulationResult(
+        years=years,
+        patrimony=patrimony,
+        annual_income=annual_net_income,
+        cumulative_income=cumulative_income,
+        label="Imóvel (financiado)",
+        color="#C0392B",
+        debt_balance=debt_balance,
+        internal_portfolio=internal_portfolio,
+    )
+
+
+def simulate_real_estate_mc(
+    params: RealEstateParams,
+    horizon_years: int,
+    mc_params: MonteCarloParams,
+    capital_initial: float | None = None,
+    portfolio_for_internal: PortfolioParams | None = None,
+) -> MonteCarloResult:
+    """Monte Carlo simulation of the real estate scenario.
+
+    Appreciation is stochastic per trajectory per year. For the cash variant,
+    rent grows with each trajectory's own appreciation and is reinvested at
+    a stochastic rate. For the financed variant, the schedule is deterministic
+    (contract rate is fixed) but the internal portfolio uses a Carteira-blended
+    stochastic return drawn from `portfolio_for_internal`.
+    """
+    if horizon_years <= 0:
+        raise ValueError("horizon_years must be positive")
+
+    rng = np.random.default_rng(mc_params.seed + 1)  # offset: independent stream from Carteira
+    N, T = mc_params.n_trajectories, horizon_years
+
+    # Stochastic appreciation per trajectory per year (N, T)
+    appreciation = _draw_normal_returns(
+        rng,
+        mean=params.annual_appreciation,
+        sigma=params.appreciation_volatility,
+        shape=(N, T),
+    )
+
+    if params.financing is None:
+        return _real_estate_mc_cash(params, horizon_years, appreciation)
+
+    if portfolio_for_internal is None:
+        raise ValueError(
+            "simulate_real_estate_mc with financing requires portfolio_for_internal"
+        )
+    if capital_initial is None:
+        capital_initial = params.property_value
+    return _real_estate_mc_financed(
+        params, horizon_years, appreciation, capital_initial,
+        portfolio_for_internal, rng,
+    )
+
+
+def _real_estate_mc_cash(
+    params: RealEstateParams,
+    horizon_years: int,
+    appreciation: np.ndarray,
+) -> MonteCarloResult:
+    """Cash purchase MC: appreciation is the only stochastic input."""
+    N, T = appreciation.shape
+    # Property values: shape (N, T+1). Year 0 = initial value.
+    appreciation_factors = np.concatenate(
+        [np.ones((N, 1)), np.cumprod(1 + appreciation, axis=1)], axis=1,
+    )
+    property_values = params.property_value * appreciation_factors
+
+    # Annual rent net per trajectory: grows with same appreciation factors
+    annual_net_income = params.net_annual_income() * appreciation_factors
+
+    # Reinvest accumulated rent at stochastic rate (net_yield + appreciation_t)
+    rate = params.net_yield() + appreciation  # (N, T)
+    accumulated = np.zeros((N, T + 1))
+    for t in range(T):
+        accumulated[:, t + 1] = accumulated[:, t] * (1 + rate[:, t]) + annual_net_income[:, t + 1]
+
+    trajectories = property_values + accumulated
+
+    return MonteCarloResult(
+        trajectories=trajectories,
+        percentiles=_compute_percentiles(trajectories),
+        final_distribution=trajectories[:, -1].copy(),
+        max_drawdowns=_compute_max_drawdowns(trajectories),
+        label="Imóvel (MC)",
+        color="#C0392B",
+    )
+
+
+def _real_estate_mc_financed(
+    params: RealEstateParams,
+    horizon_years: int,
+    appreciation: np.ndarray,
+    capital_initial: float,
+    portfolio_for_internal: PortfolioParams,
+    rng: np.random.Generator,
+) -> MonteCarloResult:
+    """Financed MC: stochastic appreciation + stochastic internal portfolio.
+
+    Schedule (parcela, juros, saldo) is deterministic (contract rate fixed).
+    Internal portfolio compounds with a Carteira-blended stochastic return.
+    """
+    fin = params.financing
+    if fin is None:
+        raise ValueError(
+            "_real_estate_mc_financed requires params.financing to be set"
+        )
+    N, T = appreciation.shape
+
+    # Deterministic schedule (Phase 2 financing logic, mirroring _simulate_real_estate_financed)
+    entry = params.property_value * fin.entry_pct
+    if capital_initial < entry:
+        raise ValueError(
+            f"capital_initial ({capital_initial:.2f}) is below the required "
+            f"entry ({entry:.2f}) at entry_pct={fin.entry_pct:.0%}."
+        )
+    loan_principal = params.property_value - entry
+    initial_buffer = capital_initial - entry
+
+    schedule = build_schedule(fin, loan_principal)
+
+    n_months_horizon = T * 12
+    n_months_term = fin.term_years * 12
+    if n_months_horizon > n_months_term:
+        pad = n_months_horizon - n_months_term
+        payments_full = np.concatenate([schedule.payments, np.zeros(pad)])
+        balance_full = np.concatenate([schedule.balance, np.zeros(pad)])
+    elif n_months_horizon < n_months_term:
+        payments_full = schedule.payments[:n_months_horizon]
+        balance_full = schedule.balance[:n_months_horizon]
+    else:
+        payments_full = schedule.payments
+        balance_full = schedule.balance
+
+    payments_annual = payments_full.reshape(T, 12).sum(axis=1)  # (T,)
+    balance_at_month_start = np.concatenate([[loan_principal], balance_full[:-1]])
+    insurance_monthly = balance_at_month_start * fin.monthly_insurance_rate
+    insurance_annual = insurance_monthly.reshape(T, 12).sum(axis=1)  # (T,)
+
+    # Property value per trajectory (N, T+1) using stochastic appreciation
+    appreciation_factors = np.concatenate(
+        [np.ones((N, 1)), np.cumprod(1 + appreciation, axis=1)], axis=1,
+    )
+    property_values = params.property_value * appreciation_factors  # (N, T+1)
+
+    # Debt balance at end of each year (deterministic, broadcast to N)
+    debt_balance_yearly = np.zeros(T + 1)
+    debt_balance_yearly[0] = loan_principal
+    for y in range(1, T + 1):
+        idx = 12 * y - 1
+        if idx < len(balance_full):
+            debt_balance_yearly[y] = balance_full[idx]
+        else:
+            debt_balance_yearly[y] = 0.0
+    debt_balance = np.broadcast_to(debt_balance_yearly, (N, T + 1))
+
+    # Annual rent net per trajectory (grows with each trajectory's appreciation)
+    annual_net_income = params.net_annual_income() * appreciation_factors  # (N, T+1)
+
+    # Stochastic Carteira blended return per trajectory per year (uses portfolio_for_internal)
+    K = len(portfolio_for_internal.assets)
+    weights = np.array([a.weight for a in portfolio_for_internal.assets])
+    means = np.array([
+        a.expected_yield * (1 - a.tax_rate) + a.capital_gain
+        for a in portfolio_for_internal.assets
+    ])
+    sigmas = np.array([a.volatility for a in portfolio_for_internal.assets])
+    carteira_draws = _draw_normal_returns(
+        rng, mean=means, sigma=sigmas, shape=(N, T, K),
+    )
+    carteira_returns = (carteira_draws * weights).sum(axis=2)  # (N, T)
+
+    # Net cash flow per trajectory per year:
+    # rent (stochastic via appreciation) − payments (deterministic) − insurance (deterministic)
+    net_cash_flow = annual_net_income[:, 1:] - payments_annual - insurance_annual  # (N, T)
+
+    # Internal portfolio (PMT-end: compound previous, then add cash flow)
+    internal_portfolio = np.zeros((N, T + 1))
+    internal_portfolio[:, 0] = initial_buffer
+    for t in range(T):
+        internal_portfolio[:, t + 1] = (
+            internal_portfolio[:, t] * (1 + carteira_returns[:, t])
+            + net_cash_flow[:, t]
+        )
+
+    trajectories = property_values - debt_balance + internal_portfolio
+
+    return MonteCarloResult(
+        trajectories=trajectories,
+        percentiles=_compute_percentiles(trajectories),
+        final_distribution=trajectories[:, -1].copy(),
+        max_drawdowns=_compute_max_drawdowns(trajectories),
+        label="Imóvel financiado (MC)",
+        color="#C0392B",
+    )
+
+
+def simulate_portfolio(
+    params: PortfolioParams,
+    horizon_years: int,
+    reinvest_income: bool = True,
+    ipca: float = 0.0,
+) -> SimulationResult:
+    """Simulate a diversified portfolio with full reinvestment and optional aporte.
+
+    `ipca` is only used when `params.contribution_inflation_indexed` is True.
+    Contributions enter at the beginning of each year (PMT begin) and compound
+    at the same rate as `reinvest_income` mode.
+    """
+    if horizon_years <= 0:
+        raise ValueError("horizon_years must be positive")
+
+    years = np.arange(0, horizon_years + 1)
+    rate = params.total_return() if reinvest_income else params.blended_capital_gain()
+    yield_only = params.blended_yield()
+
+    # Vectorized base patrimony (no contributions)
+    patrimony = params.capital * (1 + rate) ** years
+
+    # Add contributions (begin-of-year), compounded at `rate` until end-of-year y
+    monthly = params.monthly_contribution
+    indexed = params.contribution_inflation_indexed
+    if monthly > 0:
+        annual_base = 12.0 * monthly
+        contribution_pv = np.zeros_like(patrimony, dtype=float)
+        for y in range(1, horizon_years + 1):
+            total = 0.0
+            for t in range(y):
+                aporte_t = annual_base * ((1 + ipca) ** t if indexed else 1.0)
+                total += aporte_t * (1 + rate) ** (y - t)
+            contribution_pv[y] = total
+        patrimony = patrimony + contribution_pv
+
+    # Annual income generated (yield on patrimony at start of year)
+    if reinvest_income:
+        annual_income = np.array([
+            patrimony[max(y - 1, 0)] * yield_only
+            for y in years
+        ])
+    else:
+        # Without reinvest, income is on principal + accumulated contributions
+        annual_income = patrimony * yield_only
+
+    cumulative_income = np.cumsum(annual_income)
+
+    return SimulationResult(
+        years=years,
+        patrimony=patrimony,
+        annual_income=annual_income,
+        cumulative_income=cumulative_income,
+        label="Carteira Diversificada",
+        color="#27AE60",
+    )
+
+
+def simulate_portfolio_mc(
+    params: PortfolioParams,
+    horizon_years: int,
+    mc_params: MonteCarloParams,
+    ipca: float = 0.0,
+) -> MonteCarloResult:
+    """Monte Carlo simulation of the diversified portfolio.
+
+    Each year, each asset's net return is drawn from N(mean, volatility^2)
+    independently. Portfolio return = weighted sum across assets. Aporte
+    mensal is deterministic (PMT-begin: added at the start of the year,
+    compounded with that year's return).
+    """
+    if horizon_years <= 0:
+        raise ValueError("horizon_years must be positive")
+
+    rng = np.random.default_rng(mc_params.seed)
+    N, T = mc_params.n_trajectories, horizon_years
+    K = len(params.assets)
+
+    weights = np.array([a.weight for a in params.assets])
+    means = np.array([
+        a.expected_yield * (1 - a.tax_rate) + a.capital_gain
+        for a in params.assets
+    ])
+    sigmas = np.array([a.volatility for a in params.assets])
+
+    # Per-trajectory per-year per-asset draws: shape (N, T, K)
+    draws = _draw_normal_returns(rng, mean=means, sigma=sigmas, shape=(N, T, K))
+    # Portfolio return = weighted sum across assets: shape (N, T)
+    portfolio_returns = (draws * weights).sum(axis=2)
+
+    monthly = params.monthly_contribution
+    indexed = params.contribution_inflation_indexed
+    annual_base = 12.0 * monthly
+
+    trajectories = np.zeros((N, T + 1))
+    trajectories[:, 0] = params.capital
+    for t in range(T):
+        if monthly > 0:
+            aporte_t = annual_base * ((1 + ipca) ** t if indexed else 1.0)
+        else:
+            aporte_t = 0.0
+        # PMT-begin: add aporte first, then compound with year's return
+        trajectories[:, t + 1] = (trajectories[:, t] + aporte_t) * (1 + portfolio_returns[:, t])
+
+    return MonteCarloResult(
+        trajectories=trajectories,
+        percentiles=_compute_percentiles(trajectories),
+        final_distribution=trajectories[:, -1].copy(),
+        max_drawdowns=_compute_max_drawdowns(trajectories),
+        label="Carteira (MC)",
+        color="#27AE60",
+    )
+
+
+def simulate_benchmark(
+    params: BenchmarkParams,
+    horizon_years: int,
+) -> SimulationResult:
+    """Tesouro Selic with full reinvestment (reference benchmark)."""
+    if horizon_years <= 0:
+        raise ValueError("horizon_years must be positive")
+
+    years = np.arange(0, horizon_years + 1)
+    rate = params.net_yield()
+    patrimony = params.capital * (1 + rate) ** years
+    annual_income = np.array([
+        params.capital * (1 + rate) ** max(y - 1, 0) * rate
+        for y in years
+    ])
+    cumulative_income = np.cumsum(annual_income)
+
+    return SimulationResult(
+        years=years,
+        patrimony=patrimony,
+        annual_income=annual_income,
+        cumulative_income=cumulative_income,
+        label="Tesouro Selic (líquido)",
+        color="#F39C12",
+    )
+
+
+def build_comparison_dataframe(
+    results: Iterable[SimulationResult],
+) -> pd.DataFrame:
+    """Combine multiple simulation results into a single long-format dataframe."""
+    frames = []
+    for r in results:
+        frames.append(pd.DataFrame({
+            "Ano": r.years,
+            "Patrimônio": r.patrimony,
+            "Renda Anual": r.annual_income,
+            "Renda Acumulada": r.cumulative_income,
+            "Cenário": r.label,
+        }))
+    return pd.concat(frames, ignore_index=True)
+
+
+# ---------- Sensitivity analysis ----------
+
+def sensitivity_real_estate(
+    base_params: RealEstateParams,
+    horizon_years: int,
+    deltas: dict[str, tuple[float, float]],
+) -> pd.DataFrame:
+    """Tornado-style sensitivity: vary one parameter at a time.
+
+    Args:
+        base_params: baseline scenario
+        horizon_years: simulation horizon
+        deltas: dict mapping parameter name to (low, high) values
+
+    Returns:
+        DataFrame with columns [parameter, low_patrimony, high_patrimony, base_patrimony]
+    """
+    base_result = simulate_real_estate(base_params, horizon_years)
+    base_patrimony = float(base_result.patrimony[-1])
+
+    rows = []
+    for param_name, (low, high) in deltas.items():
+        low_params = _replace_field(base_params, param_name, low)
+        high_params = _replace_field(base_params, param_name, high)
+
+        low_result = simulate_real_estate(low_params, horizon_years)
+        high_result = simulate_real_estate(high_params, horizon_years)
+
+        rows.append({
+            "Parâmetro": param_name,
+            "Cenário Pessimista": float(low_result.patrimony[-1]),
+            "Cenário Base": base_patrimony,
+            "Cenário Otimista": float(high_result.patrimony[-1]),
+        })
+
+    return pd.DataFrame(rows)
+
+
+def _replace_field(obj: object, field_name: str, value: float) -> object:
+    """Create a copy of a dataclass with a single field replaced."""
+    from copy import copy
+    new_obj = copy(obj)
+    setattr(new_obj, field_name, value)
+    return new_obj
+
+
+# ---------- Tax impact analysis ----------
+
+def compute_irpf_carne_leao(monthly_income: float) -> float:
+    """Compute IRPF using current 2026 progressive table (R$).
+
+    From Jan/2026 (Lei 15.270/2025): redutor effectively isenta até R$ 5.000.
+    Above R$ 7.350, full progressive table applies up to 27,5%.
+    """
+    if monthly_income <= 5_000:
+        return 0.0
+    if monthly_income <= 7_350:
+        # Reductor decreases linearly in this range — approximation
+        # Effective rate ramps from 0% to ~12%
+        progress = (monthly_income - 5_000) / (7_350 - 5_000)
+        effective_rate = 0.075 * progress
+        return monthly_income * effective_rate
+
+    # Standard progressive table for > R$ 7.350
+    if monthly_income <= 4_664.68:
+        return 0.0
+    elif monthly_income <= 9_338.92:
+        return monthly_income * 0.225 - 950.94
+    return monthly_income * 0.275 - 1_417.89
+
+
+def annual_tax_comparison(
+    real_estate: RealEstateParams,
+    portfolio: PortfolioParams,
+) -> pd.DataFrame:
+    """Compare annual tax burden between scenarios."""
+    re_label = "Imóvel" if real_estate.financing is None else "Imóvel (financiado)"
+    re_tax = real_estate.income_tax_amount()
+    re_gross_income = real_estate.gross_annual_rent()
+
+    # Portfolio tax (computed inside blended yield)
+    pf_gross_income = sum(
+        portfolio.capital * a.weight * a.expected_yield
+        for a in portfolio.assets
+    )
+    pf_tax = sum(
+        portfolio.capital * a.weight * a.expected_yield * a.tax_rate
+        for a in portfolio.assets
+    )
+
+    return pd.DataFrame([
+        {
+            "Cenário": re_label,
+            "Receita Bruta": re_gross_income,
+            "Imposto Anual": re_tax,
+            "Receita Líquida": re_gross_income - re_tax,
+            "Carga Tributária Efetiva": re_tax / re_gross_income if re_gross_income else 0.0,
+        },
+        {
+            "Cenário": "Carteira Diversificada",
+            "Receita Bruta": pf_gross_income,
+            "Imposto Anual": pf_tax,
+            "Receita Líquida": pf_gross_income - pf_tax,
+            "Carga Tributária Efetiva": pf_tax / pf_gross_income if pf_gross_income else 0.0,
+        },
+    ])
