@@ -23,7 +23,7 @@ Migração do dashboard `dashboard-investimentos` (Streamlit) para uma stack web
 - ✅ **Fase 3** — Visão Geral (KPIs, charts, drawer, scenario store)
 - ⏳ **Fase 4** — Abas individuais
   - ✅ Renda Fixa (KPIs, tabela, IR regressivo, calendário, CSV import/export)
-  - ⬜ Imóvel
+  - ✅ Imóvel (KPIs, custos, financiamento opcional SAC/Price, evolução, riscos)
   - ⬜ Carteira
   - ⬜ Sensibilidade
   - ⬜ Risco MC
