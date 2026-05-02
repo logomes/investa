@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { Topbar } from "@/components/shell/Topbar";
+import { Providers } from "./providers";
 import "./globals.css";
 
 const inter = Inter({
@@ -41,16 +42,15 @@ export default function RootLayout({
           </div>
         </div>
 
-        {/* Shell */}
-        <div className="shell-grid relative z-[1] flex min-h-screen">
-          <Sidebar />
-          <main className="flex-1 flex flex-col min-w-0">
-            <Topbar />
-            <div className="flex-1 px-8 py-6">
-              {children}
-            </div>
-          </main>
-        </div>
+        <Providers>
+          <div className="shell-grid relative z-[1] flex min-h-screen">
+            <Sidebar />
+            <main className="flex-1 flex flex-col min-w-0">
+              <Topbar />
+              <div className="flex-1 px-8 py-6">{children}</div>
+            </main>
+          </div>
+        </Providers>
       </body>
     </html>
   );
