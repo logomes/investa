@@ -13,8 +13,22 @@ Migração do dashboard `dashboard-investimentos` (Streamlit) para uma stack web
 
 ## URLs de produção
 
-- **API:** https://investa-api-igh9.onrender.com (status: ✅ Fase 1 completa — Render free tier, cold start ~30s após inatividade)
-- **Web:** https://investa-beta.vercel.app (status: ✅ Fase 2 completa — shell + 8 rotas placeholder)
+- **API:** https://investa-api-igh9.onrender.com (Render free tier, cold start ~30s após inatividade)
+- **Web:** https://investa-beta.vercel.app
+
+## Status das fases
+
+- ✅ **Fase 1** — API FastAPI (engine, BCB SGS, Monte Carlo)
+- ✅ **Fase 2** — Web shell (sidebar, topbar, 8 rotas placeholder)
+- ✅ **Fase 3** — Visão Geral (KPIs, charts, drawer, scenario store)
+- ⏳ **Fase 4** — Abas individuais
+  - ✅ Renda Fixa (KPIs, tabela, IR regressivo, calendário, CSV import/export)
+  - ⬜ Imóvel
+  - ⬜ Carteira
+  - ⬜ Sensibilidade
+  - ⬜ Risco MC
+  - ⬜ Tributação
+  - ⬜ Exportar
 
 ## Desenvolvimento local
 
