@@ -1,5 +1,5 @@
-import { ConstructionCard } from "@/components/placeholder/ConstructionCard";
+import { ImovelPageContent } from "@/components/imovel/ImovelPageContent";
 
 export default function ImovelPage() {
-  return <ConstructionCard pageTitle="Imóvel" fase={5} />;
+  return <ImovelPageContent />;
 }
