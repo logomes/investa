@@ -1,11 +1,12 @@
 """POST /api/simulate — deterministic simulation across all scenarios."""
 from fastapi import APIRouter
 
-from converters import simulation_result_to_dto
+from converters import monte_carlo_result_to_dto, simulation_result_to_dto
 from core.config import (
     AssetClass,
     BenchmarkParams,
     FinancingParams,
+    MonteCarloParams,
     PortfolioParams,
     RealEstateParams,
 )
@@ -14,11 +15,18 @@ from core.models import (
     sensitivity_real_estate,
     simulate_benchmark,
     simulate_portfolio,
+    simulate_portfolio_mc,
     simulate_real_estate,
+    simulate_real_estate_mc,
 )
 from core.services.macro import get_macro_params
-from schemas.inputs import SimulateInput
-from schemas.outputs import SensitivityRowOut, SimulateOut, TaxComparisonRowOut
+from schemas.inputs import SimulateInput, SimulateMonteCarloInput
+from schemas.outputs import (
+    SensitivityRowOut,
+    SimulateMonteCarloOut,
+    SimulateOut,
+    TaxComparisonRowOut,
+)
 
 router = APIRouter()
 
@@ -141,4 +149,38 @@ def simulate(payload: SimulateInput) -> SimulateOut:
         benchmark=simulation_result_to_dto(bench_result),
         sensitivity=sensitivity,
         tax_comparison=tax_comparison,
+    )
+
+
+def _to_mc_params(input_mc) -> MonteCarloParams:
+    return MonteCarloParams(
+        n_trajectories=input_mc.n_trajectories,
+        seed=input_mc.seed,
+        target_patrimony=input_mc.target_patrimony,
+    )
+
+
+@router.post("/api/simulate/monte-carlo", response_model=SimulateMonteCarloOut)
+def simulate_monte_carlo(payload: SimulateMonteCarloInput) -> SimulateMonteCarloOut:
+    """Run Monte Carlo for both Real Estate and Portfolio scenarios."""
+    re_params = _to_real_estate_params(payload.real_estate)
+    pf_params = _to_portfolio_params(payload.portfolio)
+    mc_params = _to_mc_params(payload.mc)
+    macro = get_macro_params()
+
+    re_mc = simulate_real_estate_mc(
+        re_params,
+        horizon_years=payload.horizon,
+        mc_params=mc_params,
+    )
+    pf_mc = simulate_portfolio_mc(
+        pf_params,
+        horizon_years=payload.horizon,
+        mc_params=mc_params,
+        ipca=macro.ipca,
+    )
+
+    return SimulateMonteCarloOut(
+        real_estate=monte_carlo_result_to_dto(re_mc),
+        portfolio=monte_carlo_result_to_dto(pf_mc),
     )
