@@ -13,8 +13,8 @@ Migração do dashboard `dashboard-investimentos` (Streamlit) para uma stack web
 
 ## URLs de produção
 
-- **API:** https://investa-api.onrender.com (deploy: Render)
-- **Web:** https://investa.vercel.app (deploy: Vercel — após Fase 2)
+- **API:** https://investa-api-igh9.onrender.com (status: ✅ Fase 1 completa — Render free tier, cold start ~30s após inatividade)
+- **Web:** https://investa.vercel.app (status: 🟡 Fase 2 pendente)
 
 ## Desenvolvimento local
 
