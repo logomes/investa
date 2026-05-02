@@ -123,23 +123,44 @@ export function LineChart({
         />
       ))}
 
-      {/* Last value markers + labels */}
-      {showLastLabel &&
-        series.map((s, i) => (
-          <g key={`lbl${i}`}>
-            <circle cx={x(s.values.length - 1)} cy={y(s.values[s.values.length - 1])} r="3" fill={s.color} />
+      {/* Last value markers + labels (with vertical collision avoidance:
+          marker stays at the true Y; if labels overlap they're nudged down) */}
+      {showLastLabel && (() => {
+        const minGap = 12;
+        const items = series.map((s, i) => {
+          const lastI = s.values.length - 1;
+          return {
+            i,
+            color: s.color,
+            cx: x(lastI),
+            cy: y(s.values[lastI]),
+            text: yFormat(s.values[lastI]),
+          };
+        });
+        const order = [...items].sort((a, b) => a.cy - b.cy);
+        const labelY = new Map<number, number>();
+        let prev = -Infinity;
+        for (const l of order) {
+          const ty = Math.max(l.cy, prev + minGap);
+          labelY.set(l.i, ty);
+          prev = ty;
+        }
+        return items.map((l) => (
+          <g key={`lbl${l.i}`}>
+            <circle cx={l.cx} cy={l.cy} r="3" fill={l.color} />
             <text
-              x={x(s.values.length - 1) + 6}
-              y={y(s.values[s.values.length - 1]) + 3}
-              fill={s.color}
+              x={l.cx + 6}
+              y={(labelY.get(l.i) as number) + 3}
+              fill={l.color}
               fontSize="10"
               fontFamily="inherit"
               fontWeight="700"
             >
-              {yFormat(s.values[s.values.length - 1])}
+              {l.text}
             </text>
           </g>
-        ))}
+        ));
+      })()}
 
       {/* X axis labels */}
       {xLabels.map((lbl, i) => (
