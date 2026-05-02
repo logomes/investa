@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { Sidebar } from "@/components/shell/Sidebar";
+import { Topbar } from "@/components/shell/Topbar";
 import "./globals.css";
-import { cn } from "@/lib/utils";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -28,8 +29,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={cn(inter.variable, jetbrainsMono.variable, "font-sans")}>
-      <body className="font-sans antialiased">{children}</body>
+    <html lang="pt-BR" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <body className="font-sans antialiased">
+        {/* Desktop-only message */}
+        <div className="desktop-only-warning min-h-screen flex items-center justify-center px-6 text-center">
+          <div className="max-w-sm">
+            <h1 className="text-xl font-bold text-ink mb-2">Use desktop ≥1280px</h1>
+            <p className="text-sm text-ink-2">
+              O dashboard é desenhado para telas ≥1280px. Mobile vem em uma fase futura.
+            </p>
+          </div>
+        </div>
+
+        {/* Shell */}
+        <div className="shell-grid relative z-[1] flex min-h-screen">
+          <Sidebar />
+          <main className="flex-1 flex flex-col min-w-0">
+            <Topbar />
+            <div className="flex-1 px-8 py-6">
+              {children}
+            </div>
+          </main>
+        </div>
+      </body>
     </html>
   );
 }
