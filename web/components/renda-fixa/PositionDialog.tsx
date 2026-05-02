@@ -62,7 +62,7 @@ export function PositionDialog({ open, mode, initial, onClose, onSubmit, onDelet
       initialAmount: initial?.initialAmount ?? 0,
       purchaseDate: initial?.purchaseDate ?? today,
       indexer: initial?.indexer ?? "cdi",
-      rate: initial?.rate ?? 1.0,
+      rate: initial !== undefined ? initial.rate * 100 : 100,
       maturityDate: initial?.maturityDate ?? null,
       isTaxExempt: initial?.isTaxExempt ?? false,
     },
@@ -76,7 +76,7 @@ export function PositionDialog({ open, mode, initial, onClose, onSubmit, onDelet
         initialAmount: initial?.initialAmount ?? 0,
         purchaseDate: initial?.purchaseDate ?? today,
         indexer: initial?.indexer ?? "cdi",
-        rate: initial?.rate ?? 1.0,
+        rate: initial !== undefined ? initial.rate * 100 : 100,
         maturityDate: initial?.maturityDate ?? null,
         isTaxExempt: initial?.isTaxExempt ?? false,
       });
@@ -85,8 +85,10 @@ export function PositionDialog({ open, mode, initial, onClose, onSubmit, onDelet
 
   const indexer = form.watch("indexer");
 
+  // Form holds rate as percent for UX (e.g. user types "95" = 95% CDI),
+  // but storage / engine expect decimal (0.95). Convert on submit.
   const handleSubmit = form.handleSubmit((data) => {
-    onSubmit(data);
+    onSubmit({ ...data, rate: data.rate / 100 });
   });
 
   return (

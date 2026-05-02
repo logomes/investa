@@ -14,7 +14,8 @@ SGS_BASE_URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{series_id}/dados/
 
 SERIES_SELIC_META = 432       # % a.a.
 SERIES_IPCA_MONTHLY = 433     # % mensal — accumulate 12 months
-SERIES_CDI_ANNUAL = 12        # % a.a.
+SERIES_CDI_ANNUAL = 4389      # CDI anualizado base 252 — % a.a.
+                              # (série 12 é o CDI diário, % a.d. — não usar)
 SERIES_USD_BRL = 1            # R$/USD (PTAX compra)
 
 DEFAULT_TIMEOUT = 5.0

@@ -31,7 +31,7 @@ def test_fetch_macro_success(mocker):
             return _mock_response([{"data": "01/04/2026", "valor": "14.75"}])
         if "bcdata.sgs.433" in url:
             return _mock_response(_ipca_payload_12m())
-        if "bcdata.sgs.12" in url:
+        if "bcdata.sgs.4389" in url:
             return _mock_response([{"data": "01/04/2026", "valor": "14.65"}])
         if "bcdata.sgs.1" in url:
             return _mock_response([{"data": "01/04/2026", "valor": "5.30"}])
@@ -94,7 +94,7 @@ def test_fetch_macro_partial_failure_is_total_failure(mocker):
             return _mock_response([{"data": "01/04/2026", "valor": "14.75"}])
         if "bcdata.sgs.433" in url:
             return _mock_response(_ipca_payload_12m())
-        if "bcdata.sgs.12" in url:
+        if "bcdata.sgs.4389" in url:
             return _mock_response([], status_code=500)
         return _mock_response([{"data": "01/04/2026", "valor": "5.30"}])
 
@@ -127,7 +127,7 @@ def test_fetch_macro_bad_valor_in_ipca_payload(mocker):
             return _mock_response([{"data": "01/04/2026", "valor": "14.75"}])
         if "bcdata.sgs.433" in url:
             return _mock_response(bad_ipca)
-        if "bcdata.sgs.12" in url:
+        if "bcdata.sgs.4389" in url:
             return _mock_response([{"data": "01/04/2026", "valor": "14.65"}])
         if "bcdata.sgs.1" in url:
             return _mock_response([{"data": "01/04/2026", "valor": "5.30"}])
@@ -147,7 +147,7 @@ def test_fetch_macro_partial_ipca_payload_is_total_failure(mocker):
             return _mock_response([{"data": "01/04/2026", "valor": "14.75"}])
         if "bcdata.sgs.433" in url:
             return _mock_response(short_ipca)  # only 8 months
-        if "bcdata.sgs.12" in url:
+        if "bcdata.sgs.4389" in url:
             return _mock_response([{"data": "01/04/2026", "valor": "14.65"}])
         if "bcdata.sgs.1" in url:
             return _mock_response([{"data": "01/04/2026", "valor": "5.30"}])
