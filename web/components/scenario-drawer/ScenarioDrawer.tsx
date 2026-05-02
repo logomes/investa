@@ -48,7 +48,7 @@ export function ScenarioDrawer() {
           <SheetTitle className="text-ink">Simular cenário</SheetTitle>
         </SheetHeader>
         <FormProvider {...form}>
-          <form onSubmit={onSubmit} className="space-y-6 py-4">
+          <form onSubmit={onSubmit} className="space-y-6 px-5 pb-4">
             <CapitalSection />
             <RealEstateSection />
             <FinancingSection />
