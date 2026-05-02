@@ -80,6 +80,16 @@ describe("imovel-derive — KPIs", () => {
   it("totalCosts >= 0 sempre (sanity)", () => {
     expect(totalCosts({ ...RE, vacancyMonthsPerYear: 0, incomeTaxBracket: 0 })).toBeGreaterThanOrEqual(0);
   });
+
+  it("vacancyLoss = 0 quando vacancyMonthsPerYear = 0", () => {
+    const re = { ...RE, vacancyMonthsPerYear: 0 };
+    expect(vacancyLoss(re)).toBe(0);
+    expect(costBreakdown(re)[1].value).toBe(0);
+  });
+
+  it("incomeTaxAmount = 0 quando incomeTaxBracket = 0", () => {
+    expect(incomeTaxAmount({ ...RE, incomeTaxBracket: 0 })).toBe(0);
+  });
 });
 
 describe("imovel-derive — costBreakdown", () => {
@@ -162,6 +172,14 @@ describe("imovel-derive — financingSummary", () => {
     const fin: FinancingInput = { ...FIN, system: "Price" };
     const f = financingSummary({ ...RE, financing: fin })!;
     expect(f.totalInterest).toBeCloseTo(443_566, -2);
+  });
+
+  it("Price annualRate=0: firstPayment = P/n, totalInterest = 0", () => {
+    const fin: FinancingInput = { ...FIN, system: "Price", annualRate: 0 };
+    const f = financingSummary({ ...RE, financing: fin })!;
+    // P = 230_000 * (1 - 0.20) = 184_000; n = 30 * 12 = 360
+    expect(f.firstPayment).toBeCloseTo(511.111, 2);
+    expect(f.totalInterest).toBe(0);
   });
 });
 

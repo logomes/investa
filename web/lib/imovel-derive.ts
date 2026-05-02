@@ -110,9 +110,14 @@ export function financingSummary(re: RealEstateInput): FinancingSummary | null {
     firstPayment = amort + P * i;
     totalInterest = i * P * (n + 1) / 2;
   } else {
-    const pmt = P * i / (1 - Math.pow(1 + i, -n));
-    firstPayment = pmt;
-    totalInterest = pmt * n - P;
+    if (i === 0) {
+      firstPayment = P / n;
+      totalInterest = 0;
+    } else {
+      const pmt = P * i / (1 - Math.pow(1 + i, -n));
+      firstPayment = pmt;
+      totalInterest = pmt * n - P;
+    }
   }
 
   return {
