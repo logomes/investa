@@ -12,7 +12,7 @@ Object.defineProperty(globalThis, "localStorage", {
     removeItem: (key: string) => { _localStorageStore.delete(key); },
     clear: () => { _localStorageStore.clear(); },
     get length() { return _localStorageStore.size; },
-    key: (index: number) => [..._localStorageStore.keys()][index] ?? null,
+    key: (index: number) => Array.from(_localStorageStore.keys())[index] ?? null,
   },
   writable: true,
   configurable: true,
