@@ -1,4 +1,4 @@
-import type { RealEstateInput, FinancingInput } from "./api-types";
+import type { RealEstateInput } from "./api-types";
 
 // ---------- KPIs ----------
 
