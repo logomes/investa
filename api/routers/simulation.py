@@ -67,10 +67,11 @@ def _to_portfolio_params(input_pf) -> PortfolioParams:
     )
 
 
-def _to_benchmark_params(input_bench) -> BenchmarkParams:
+def _to_benchmark_params(input_bench, capital: float) -> BenchmarkParams:
     return BenchmarkParams(
         selic_rate=input_bench.selic_rate,
         tax_rate=input_bench.tax_rate,
+        capital=capital,
     )
 
 
@@ -94,7 +95,7 @@ def simulate(payload: SimulateInput) -> SimulateOut:
     """Run all three deterministic simulations + sensitivity + tax comparison."""
     re_params = _to_real_estate_params(payload.real_estate)
     pf_params = _to_portfolio_params(payload.portfolio)
-    bench_params = _to_benchmark_params(payload.benchmark)
+    bench_params = _to_benchmark_params(payload.benchmark, payload.capital)
     macro = get_macro_params()
 
     re_result = simulate_real_estate(
