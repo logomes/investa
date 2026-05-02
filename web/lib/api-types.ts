@@ -6,7 +6,7 @@ export type FinancingInput = {
   annualRate: number;
   entryPct: number;
   system: "SAC" | "Price";
-  monthlyInsuranceRate?: number;
+  monthlyInsuranceRate: number;
 };
 
 export type RealEstateInput = {
