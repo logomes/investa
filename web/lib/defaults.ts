@@ -1,4 +1,4 @@
-import type { SimulateInput, MonteCarloInput } from "./api-types";
+import type { SimulateInput, MonteCarloInput, FinancingInput } from "./api-types";
 
 export const DEFAULT_SCENARIO: SimulateInput = {
   capital: 230_000,
@@ -46,3 +46,11 @@ export const DEFAULT_MC: MonteCarloInput = {
 };
 
 export const DEFAULT_GOAL = 600_000;
+
+export const DEFAULT_FINANCING: FinancingInput = {
+  termYears: 30,
+  annualRate: 0.115,
+  entryPct: 0.20,
+  system: "SAC",
+  monthlyInsuranceRate: 0.0005,
+};
