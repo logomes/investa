@@ -7,14 +7,14 @@ Migração do dashboard `dashboard-investimentos` (Streamlit) para uma stack web
 ## Estrutura
 
 - `api/` — Backend FastAPI com a engine de simulação
-- `web/` — Frontend Next.js 14 (App Router) — _populado a partir da Fase 2_
+- `web/` — Frontend Next.js 14 (App Router, Tailwind v4, shadcn/ui)
 - `docs/design-handoff/` — Mock e tokens de design
 - `.github/workflows/` — CI
 
 ## URLs de produção
 
 - **API:** https://investa-api-igh9.onrender.com (status: ✅ Fase 1 completa — Render free tier, cold start ~30s após inatividade)
-- **Web:** https://investa.vercel.app (status: 🟡 Fase 2 pendente)
+- **Web:** https://investa-beta.vercel.app (status: ✅ Fase 2 completa — shell + 8 rotas placeholder)
 
 ## Desenvolvimento local
 
