@@ -1,91 +1,136 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+@theme {
+  /* Paleta — backgrounds */
+  --color-bg-0: #050a0d;
+  --color-bg-1: #0a1216;
+  --color-bg-2: #121e24;
+  --color-bg-3: #1a2a32;
+  --color-bg-4: #233640;
+
+  /* Paleta — ink (text) */
+  --color-ink: #eaf6f4;
+  --color-ink-2: #b6cdca;
+  --color-ink-3: #7d9591;
+  --color-ink-4: #506663;
+
+  /* Paleta — brand teal */
+  --color-brand: #00b894;
+  --color-brand-bright: #2af0c4;
+
+  /* Paleta — accent colors */
+  --color-accent-coral: #ff6b5b;
+  --color-accent-cyan: #5cc8ff;
+  --color-accent-green: #46e8a4;
+  --color-accent-red: #ff5d72;
+  --color-accent-amber: #ffc857;
+
+  /* Paleta — lines/borders */
+  --color-line: #1f323b;
+  --color-line-soft: #162428;
+
+  /* Fonts (next/font sets --font-inter and --font-jetbrains on <html>) */
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), monospace;
+
+  /* Shadows */
+  --shadow-glow: 0 4px 16px rgba(42, 240, 196, 0.32);
+  --shadow-card-left: inset 3px 0 0 #2af0c4;
+
+  /* Radii */
+  --radius-card: 16px;
+  --radius-pill: 999px;
+}
+
+/* shadcn semantic tokens — aliased to our paleta */
+:root {
+  --background: oklch(0.16 0.02 220);    /* approx bg-1 */
+  --foreground: oklch(0.95 0.02 180);    /* approx ink */
+  --card: oklch(0.20 0.02 220);          /* approx bg-2 */
+  --card-foreground: oklch(0.95 0.02 180);
+  --popover: oklch(0.20 0.02 220);
+  --popover-foreground: oklch(0.95 0.02 180);
+  --primary: oklch(0.66 0.15 165);       /* approx brand */
+  --primary-foreground: oklch(0.16 0.02 220);
+  --secondary: oklch(0.24 0.02 220);     /* approx bg-3 */
+  --secondary-foreground: oklch(0.95 0.02 180);
+  --muted: oklch(0.24 0.02 220);
+  --muted-foreground: oklch(0.65 0.02 180);
+  --accent: oklch(0.66 0.15 165);
+  --accent-foreground: oklch(0.16 0.02 220);
+  --destructive: oklch(0.65 0.20 20);    /* approx accent-red */
+  --destructive-foreground: oklch(0.95 0.02 180);
+  --border: oklch(0.30 0.02 220);
+  --input: oklch(0.30 0.02 220);
+  --ring: oklch(0.85 0.18 165);          /* approx brand-bright */
+  --radius: 0.625rem;
 }
 
 @layer base {
-  .theme {
-    --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
-  }
-  :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
-  }
-  .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
-  }
   * {
+    box-sizing: border-box;
     border-color: var(--border);
   }
+
+  html {
+    background: #0a1216;
+  }
+
   body {
-    background-color: var(--background);
-    color: var(--foreground);
-    font-family: var(--font-sans, system-ui, sans-serif);
+    background: var(--color-bg-1);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Ambient glow — teal top-right, cyan bottom-left */
+  body::before {
+    content: "";
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(42, 240, 196, 0.10) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    bottom: -250px;
+    left: 200px;
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(92, 200, 255, 0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .tabular {
+    font-feature-settings: "tnum";
+  }
+}
+
+/* Desktop-only viewport gate */
+@layer utilities {
+  .desktop-only-warning {
+    display: none;
+  }
+
+  @media (max-width: 1279px) {
+    .desktop-only-warning {
+      display: flex;
+    }
+
+    .shell-grid {
+      display: none;
+    }
   }
 }
