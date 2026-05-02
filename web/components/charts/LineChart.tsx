@@ -28,7 +28,9 @@ type Props = {
   axisColor?: string;
 };
 
-const DEFAULT_PAD: Pad = { t: 12, r: 16, b: 28, l: 56 };
+// Right pad accommodates the last-value labels (`R$XXXk`) printed past the
+// final marker. ~70px fits "R$ 1.235k" without clipping.
+const DEFAULT_PAD: Pad = { t: 12, r: 72, b: 28, l: 56 };
 
 function defaultYFormat(v: number): string {
   return `R$${(v / 1000).toFixed(0)}k`;
