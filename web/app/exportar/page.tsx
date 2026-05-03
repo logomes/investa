@@ -1,5 +1,5 @@
-import { ConstructionCard } from "@/components/placeholder/ConstructionCard";
+import { ExportarPageContent } from "@/components/exportar/ExportarPageContent";
 
 export default function ExportarPage() {
-  return <ConstructionCard pageTitle="Exportar" fase={5} />;
+  return <ExportarPageContent />;
 }
