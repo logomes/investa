@@ -1,5 +1,5 @@
-import { ConstructionCard } from "@/components/placeholder/ConstructionCard";
+import { SensibilidadePageContent } from "@/components/sensibilidade/SensibilidadePageContent";
 
 export default function SensibilidadePage() {
-  return <ConstructionCard pageTitle="Sensibilidade" fase={5} />;
+  return <SensibilidadePageContent />;
 }
