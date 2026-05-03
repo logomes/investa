@@ -1,5 +1,5 @@
-import { ConstructionCard } from "@/components/placeholder/ConstructionCard";
+import { RiscoPageContent } from "@/components/risco/RiscoPageContent";
 
 export default function RiscoPage() {
-  return <ConstructionCard pageTitle="Risco MC" fase={5} />;
+  return <RiscoPageContent />;
 }
