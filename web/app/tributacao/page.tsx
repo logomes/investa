@@ -1,5 +1,5 @@
-import { ConstructionCard } from "@/components/placeholder/ConstructionCard";
+import { TributacaoPageContent } from "@/components/tributacao/TributacaoPageContent";
 
 export default function TributacaoPage() {
-  return <ConstructionCard pageTitle="Tributação" fase={5} />;
+  return <TributacaoPageContent />;
 }
