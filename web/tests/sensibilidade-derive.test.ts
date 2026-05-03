@@ -82,8 +82,10 @@ describe("sensibilidade-derive — tornadoBounds", () => {
   it("retorna range simétrico em torno do base", () => {
     const enriched = enrichRows(SAMPLE, BASE);
     const { min, max } = tornadoBounds(enriched, BASE);
-    expect(min).toBeCloseTo(BASE - 76_650, -1);
-    expect(max).toBeCloseTo(BASE + 76_650, -1);
+    // maior |impact| em SAMPLE: monthly_rent.optImpact = 470k - 393k = 77k
+    // padded = 77k × 1,05 = 80_850
+    expect(min).toBeCloseTo(BASE - 80_850, -1);
+    expect(max).toBeCloseTo(BASE + 80_850, -1);
     expect(BASE - min).toBeCloseTo(max - BASE, 0);
   });
 

@@ -54,7 +54,11 @@ export function tornadoBounds(
       max: Math.round(base * 1.1 * 100) / 100,
     };
   }
-  const maxDeviation = Math.max(...rows.map((r) => Math.abs(r.pessImpact)));
+  // Use both impact magnitudes — otherwise an optimistic bar may extend past
+  // the chart's right edge when |optImpact| > |pessImpact|.
+  const maxDeviation = Math.max(
+    ...rows.map((r) => Math.max(Math.abs(r.pessImpact), Math.abs(r.optImpact))),
+  );
   const padded = maxDeviation * 1.05;
   return { min: base - padded, max: base + padded };
 }
