@@ -1,5 +1,5 @@
-import { ConstructionCard } from "@/components/placeholder/ConstructionCard";
+import { CarteiraPageContent } from "@/components/carteira/CarteiraPageContent";
 
 export default function CarteiraPage() {
-  return <ConstructionCard pageTitle="Carteira" fase={5} />;
+  return <CarteiraPageContent />;
 }
