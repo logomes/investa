@@ -9,6 +9,9 @@ import { Slider } from "@/components/ui/slider";
 export function MonteCarloSection() {
   const { register, control, watch } = useFormContext<ScenarioFormValues>();
   const n = watch("mc.nTrajectories");
+  // Defensive: fallback to default when undefined briefly during slider drag
+  // or stale localStorage hydration. Without it, n.toLocaleString crashes.
+  const nDisplay = typeof n === "number" && Number.isFinite(n) ? n : 2_000;
 
   return (
     <div className="space-y-3">
@@ -17,7 +20,7 @@ export function MonteCarloSection() {
       <div className="space-y-1">
         <div className="flex items-center justify-between">
           <Label>Trajetórias</Label>
-          <span className="text-xs text-ink-3 tabular">{n.toLocaleString("pt-BR")}</span>
+          <span className="text-xs text-ink-3 tabular">{nDisplay.toLocaleString("pt-BR")}</span>
         </div>
         <Controller
           control={control}
@@ -27,8 +30,14 @@ export function MonteCarloSection() {
               min={100}
               max={50_000}
               step={100}
-              value={[field.value]}
-              onValueChange={(v) => field.onChange((v as number[])[0])}
+              value={[typeof field.value === "number" ? field.value : 2_000]}
+              onValueChange={(v) => {
+                const arr = Array.isArray(v) ? v : [v];
+                const next = arr[0];
+                if (typeof next === "number" && Number.isFinite(next)) {
+                  field.onChange(next);
+                }
+              }}
             />
           )}
         />
@@ -41,7 +50,11 @@ export function MonteCarloSection() {
             id="mc-seed"
             type="number"
             {...register("mc.seed", {
-              setValueAs: (v) => (v === "" || v == null ? null : Number(v)),
+              setValueAs: (v) => {
+                if (v === "" || v == null) return null;
+                const n = Number(v);
+                return Number.isFinite(n) ? Math.trunc(n) : null;
+              },
             })}
           />
         </div>
