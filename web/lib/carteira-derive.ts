@@ -95,3 +95,73 @@ export const ASSET_COLORS: string[] = [
   "#7DCFFF",  // 6 — fallback
   "#A2E5C0",  // 7 — fallback
 ];
+
+// ---------- Donut geometry ----------
+
+export type DonutSlice = {
+  path: string;
+  color: string;
+  midAngle: number;
+};
+
+const TWO_PI = 2 * Math.PI;
+const HALF_PI = Math.PI / 2;
+
+function polar(cx: number, cy: number, r: number, angle: number): [number, number] {
+  return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+}
+
+export function donutSlices(args: {
+  segments: AllocationSegment[];
+  cx: number;
+  cy: number;
+  outerR: number;
+  innerR: number;
+}): DonutSlice[] {
+  const { segments, cx, cy, outerR, innerR } = args;
+  const visible = segments.filter((s) => s.weight > 0);
+  const slices: DonutSlice[] = [];
+
+  let cumulative = -HALF_PI;
+
+  for (const seg of visible) {
+    const sweep = seg.weight * TWO_PI;
+    const start = cumulative;
+    const end = cumulative + sweep;
+    const mid = (start + end) / 2;
+
+    let path: string;
+
+    if (seg.weight >= 1 - 1e-9) {
+      const top = polar(cx, cy, outerR, -HALF_PI);
+      const bot = polar(cx, cy, outerR, HALF_PI);
+      const topInner = polar(cx, cy, innerR, -HALF_PI);
+      const botInner = polar(cx, cy, innerR, HALF_PI);
+      path =
+        `M ${top[0]} ${top[1]} ` +
+        `A ${outerR} ${outerR} 0 1 1 ${bot[0]} ${bot[1]} ` +
+        `A ${outerR} ${outerR} 0 1 1 ${top[0]} ${top[1]} ` +
+        `L ${topInner[0]} ${topInner[1]} ` +
+        `A ${innerR} ${innerR} 0 1 0 ${botInner[0]} ${botInner[1]} ` +
+        `A ${innerR} ${innerR} 0 1 0 ${topInner[0]} ${topInner[1]} ` +
+        `Z`;
+    } else {
+      const largeArc = sweep > Math.PI ? 1 : 0;
+      const [x0o, y0o] = polar(cx, cy, outerR, start);
+      const [x1o, y1o] = polar(cx, cy, outerR, end);
+      const [x0i, y0i] = polar(cx, cy, innerR, end);
+      const [x1i, y1i] = polar(cx, cy, innerR, start);
+      path =
+        `M ${x0o} ${y0o} ` +
+        `A ${outerR} ${outerR} 0 ${largeArc} 1 ${x1o} ${y1o} ` +
+        `L ${x0i} ${y0i} ` +
+        `A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1i} ${y1i} ` +
+        `Z`;
+    }
+
+    slices.push({ path, color: seg.color, midAngle: mid });
+    cumulative = end;
+  }
+
+  return slices;
+}
