@@ -421,7 +421,10 @@ def simulate_real_estate_mc(
     if horizon_years <= 0:
         raise ValueError("horizon_years must be positive")
 
-    rng = np.random.default_rng(mc_params.seed + 1)  # offset: independent stream from Carteira
+    # Offset: independent stream from Carteira when seed is fixed.
+    # When seed is None (entropy from OS), no offset needed — already independent.
+    seed_re = None if mc_params.seed is None else mc_params.seed + 1
+    rng = np.random.default_rng(seed_re)
     N, T = mc_params.n_trajectories, horizon_years
 
     # Stochastic appreciation per trajectory per year (N, T)
