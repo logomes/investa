@@ -244,10 +244,10 @@ return (
 ### `web/tests/carteira-derive.test.ts` (~12-15 testes)
 Fixture: `DEFAULT_SCENARIO.portfolio` + macro mock.
 
-- `blendedYield` ≈ 0,06432 (defaults)
-- `blendedCapitalGain` ≈ 0,024
-- `totalReturn` ≈ 0,08832
-- `annualIncome` ≈ R$ 14.794
+- `blendedYield` ≈ 0,09273 (defaults — Σ w×y×(1−tax))
+- `blendedCapitalGain` ≈ 0,020 (Σ w×capitalGain)
+- `totalReturn` ≈ 0,11273
+- `annualIncome` ≈ R$ 21.327 (230k × 9,273%)
 - `normalizedWeights`: pesos `[0.5, 0.5, 0]` → `[0.5, 0.5, 0]`; pesos `[1, 1, 0]` → `[0.5, 0.5, 0]`; pesos `[0, 0, 0]` → `[0, 0, 0]`
 - `allocationSegments` length = pf.assets.length, Σweight = 1, Σamount = pf.capital
 - `yieldComparison` retorna 4 entradas em ordem fixa
@@ -280,10 +280,10 @@ Total: ~22-25 testes em 3 arquivos.
 
 ## Critérios de aceite (smoke produção)
 
-1. Sidebar → Carteira → KPIs: DY blended **6,43%**, Ganho capital **2,40%**, Retorno total **8,83%**, Renda anual **R$ 14.794** (com defaults: capital R$ 230k, 5 classes definidas)
+1. Sidebar → Carteira → KPIs: DY blended **9,27%**, Ganho capital **2,00%**, Retorno total **11,27%**, Renda anual **R$ 21.327** (com defaults: capital R$ 230k, 5 classes definidas)
 2. Donut renderiza 5 fatias coloridas com `R$ 230k` no centro + label "alocados"
 3. Tabela 5 linhas, bullet colorido coerente com donut, valores: FIIs Papel R$ 57.500 (25%), FIIs Tijolo R$ 57.500 (25%), Ações BR R$ 46.000 (20%), Dividend US R$ 34.500 (15%), Tesouro IPCA+ R$ 34.500 (15%)
-4. Yield comparison: 4 barras com Carteira ~6,43%, Imóvel bruto ~7,83%, Imóvel líquido ~4,20%, Tesouro Selic líq ~12,17% (14,75% × 0,825)
+4. Yield comparison: 4 barras com Carteira ~9,27%, Imóvel bruto ~7,83%, Imóvel líquido ~4,20%, Tesouro Selic líq ~12,17% (14,75% × 0,825)
 5. Linhas tracejadas Selic 14,75% e IPCA ~4,14% visíveis no chart
 6. Mexer no Drawer (peso ou yield esperado de qualquer ativo) → KPIs, donut e tabela atualizam ao aplicar cenário
 7. Sem erros no console
