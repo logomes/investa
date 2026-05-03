@@ -26,7 +26,7 @@ Migração do dashboard `dashboard-investimentos` (Streamlit) para uma stack web
   - ✅ Imóvel (KPIs, custos, financiamento opcional SAC/Price, evolução, riscos)
   - ✅ Carteira (KPIs blended, donut SVG, tabela detalhamento, yield comparison)
   - ✅ Sensibilidade (KPI base, tornado SVG, tabela detalhada)
-  - ⬜ Risco MC
+  - ✅ Risco MC (KPIs comparativos, banda p10-p90, histogramas, loss rate banner)
   - ✅ Tributação (KPIs comparativos, chart stacked, tabela, notas 2026)
   - ⬜ Exportar
 
