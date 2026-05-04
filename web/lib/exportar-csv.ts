@@ -27,10 +27,11 @@ export function buildLongFormatRows(sim: SimulateOut): LongRow[] {
   return result;
 }
 
-// `,` as decimal separator. `.toString()` preserves precision (no fixed
-// rounding); `replace` swaps the dot. Integers ("1000") pass through unchanged.
+// `,` as decimal separator. Round monetary values to 2 places (cents) to avoid
+// the long binary-float tail (e.g. 277933.2143036685) leaking into the CSV.
+// Excel BR opens this directly as currency.
 function formatBR(value: number): string {
-  return value.toString().replace(".", ",");
+  return value.toFixed(2).replace(".", ",");
 }
 
 export function toCsvBR(rows: LongRow[]): string {

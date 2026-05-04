@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Bell, Search, Settings, Sparkles } from "lucide-react";
+import { Search, Sparkles } from "lucide-react";
 import { NAV_BY_HREF } from "@/lib/nav";
 import { Button } from "@/components/ui/button";
 import { useScenarioStore } from "@/lib/store";
@@ -46,19 +46,6 @@ export function Topbar() {
 
       {/* Actions */}
       <div className="flex-shrink-0 flex items-center gap-2">
-        <button
-          aria-label="Notificações"
-          className="relative w-[38px] h-[38px] rounded-[10px] bg-bg-2 border border-line flex items-center justify-center text-ink-2 hover:bg-bg-3 hover:text-ink transition-colors"
-        >
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent-green" />
-        </button>
-        <button
-          aria-label="Configurações"
-          className="w-[38px] h-[38px] rounded-[10px] bg-bg-2 border border-line flex items-center justify-center text-ink-2 hover:bg-bg-3 hover:text-ink transition-colors"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
         <Button
           onClick={() => setDrawerOpen(true)}
           className="h-[38px] rounded-[10px] text-bg-0 font-semibold shadow-glow hover:scale-[1.02] transition-transform"

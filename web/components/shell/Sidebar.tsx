@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Settings } from "lucide-react";
 import { NAV_GROUPS } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
@@ -81,12 +80,6 @@ export function Sidebar() {
           <div className="text-[13px] font-medium text-ink leading-tight">Lucas G.</div>
           <div className="text-[11.5px] text-ink-3 leading-tight">Plano Pro · Abr/26</div>
         </div>
-        <button
-          aria-label="Configurações"
-          className="text-ink-3 hover:text-ink transition-colors"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
       </div>
     </aside>
   );

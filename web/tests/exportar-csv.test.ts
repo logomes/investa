@@ -100,20 +100,20 @@ describe("exportar-csv — toCsvBR", () => {
     expect(lines[1].split(";")).toHaveLength(5);
   });
 
-  it("decimais com vírgula: 123.45 → '123,45'", () => {
+  it("decimais com vírgula, arredondados a 2 casas (centavos)", () => {
     const row: LongRow = {
       scenario: "X",
       year: 0,
-      patrimony: 123.45,
-      annualIncome: 9.5,
-      cumulativeIncome: 0.001,
+      patrimony: 277933.2143036685,    // long float tail truncated → "277933,21"
+      annualIncome: 9.5,                // padded to 2 places → "9,50"
+      cumulativeIncome: 0.001,          // rounded down → "0,00"
     };
     const csv = toCsvBR([row]);
     const lines = csv.slice(1).split("\r\n");
     const cells = lines[1].split(";");
-    expect(cells[2]).toBe("123,45");
-    expect(cells[3]).toBe("9,5");
-    expect(cells[4]).toBe("0,001");
+    expect(cells[2]).toBe("277933,21");
+    expect(cells[3]).toBe("9,50");
+    expect(cells[4]).toBe("0,00");
   });
 
   it("linhas separadas por \\r\\n", () => {
