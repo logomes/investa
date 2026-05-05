@@ -7,6 +7,7 @@ import {
   Dices,
   Download,
   Vault,
+  Briefcase,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,6 +27,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { slug: "", label: "Visão Geral", href: "/", icon: LayoutGrid, fase: 3 },
       { slug: "imovel", label: "Imóvel", href: "/imovel", icon: Home, fase: 5 },
       { slug: "carteira", label: "Carteira", href: "/carteira", icon: LineChart, fase: 5 },
+      { slug: "ativos", label: "Ativos", href: "/ativos", icon: Briefcase, fase: 5 },
       { slug: "sensibilidade", label: "Sensibilidade", href: "/sensibilidade", icon: Target, fase: 5 },
       { slug: "tributacao", label: "Tributação", href: "/tributacao", icon: Receipt, fase: 5 },
       { slug: "risco", label: "Risco MC", href: "/risco", icon: Dices, badge: "MC", fase: 5 },
