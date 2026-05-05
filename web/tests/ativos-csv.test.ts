@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { exportCsv, importCsv } from "@/lib/ativos-csv";
 import type { AssetPosition } from "@/lib/ativos-schema";
+import { ASSET_CLASS_META } from "@/lib/ativos-schema";
 
 const samplePosition: AssetPosition = {
   id: "1",
@@ -73,5 +74,36 @@ describe("ativos-csv — importCsv", () => {
     const csv = "﻿HGCR11;FII de Papel;BRL;100;100,00;0,13;0\r\n";
     const result = await importCsv(fileFromString(csv));
     expect(result.errors.length).toBeGreaterThan(0);
+  });
+
+  it("LABEL_TO_CLASS cobre todas as 9 classes (round-trip canonical labels)", async () => {
+    const classes = Object.keys(ASSET_CLASS_META) as Array<keyof typeof ASSET_CLASS_META>;
+    for (const cls of classes) {
+      const meta = ASSET_CLASS_META[cls];
+      const csv =
+        "﻿Ticker;Classe;Moeda;Quantidade;Preço Médio;Yield Esperado;Ganho Capital\r\n" +
+        `TST;${meta.label};${meta.defaultCurrency};1;1,00;0,01;0\r\n`;
+      const result = await importCsv(fileFromString(csv));
+      expect(result.errors, `falhou para ${cls}: ${JSON.stringify(result.errors)}`).toHaveLength(0);
+      expect(result.positions[0].assetClass).toBe(cls);
+    }
+  });
+
+  it("célula vazia em yield → erro (não default 0 silencioso)", async () => {
+    const csv =
+      "﻿Ticker;Classe;Moeda;Quantidade;Preço Médio;Yield Esperado;Ganho Capital\r\n" +
+      "HGCR11;FII Papel;BRL;100;100,00;;0\r\n";
+    const result = await importCsv(fileFromString(csv));
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.positions).toHaveLength(0);
+  });
+
+  it("aceita formato BR canônico com separador de milhar (1.234,56)", async () => {
+    const csv =
+      "﻿Ticker;Classe;Moeda;Quantidade;Preço Médio;Yield Esperado;Ganho Capital\r\n" +
+      "JNJ;Stock US;USD;10;1.234,56;0,032;0,05\r\n";
+    const result = await importCsv(fileFromString(csv));
+    expect(result.errors).toHaveLength(0);
+    expect(result.positions[0].avgPrice).toBe(1234.56);
   });
 });

@@ -7,21 +7,19 @@ export type ImportResult = { positions: AssetPosition[]; errors: ImportError[] }
 
 const HEADER = "Ticker;Classe;Moeda;Quantidade;Preço Médio;Yield Esperado;Ganho Capital";
 
-// Reverse map: human label → enum key
+// Canonical labels are auto-derived from ASSET_CLASS_META so that adding a new
+// AssetClass automatically gets its label recognized. Aliases below capture the
+// short/legacy variants users may type by hand.
 const LABEL_TO_CLASS: Record<string, AssetClass> = {
-  "FII Papel":              "FII_PAPEL",
-  "FII de Papel":           "FII_PAPEL",
+  ...Object.fromEntries(
+    (Object.keys(ASSET_CLASS_META) as AssetClass[]).map(
+      (cls) => [ASSET_CLASS_META[cls].label, cls],
+    ),
+  ),
+  "FII Papel":             "FII_PAPEL",
   "FII Tijolo":             "FII_TIJOLO",
-  "FII de Tijolo":          "FII_TIJOLO",
-  "Ação BR Dividendo":      "ACAO_BR_DIVIDENDO",
-  "Ação BR (dividendo)":    "ACAO_BR_DIVIDENDO",
-  "Ação BR Crescimento":    "ACAO_BR_CRESCIMENTO",
-  "Ação BR (crescimento)":  "ACAO_BR_CRESCIMENTO",
-  "ETF BR":                 "ETF_BR",
-  "BDR":                    "BDR",
-  "Stock US":               "STOCK_US",
-  "REIT US":                "REIT_US",
-  "ETF US":                 "ETF_US",
+  "Ação BR Dividendo":     "ACAO_BR_DIVIDENDO",
+  "Ação BR Crescimento":   "ACAO_BR_CRESCIMENTO",
 };
 
 function classToLabel(cls: AssetClass): string {
@@ -29,7 +27,11 @@ function classToLabel(cls: AssetClass): string {
 }
 
 function parseBRNumber(s: string): number | null {
-  const cleaned = s.replace(",", ".").trim();
+  const trimmed = s.trim();
+  if (trimmed === "") return null;
+  // Accepts BR-canonical money form (1.234,56). Strip thousand separators '.', then convert decimal ',' → '.'.
+  // Won't disambiguate US-decimal (100.50 typed by accident becomes 10050) — BR contract wins per CSV spec.
+  const cleaned = trimmed.replace(/\./g, "").replace(",", ".");
   const n = Number(cleaned);
   return Number.isFinite(n) ? n : null;
 }
@@ -65,20 +67,20 @@ export async function importCsv(file: File): Promise<ImportResult> {
   const header = parsed.data[0];
   const expected = HEADER.split(";");
   if (header.length !== expected.length || header.some((h, i) => h.trim() !== expected[i])) {
-    errors.push({ row: 0, message: `Cabeçalho inválido. Esperado: ${HEADER}` });
+    errors.push({ row: 1, message: `Cabeçalho inválido. Esperado: ${HEADER}` });
     return { positions, errors };
   }
 
   for (let i = 1; i < parsed.data.length; i++) {
     const row = parsed.data[i];
     if (row.length < 7) {
-      errors.push({ row: i, message: "linha incompleta" });
+      errors.push({ row: i + 1, message: "linha incompleta" });
       continue;
     }
     const [ticker, classeLabel, currency, qty, price, yld, capGain] = row;
     const assetClass = LABEL_TO_CLASS[classeLabel.trim()];
     if (!assetClass) {
-      errors.push({ row: i, field: "Classe", message: `classe desconhecida: ${classeLabel}` });
+      errors.push({ row: i + 1, field: "Classe", message: `classe desconhecida: ${classeLabel}` });
       continue;
     }
     const quantity = parseBRNumber(qty);
@@ -86,7 +88,7 @@ export async function importCsv(file: File): Promise<ImportResult> {
     const expectedYield = parseBRNumber(yld);
     const capitalGain = parseBRNumber(capGain);
     if (quantity === null || avgPrice === null || expectedYield === null || capitalGain === null) {
-      errors.push({ row: i, message: "valor numérico inválido" });
+      errors.push({ row: i + 1, message: "valor numérico inválido" });
       continue;
     }
     const candidate = {
@@ -103,7 +105,7 @@ export async function importCsv(file: File): Promise<ImportResult> {
     const result = assetPositionSchema.safeParse(candidate);
     if (!result.success) {
       result.error.issues.forEach((issue) => {
-        errors.push({ row: i, field: issue.path.join("."), message: issue.message });
+        errors.push({ row: i + 1, field: issue.path.join("."), message: issue.message });
       });
       continue;
     }
