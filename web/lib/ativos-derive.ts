@@ -26,6 +26,10 @@ export function ativosKpis(positions: AssetPosition[], macro: MacroOut): AtivosK
 
   let weightedYieldNet = 0;
   let weightedCapGain = 0;
+  // Convention: ASSET_CLASS_META.taxRate is applied uniformly as a haircut on
+  // expected yield. For ETF_BR / BDR the metadata note says "15% sobre ganho",
+  // but we model it on yield for simplicity (yield is small for those classes).
+  // Capital gain is reported gross. See FUTURE_IMPROVEMENTS for refinement.
   positions.forEach((p, i) => {
     const w = valuesBRL[i] / totalAllocated;
     const taxRate = ASSET_CLASS_META[p.assetClass].taxRate;

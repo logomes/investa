@@ -53,6 +53,18 @@ const STOCK_US: AssetPosition = {
   color: "#7DCFFF",
 };
 
+const ETF_BR_POS: AssetPosition = {
+  id: "4",
+  ticker: "BOVA11",
+  assetClass: "ETF_BR",
+  currency: "BRL",
+  quantity: 100,
+  avgPrice: 100,
+  expectedYield: 0.04,
+  capitalGain: 0.10,
+  color: "#C39BD3",
+};
+
 describe("ativos-derive — positionValueBRL", () => {
   it("BRL passa direto", () => {
     expect(positionValueBRL(FII_PAPEL, MACRO)).toBe(10_000);
@@ -100,9 +112,21 @@ describe("ativos-derive — ativosKpis", () => {
     const k = ativosKpis([FII_PAPEL, STOCK_US], MACRO);
     expect(k.totalReturn).toBeCloseTo(k.blendedYield + k.blendedCapitalGain, 5);
   });
+
+  it("ETF_BR pinning: taxRate (0.15) é aplicado em yield, capitalGain fica bruto", () => {
+    // Documenta a convenção atual. Se um dia ASSET_CLASS_META.taxRate for splittado em
+    // yieldTaxRate/capitalGainTaxRate, este teste deve falhar e ser revisado.
+    const k = ativosKpis([ETF_BR_POS], MACRO);
+    expect(k.blendedYield).toBeCloseTo(0.04 * 0.85, 5);    // yield com haircut
+    expect(k.blendedCapitalGain).toBeCloseTo(0.10, 5);      // gain bruto
+  });
 });
 
 describe("ativos-derive — byAssetClass", () => {
+  it("array vazio → []", () => {
+    expect(byAssetClass([], MACRO)).toEqual([]);
+  });
+
   it("agrega 2 posições da mesma classe", () => {
     const groups = byAssetClass([FII_PAPEL, FII_PAPEL_2], MACRO);
     expect(groups).toHaveLength(1);
