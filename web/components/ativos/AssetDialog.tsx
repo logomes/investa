@@ -29,8 +29,8 @@ const formSchema = z.object({
   currency: z.enum(["BRL", "USD"]),
   quantity: z.number().positive(),
   avgPrice: z.number().positive(),
-  expectedYield: z.number(),
-  capitalGain: z.number(),
+  expectedYield: z.number().min(0, "yield 0–100%").max(100, "yield 0–100%"),
+  capitalGain: z.number().min(-100, "ganho -100–100%").max(100, "ganho -100–100%"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
