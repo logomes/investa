@@ -40,7 +40,7 @@ export function ByMarketCard({ split, macro }: Props) {
                       style={{ backgroundColor: row.color }}
                     />
                     <span className="font-medium text-ink">{row.label}</span>
-                    <span className="text-ink-4 text-[10px]">({row.slot.positions} posições)</span>
+                    <span className="text-ink-4 text-[10px]">({row.slot.positions})</span>
                   </div>
                   <span className="text-ink-3 tabular">
                     {formatRsK(row.slot.totalBRL)} <span className="text-ink-4">· {formatPercent(row.slot.weight, 1)}</span>

@@ -33,7 +33,7 @@ export function KpiRowAtivos({ kpis }: Props) {
         value={formatPercent(kpis.totalReturn, 2)}
         icon={BarChart3}
         feature
-        valueColor="green"
+        valueColor={kpis.totalReturn >= 0 ? "green" : "red"}
       />
     </div>
   );
