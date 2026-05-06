@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useFixedIncomeStore } from "@/lib/fi-store";
 import { exportCsv, importCsv } from "@/lib/fi-csv";
+import { KpiSkeleton } from "@/components/kpi/KpiSkeleton";
 import { KpiRowFixedIncome } from "./KpiRowFixedIncome";
 import { PositionsTable } from "./PositionsTable";
 import { PositionDialog } from "./PositionDialog";
@@ -17,9 +18,15 @@ export function RendaFixaPageContent() {
   const removePosition = useFixedIncomeStore((s) => s.removePosition);
   const replaceAllPositions = useFixedIncomeStore((s) => s.replaceAllPositions);
 
+  const [hydrated, setHydrated] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
   const [dialogInitial, setDialogInitial] = useState<FixedIncomePosition | undefined>();
+
+  useEffect(() => {
+    useFixedIncomeStore.persist.rehydrate();
+    setHydrated(true);
+  }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -77,6 +84,14 @@ export function RendaFixaPageContent() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  if (!hydrated) {
+    return (
+      <div className="grid grid-cols-4 gap-4">
+        <KpiSkeleton /><KpiSkeleton /><KpiSkeleton /><KpiSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
