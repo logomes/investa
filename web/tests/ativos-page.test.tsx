@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AtivosPageContent } from "@/components/ativos/AtivosPageContent";
 import type { MacroOut } from "@/lib/api-types";
@@ -35,8 +35,7 @@ describe("AtivosPageContent", () => {
 
   it("empty state quando sem positions", async () => {
     render(wrap(<AtivosPageContent />));
-    await new Promise((r) => setTimeout(r, 50));
-    expect(screen.getByText(/nenhuma posição/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/nenhuma posição/i)).toBeInTheDocument());
   });
 
   it("renderiza KPIs + tabela + 2 cards de breakdown", async () => {
@@ -54,8 +53,7 @@ describe("AtivosPageContent", () => {
       }],
     });
     render(wrap(<AtivosPageContent />));
-    await new Promise((r) => setTimeout(r, 50));
-    expect(screen.getByText(/total alocado/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/total alocado/i)).toBeInTheDocument());
     expect(screen.getByText(/dy blended/i)).toBeInTheDocument();
     expect(screen.getByText(/posições/i)).toBeInTheDocument();
     expect(screen.getByText(/por classe/i)).toBeInTheDocument();
@@ -72,13 +70,11 @@ describe("AtivosPageContent", () => {
   it("macro error → ErrorCard", async () => {
     mockMacro = { data: undefined, isLoading: false, error: new Error("boom"), refetch: vi.fn() };
     render(wrap(<AtivosPageContent />));
-    await new Promise((r) => setTimeout(r, 50));
-    expect(screen.getByText(/falha/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/falha/i)).toBeInTheDocument());
   });
 
   it("botão Adicionar visível no header da tabela", async () => {
     render(wrap(<AtivosPageContent />));
-    await new Promise((r) => setTimeout(r, 50));
-    expect(screen.getByRole("button", { name: /adicionar/i })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: /adicionar/i })).toBeInTheDocument());
   });
 });

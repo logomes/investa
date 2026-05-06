@@ -78,9 +78,17 @@ export function AtivosPageContent() {
           const file = e.target.files?.[0];
           if (!file) return;
           const result = await importCsv(file);
-          if (result.positions.length > 0) replaceAll(result.positions);
-          if (result.errors.length > 0) console.warn("Erros importação:", result.errors);
-          if (e.target) e.target.value = "";
+          if (result.errors.length === 0 && result.positions.length > 0) {
+            replaceAll(result.positions);
+            alert(`${result.positions.length} posições importadas.`);
+          } else if (result.errors.length > 0) {
+            const errorList = result.errors
+              .slice(0, 5)
+              .map((err) => `Linha ${err.row}: ${err.message}`)
+              .join("\n");
+            alert(`Erros na importação:\n${errorList}${result.errors.length > 5 ? "\n..." : ""}`);
+          }
+          e.target.value = "";
         }}
       />
       <div className="grid grid-cols-2 gap-6">
