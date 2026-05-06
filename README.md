@@ -30,6 +30,10 @@ Migração do dashboard `dashboard-investimentos` (Streamlit) para uma stack web
   - ✅ Tributação (KPIs comparativos, chart stacked, tabela, notas 2026)
   - ✅ Exportar (preview da tabela + download CSV BR-friendly)
 
+## Features pós-Fase 4
+
+- ✅ **Ativos** — registro de posições individuais (Ações BR/US, FIIs, ETFs, REITs, Stocks, BDR) com KPIs blended (DY líq. ponderado por valor + ganho de capital), agregação por classe e por mercado (BR/EUA com USD/BRL ao vivo), import/export CSV BR-friendly e persistência local
+
 ## Desenvolvimento local
 
 Backend (a partir desta fase):
