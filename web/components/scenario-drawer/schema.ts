@@ -33,12 +33,20 @@ export const portfolioAssetSchema = z.object({
   volatility: z.number().min(0).max(1),
 });
 
-export const portfolioSchema = z.object({
-  capital: z.number().positive(),
-  monthlyContribution: z.number().min(0),
-  contributionInflationIndexed: z.boolean(),
-  assets: z.array(portfolioAssetSchema).min(1),
-});
+export const portfolioSchema = z
+  .object({
+    capital: z.number().positive(),
+    monthlyContribution: z.number().min(0),
+    contributionInflationIndexed: z.boolean(),
+    assets: z.array(portfolioAssetSchema).min(1).max(12),
+  })
+  .refine(
+    (p) => {
+      const sum = p.assets.reduce((acc, a) => acc + a.weight, 0);
+      return Math.abs(sum - 1) <= 0.001;
+    },
+    { message: "soma dos pesos deve ser 100%", path: ["assets"] }
+  );
 
 export const benchmarkSchema = z.object({
   selicRate: z.number().min(0).max(1),
