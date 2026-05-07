@@ -44,4 +44,17 @@ describe("GoalCard editable target", () => {
     expect(input).toBeInTheDocument();
     expect((input as HTMLInputElement).value).toBe(String(DEFAULT_GOAL));
   });
+
+  it("pressing Enter with a valid positive number commits and exits edit mode", async () => {
+    const user = userEvent.setup();
+    render(wrap(<GoalCard />));
+    await user.click(screen.getByRole("button", { name: /editar meta/i }));
+    const input = screen.getByRole("spinbutton");
+    await user.clear(input);
+    await user.type(input, "800000");
+    await user.keyboard("{Enter}");
+    expect(useScenarioStore.getState().goalTarget).toBe(800_000);
+    expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /editar meta/i }).textContent).toMatch(/800/);
+  });
 });

@@ -11,8 +11,21 @@ import { formatRs, formatPercent } from "@/lib/format";
 export function GoalCard() {
   const sim = useSimulate();
   const goal = useScenarioStore((s) => s.goalTarget);
+  const setGoalTarget = useScenarioStore((s) => s.setGoalTarget);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<string>("");
+
+  const commit = () => {
+    const parsed = Number(draft);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      setGoalTarget(parsed);
+    }
+    setEditing(false);
+  };
+
+  const cancel = () => {
+    setEditing(false);
+  };
 
   if (sim.isLoading) return <ChartSkeleton height={420} />;
   if (sim.error) return <ErrorCard onRetry={() => sim.refetch()} />;
@@ -33,6 +46,11 @@ export function GoalCard() {
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") cancel();
+          }}
           aria-label="Editar meta"
           className="text-[26px] font-bold text-ink tabular leading-none w-full bg-bg-3 border border-line rounded-md px-2 py-0.5"
         />
