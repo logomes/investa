@@ -70,4 +70,29 @@ describe("GoalCard editable target", () => {
     expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /editar meta/i }).textContent).toMatch(/600/);
   });
+
+  it("submitting empty/zero/negative reverts silently without changing the store", async () => {
+    const user = userEvent.setup();
+    render(wrap(<GoalCard />));
+
+    // Try empty
+    await user.click(screen.getByRole("button", { name: /editar meta/i }));
+    await user.clear(screen.getByRole("spinbutton"));
+    await user.keyboard("{Enter}");
+    expect(useScenarioStore.getState().goalTarget).toBe(DEFAULT_GOAL);
+
+    // Try zero
+    await user.click(screen.getByRole("button", { name: /editar meta/i }));
+    await user.clear(screen.getByRole("spinbutton"));
+    await user.type(screen.getByRole("spinbutton"), "0");
+    await user.keyboard("{Enter}");
+    expect(useScenarioStore.getState().goalTarget).toBe(DEFAULT_GOAL);
+
+    // Try negative
+    await user.click(screen.getByRole("button", { name: /editar meta/i }));
+    await user.clear(screen.getByRole("spinbutton"));
+    await user.type(screen.getByRole("spinbutton"), "-100");
+    await user.keyboard("{Enter}");
+    expect(useScenarioStore.getState().goalTarget).toBe(DEFAULT_GOAL);
+  });
 });
