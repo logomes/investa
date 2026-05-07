@@ -20,7 +20,7 @@ type DialogState =
   | { open: true; mode: "edit"; index: number };
 
 export function PortfolioSection() {
-  const { register, control, watch, setValue, formState } = useFormContext<ScenarioFormValues>();
+  const { register, control, watch, formState } = useFormContext<ScenarioFormValues>();
   const { fields, append, remove, update, replace } = useFieldArray({ control, name: "portfolio.assets" });
   const [dialog, setDialog] = useState<DialogState>({ open: false });
 
