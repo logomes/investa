@@ -57,4 +57,17 @@ describe("GoalCard editable target", () => {
     expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /editar meta/i }).textContent).toMatch(/800/);
   });
+
+  it("pressing Esc cancels without calling setGoalTarget", async () => {
+    const user = userEvent.setup();
+    render(wrap(<GoalCard />));
+    await user.click(screen.getByRole("button", { name: /editar meta/i }));
+    const input = screen.getByRole("spinbutton");
+    await user.clear(input);
+    await user.type(input, "999999");
+    await user.keyboard("{Escape}");
+    expect(useScenarioStore.getState().goalTarget).toBe(DEFAULT_GOAL);
+    expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /editar meta/i }).textContent).toMatch(/600/);
+  });
 });
