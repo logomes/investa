@@ -94,17 +94,23 @@ export function PortfolioAssetDialog({ open, mode, initial, onClose, onSubmit, o
     }
   };
 
-  const handleSubmit = form.handleSubmit((data) => {
-    onSubmit({
-      name: data.name,
-      weight: data.weight / 100,
-      expectedYield: data.expectedYield / 100,
-      capitalGain: data.capitalGain / 100,
-      taxRate: data.taxRate / 100,
-      volatility: data.volatility / 100,
-      note: data.note,
-    });
-  });
+  // Stop propagation so the dialog's submit doesn't bubble through React's
+  // portal event system into the outer ScenarioDrawer <form>, which would
+  // re-validate the whole scenario and call setScenario with stale values.
+  const handleSubmit = (e: React.BaseSyntheticEvent) => {
+    e.stopPropagation();
+    return form.handleSubmit((data) => {
+      onSubmit({
+        name: data.name,
+        weight: data.weight / 100,
+        expectedYield: data.expectedYield / 100,
+        capitalGain: data.capitalGain / 100,
+        taxRate: data.taxRate / 100,
+        volatility: data.volatility / 100,
+        note: data.note,
+      });
+    })(e);
+  };
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
