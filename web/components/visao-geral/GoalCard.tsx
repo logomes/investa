@@ -11,7 +11,6 @@ import { formatRs, formatPercent } from "@/lib/format";
 export function GoalCard() {
   const sim = useSimulate();
   const goal = useScenarioStore((s) => s.goalTarget);
-  const setGoalTarget = useScenarioStore((s) => s.setGoalTarget);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<string>("");
 
