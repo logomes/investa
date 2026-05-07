@@ -42,16 +42,18 @@ type Props = {
 
 const DEFAULT_TYPE: PortfolioAssetTypeId = "FII_PAPEL";
 
+const toPct = (decimal: number) => Math.round(decimal * 10000) / 100;
+
 function pctFromInitial(initial: PortfolioAssetInput | undefined, defaults: typeof PORTFOLIO_TYPE_BY_ID[PortfolioAssetTypeId]["defaults"]): FormValues {
   if (initial) {
     return {
       typeId: DEFAULT_TYPE,
       name: initial.name,
-      weight: initial.weight * 100,
-      expectedYield: initial.expectedYield * 100,
-      capitalGain: initial.capitalGain * 100,
-      taxRate: initial.taxRate * 100,
-      volatility: initial.volatility * 100,
+      weight: toPct(initial.weight),
+      expectedYield: toPct(initial.expectedYield),
+      capitalGain: toPct(initial.capitalGain),
+      taxRate: toPct(initial.taxRate),
+      volatility: toPct(initial.volatility),
       note: initial.note,
     };
   }
@@ -59,10 +61,10 @@ function pctFromInitial(initial: PortfolioAssetInput | undefined, defaults: type
     typeId: DEFAULT_TYPE,
     name: PORTFOLIO_TYPE_BY_ID[DEFAULT_TYPE].label,
     weight: 0,
-    expectedYield: defaults.expectedYield * 100,
-    capitalGain: defaults.capitalGain * 100,
-    taxRate: defaults.taxRate * 100,
-    volatility: defaults.volatility * 100,
+    expectedYield: toPct(defaults.expectedYield),
+    capitalGain: toPct(defaults.capitalGain),
+    taxRate: toPct(defaults.taxRate),
+    volatility: toPct(defaults.volatility),
     note: "",
   };
 }
@@ -85,10 +87,10 @@ export function PortfolioAssetDialog({ open, mode, initial, onClose, onSubmit, o
     if (mode === "add") {
       const meta = PORTFOLIO_TYPE_BY_ID[typeId];
       form.setValue("name", meta.label);
-      form.setValue("expectedYield", meta.defaults.expectedYield * 100);
-      form.setValue("capitalGain", meta.defaults.capitalGain * 100);
-      form.setValue("taxRate", meta.defaults.taxRate * 100);
-      form.setValue("volatility", meta.defaults.volatility * 100);
+      form.setValue("expectedYield", toPct(meta.defaults.expectedYield));
+      form.setValue("capitalGain", toPct(meta.defaults.capitalGain));
+      form.setValue("taxRate", toPct(meta.defaults.taxRate));
+      form.setValue("volatility", toPct(meta.defaults.volatility));
     }
   };
 

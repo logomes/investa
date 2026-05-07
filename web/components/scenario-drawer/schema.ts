@@ -45,7 +45,7 @@ export const portfolioSchema = z
       const sum = p.assets.reduce((acc, a) => acc + a.weight, 0);
       return Math.abs(sum - 1) <= 0.001;
     },
-    { message: "soma dos pesos deve ser 100%", path: ["assets"] }
+    { message: "soma dos pesos deve ser 100%" }
   );
 
 export const benchmarkSchema = z.object({
