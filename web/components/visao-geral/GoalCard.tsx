@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Target } from "lucide-react";
 import { useSimulate } from "@/lib/api";
 import { useScenarioStore } from "@/lib/store";
@@ -10,6 +11,9 @@ import { formatRs, formatPercent } from "@/lib/format";
 export function GoalCard() {
   const sim = useSimulate();
   const goal = useScenarioStore((s) => s.goalTarget);
+  const setGoalTarget = useScenarioStore((s) => s.setGoalTarget);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<string>("");
 
   if (sim.isLoading) return <ChartSkeleton height={420} />;
   if (sim.error) return <ErrorCard onRetry={() => sim.refetch()} />;
@@ -24,13 +28,28 @@ export function GoalCard() {
         <Target className="w-4 h-4 text-brand-bright" />
         <h3 className="text-[13.5px] font-semibold text-ink">Meta patrimonial</h3>
       </div>
-      <button
-        type="button"
-        aria-label="Editar meta"
-        className="text-[26px] font-bold text-ink tabular leading-none cursor-pointer hover:text-brand-bright text-left"
-      >
-        {formatRs(goal)}
-      </button>
+      {editing ? (
+        <input
+          type="number"
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          aria-label="Editar meta"
+          className="text-[26px] font-bold text-ink tabular leading-none w-full bg-bg-3 border border-line rounded-md px-2 py-0.5"
+        />
+      ) : (
+        <button
+          type="button"
+          aria-label="Editar meta"
+          onClick={() => {
+            setDraft(String(goal));
+            setEditing(true);
+          }}
+          className="text-[26px] font-bold text-ink tabular leading-none cursor-pointer hover:text-brand-bright text-left"
+        >
+          {formatRs(goal)}
+        </button>
+      )}
       <p className="text-[12px] text-ink-3 mt-1">Hoje · {formatRs(current)}</p>
 
       <div className="mt-4">
