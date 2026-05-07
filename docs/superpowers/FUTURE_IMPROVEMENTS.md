@@ -39,13 +39,9 @@ Estimate: ~1 day if scoped only to Evolution; longer if applied to other charts 
 
 ## Drawer / Form
 
-### Asset list editing UX
+### Asset list editing UX — ✅ shipped 2026-05-06
 
-**Phase target:** Fase 4
-
-**Current behavior:** PortfolioSection shows fixed 5 rows from defaults; can edit name/weight/yield but cannot add/remove assets.
-
-**Desired:** + button to add asset, × to remove. Validation that weights sum to 1.0.
+PortfolioSection now supports add/edit/remove via modal (PortfolioAssetDialog), 11 type catalog with auto-populated defaults, Σweights badge (green/red), hard validation `Σ=1.0±0.001`, max 12 assets, reset-to-defaults button.
 
 ## Performance / Infra
 
