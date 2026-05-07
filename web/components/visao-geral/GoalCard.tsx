@@ -24,7 +24,13 @@ export function GoalCard() {
         <Target className="w-4 h-4 text-brand-bright" />
         <h3 className="text-[13.5px] font-semibold text-ink">Meta patrimonial</h3>
       </div>
-      <p className="text-[26px] font-bold text-ink tabular leading-none">{formatRs(goal)}</p>
+      <button
+        type="button"
+        aria-label="Editar meta"
+        className="text-[26px] font-bold text-ink tabular leading-none cursor-pointer hover:text-brand-bright text-left"
+      >
+        {formatRs(goal)}
+      </button>
       <p className="text-[12px] text-ink-3 mt-1">Hoje · {formatRs(current)}</p>
 
       <div className="mt-4">
