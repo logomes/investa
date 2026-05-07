@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PortfolioSection } from "@/components/scenario-drawer/sections/PortfolioSection";
@@ -58,5 +58,19 @@ describe("PortfolioSection", () => {
     fireEvent.click(within(firstRow as HTMLElement).getByLabelText(/excluir/i));
     expect(screen.getByTestId("assets-count").textContent).toBe("4");
     confirmSpy.mockRestore();
+  });
+
+  it("editing weight via dialog updates the row and the Σ badge live", async () => {
+    render(<Harness initial={base} />);
+    const firstRow = screen.getByText("FIIs de Papel").closest("[data-testid='asset-row']")!;
+    fireEvent.click(within(firstRow as HTMLElement).getByLabelText(/editar/i));
+    const weightInput = await screen.findByLabelText(/peso/i);
+    fireEvent.input(weightInput, { target: { value: "50" } });
+    const form = screen.getByRole("button", { name: /salvar/i }).closest("form")!;
+    fireEvent.submit(form);
+    await waitFor(() => {
+      const badge = screen.getByTestId("portfolio-sum-badge");
+      expect(badge.textContent).toMatch(/125/);
+    });
   });
 });

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Pencil, Trash2, RotateCcw } from "lucide-react";
-import { Controller, useFieldArray, useFormContext } from "react-hook-form";
+import { Controller, useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import type { ScenarioFormValues } from "../schema";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -20,11 +20,11 @@ type DialogState =
   | { open: true; mode: "edit"; index: number };
 
 export function PortfolioSection() {
-  const { register, control, watch, formState } = useFormContext<ScenarioFormValues>();
+  const { register, control, formState } = useFormContext<ScenarioFormValues>();
   const { fields, append, remove, update, replace } = useFieldArray({ control, name: "portfolio.assets" });
   const [dialog, setDialog] = useState<DialogState>({ open: false });
 
-  const assets = watch("portfolio.assets");
+  const assets = useWatch({ control, name: "portfolio.assets" });
   const sum = assets.reduce((acc, a) => acc + (a.weight || 0), 0);
   const sumOk = Math.abs(sum - 1) <= 0.001;
   const portfolioError = (formState.errors.portfolio as { message?: string } | undefined)?.message;
