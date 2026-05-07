@@ -46,6 +46,8 @@ export function GoalCard() {
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
+          // commit() is idempotent — Enter triggers blur immediately after,
+          // so it fires twice; setGoalTarget with same value is a no-op.
           onBlur={commit}
           onKeyDown={(e) => {
             if (e.key === "Enter") commit();
