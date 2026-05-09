@@ -4,20 +4,11 @@ Items deferred from earlier phases — to be brainstormed/planned when their own
 
 ## Charts
 
-### Monthly resolution for "1A" filter on Evolution chart
+### Monthly resolution for "1A" filter on Evolution chart — ✅ shipped 2026-05-09 (frontend interpolation)
 
-**Phase target:** Fase 4 ou dedicated 3.5
+`EvolutionCard` now renders 13 M0–M12 labels on the 1A range, computed via geometric interpolation between Y0 and Y1 (linear fallback when an endpoint is non-positive). MC bands stay annual-only and are hidden on the monthly view.
 
-**Current behavior:** TimelineFilter "1A" slices `years` array to 2 points (Y0, Y1) — straight line, low information density.
-
-**Desired:** when 1A is selected, show 12 monthly data points (M0...M12) with compound monthly growth.
-
-**Required changes:**
-- **Backend:** add `granularity: "yearly" | "monthly"` param to `/api/simulate` (or new endpoint). Adapt `simulate_real_estate` / `simulate_portfolio` / `simulate_benchmark` in `core/models.py` to compute monthly arrays when requested. Account for monthly compound growth, monthly contributions, and IPCA monthly indexing.
-- **Frontend:** `EvolutionCard` watches `range`; on "1A" calls a separate `useSimulateMonthly()` hook. Renders 13 X-labels (M0–M12). Existing yearly hook stays for 5A/10A/Tudo.
-- **Tests:** monthly CAGR sanity check vs yearly; matching final values when monthly aggregated to yearly.
-
-Estimate: ~1 day if scoped only to Evolution; longer if applied to other charts (Renda mensal, etc.).
+**Trade-off vs full backend:** small drift (~1-2%) in real-estate Y1 mid-points because financing schedule (SAC/Price month-by-month) is not modeled — portfolio and benchmark match exactly since they're geometric. If precision becomes important, a `POST /api/simulate/monthly` endpoint can replace the front-side interpolation without touching the consumer code.
 
 ## Goal Card
 
