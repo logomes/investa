@@ -25,19 +25,22 @@ import { ByAssetClassCard } from "./ByAssetClassCard";
 import { ByMarketCard } from "./ByMarketCard";
 import type { AssetPosition } from "@/lib/ativos-schema";
 
-async function fileToRows(file: File): Promise<(string | number | null)[][]> {
+type SheetSlice = { name: string; rows: (string | number | null)[][] };
+
+async function fileToSheets(file: File): Promise<SheetSlice[]> {
   if (file.name.toLowerCase().endsWith(".xlsx")) {
-    const { readSheet } = await import("read-excel-file/browser");
-    const rows = await readSheet(file, 1);
-    return rows as unknown as (string | number | null)[][];
+    const XLSX = await import("xlsx");
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array" });
+    return wb.SheetNames.map((name) => ({
+      name,
+      rows: XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: null }) as (string | number | null)[][],
+    }));
   }
   const text = await file.text();
-  // Simple CSV split — papaparse handles quotes/embedded commas, but here we
-  // can leverage its loaded form via the existing import. For B3 the rows
-  // come from an XLSX → libreoffice CSV with comma sep and quoted fields.
   const Papa = (await import("papaparse")).default;
-  const parsed = Papa.parse<string[]>(text, { skipEmptyLines: false });
-  return parsed.data;
+  const rows = Papa.parse<string[]>(text, { skipEmptyLines: false }).data;
+  return [{ name: "default", rows }];
 }
 
 async function handleB3Import(
@@ -45,33 +48,37 @@ async function handleB3Import(
   existing: AssetPosition[],
   upsert: (p: Omit<AssetPosition, "color"> & { color?: string }) => void,
 ): Promise<void> {
-  let positions: ParsedB3Position[] = [];
-  let trades: B3Trade[] = [];
-  let brokers: string[] = [];
+  const positions: ParsedB3Position[] = [];
+  const trades: B3Trade[] = [];
+  const brokers = new Set<string>();
   let earliestDate: string | null = null;
   const errors: string[] = [];
+  const recognizedSheets: string[] = [];
 
   for (const file of files) {
-    let rows: (string | number | null)[][];
+    let sheets: SheetSlice[];
     try {
-      rows = await fileToRows(file);
+      sheets = await fileToSheets(file);
     } catch (e) {
       errors.push(`${file.name}: erro ao ler (${e instanceof Error ? e.message : "desconhecido"})`);
       continue;
     }
-    const header = rows[0]?.map((c) => (typeof c === "string" ? c.trim() : ""));
-    if (isB3PositionHeader(header)) {
-      const r = parseB3Position(rows);
-      positions = r.positions;
-      brokers = r.brokers;
-      r.errors.forEach((e) => errors.push(`${file.name}: ${e.message}`));
-    } else if (isB3MovementsHeader(header)) {
-      const r = parseB3Movements(rows);
-      trades = r.trades;
-      earliestDate = r.earliestDate;
-      r.errors.forEach((e) => errors.push(`${file.name}: ${e.message}`));
-    } else {
-      errors.push(`${file.name}: formato não reconhecido (esperado Posição ou Movimentação da B3)`);
+    for (const sheet of sheets) {
+      const header = sheet.rows[0]?.map((c) => (typeof c === "string" ? c.trim() : ""));
+      if (!header) continue;
+      if (isB3PositionHeader(header)) {
+        const r = parseB3Position(sheet.rows, sheet.name);
+        positions.push(...r.positions);
+        r.brokers.forEach((b) => brokers.add(b));
+        r.errors.forEach((e) => errors.push(`${file.name}/${sheet.name}: ${e.message}`));
+        if (r.positions.length > 0) recognizedSheets.push(`${sheet.name} (${r.positions.length})`);
+      } else if (isB3MovementsHeader(header)) {
+        const r = parseB3Movements(sheet.rows);
+        trades.push(...r.trades);
+        if (r.earliestDate && (!earliestDate || r.earliestDate < earliestDate)) earliestDate = r.earliestDate;
+        r.errors.forEach((e) => errors.push(`${file.name}/${sheet.name}: ${e.message}`));
+        if (r.trades.length > 0) recognizedSheets.push(`${sheet.name} (${r.trades.length} trades)`);
+      }
     }
   }
 
@@ -102,7 +109,8 @@ async function handleB3Import(
 
   const summary =
     `Importar ${positions.length} posições da B3?\n\n` +
-    `Brokers: ${brokers.join(", ") || "—"}\n` +
+    `Sheets reconhecidos: ${recognizedSheets.join(", ") || "—"}\n` +
+    `Brokers: ${Array.from(brokers).join(", ") || "—"}\n` +
     `Posições com preço médio real (via Movimentação): ${positionsWithRealAvg}/${positions.length}\n` +
     `Posições sem histórico de compra: avgPrice = preço de fechamento (custo aproximado).\n\n` +
     `Posições já cadastradas (não-B3) serão preservadas.` +

@@ -47,26 +47,9 @@ export type B3MovementsResult = {
   latestDate: string | null;
 };
 
-const EXPECTED_HEADERS = [
-  "Produto",
-  "Instituição",
-  "Conta",
-  "Código de Negociação",
-  "CNPJ da Empresa",
-  "Código ISIN / Distribuição",
-  "Tipo",
-  "Escriturador",
-  "Quantidade",
-  "Quantidade Disponível",
-  "Quantidade Indisponível",
-  "Motivo",
-  "Preço de Fechamento",
-  "Valor Atualizado",
-];
-
 export function isB3PositionHeader(row: readonly (string | null | undefined)[]): boolean {
-  if (!row || row.length < EXPECTED_HEADERS.length) return false;
-  // Match the discriminator columns; tolerant to ordering / extra trailing cols.
+  if (!row) return false;
+  // Discriminator columns are enough — ações sheets have 14 cols, ETF/FII sheets 13.
   return row.includes("Código de Negociação") && row.includes("Quantidade") && row.includes("Preço de Fechamento");
 }
 
@@ -89,11 +72,24 @@ function refineClassFromTipo(ticker: string, tipo: string | null | undefined): A
   return inferAssetClass(ticker) ?? "ACAO_BR_DIVIDENDO";
 }
 
+// Sheet name on the multi-tab Investidor B3 XLSX hints the asset class
+// for that whole tab — overrides Tipo when present.
+function classFromSheetName(name: string): AssetClass | null {
+  switch (name.trim()) {
+    case "ETF": return "ETF_BR";
+    case "Fundo de Investimento": return "FII_PAPEL";
+    case "Acoes": return null; // delegate to refineClassFromTipo (ON/PN/UNIT)
+    default: return null;
+  }
+}
+
 /**
  * Parse rows from a B3 position export. `rows` is a 2D array (header + data),
- * already converted from CSV or XLSX upstream.
+ * already converted from CSV or XLSX upstream. `sheetName` is used to derive
+ * the asset class when set (XLSX exports group by sheet: "Acoes", "ETF",
+ * "Fundo de Investimento").
  */
-export function parseB3Position(rows: readonly (readonly (string | number | null | undefined)[])[]): B3ImportResult {
+export function parseB3Position(rows: readonly (readonly (string | number | null | undefined)[])[], sheetName?: string): B3ImportResult {
   if (rows.length === 0) {
     return { positions: [], brokers: [], errors: [{ row: 0, message: "arquivo vazio" }] };
   }
@@ -145,9 +141,10 @@ export function parseB3Position(rows: readonly (readonly (string | number | null
   }
 
   const asOf = new Date().toISOString();
+  const sheetHint = sheetName ? classFromSheetName(sheetName) : null;
   const positions: ParsedB3Position[] = Array.from(agg.entries()).map(([ticker, v]) => ({
     ticker,
-    assetClass: refineClassFromTipo(ticker, v.tipo),
+    assetClass: sheetHint ?? refineClassFromTipo(ticker, v.tipo),
     currency: "BRL",
     quantity: v.quantity,
     closingPrice: v.closingPrice,
