@@ -17,6 +17,7 @@ import {
 import { ASSET_CLASS_META } from "@/lib/ativos-schema";
 import type { AssetClass, AssetPosition, Currency } from "@/lib/ativos-schema";
 import { fetchQuote, QuoteNotFoundError } from "@/lib/quotes";
+import { relativeTime } from "@/lib/relative-time";
 import type { QuoteOut } from "@/lib/api-types";
 
 const formSchema = z.object({
@@ -48,15 +49,6 @@ type QuoteState =
   | { status: "loading" }
   | { status: "success"; data: QuoteOut }
   | { status: "error"; message: string };
-
-function relativeTime(iso: string): string {
-  const diffMin = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
-  if (diffMin < 1) return "agora";
-  if (diffMin < 60) return `há ${diffMin} min`;
-  const h = Math.floor(diffMin / 60);
-  if (h < 24) return `há ${h} h`;
-  return `há ${Math.floor(h / 24)} d`;
-}
 
 type Props = {
   open: boolean;
