@@ -1,6 +1,7 @@
 "use client";
 
-import { Plus, Upload, Download, Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Plus, Upload, Download, Pencil, Trash2, RefreshCw, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { positionValueBRL } from "@/lib/ativos-derive";
@@ -8,6 +9,7 @@ import { ASSET_CLASS_META } from "@/lib/ativos-schema";
 import type { AssetPosition } from "@/lib/ativos-schema";
 import type { MacroOut } from "@/lib/api-types";
 import { formatRs, formatPercent } from "@/lib/format";
+import { relativeTime } from "@/lib/relative-time";
 
 type Props = {
   positions: AssetPosition[];
@@ -17,9 +19,26 @@ type Props = {
   onDelete: (id: string) => void;
   onImport: () => void;
   onExport: () => void;
+  onRefreshQuote: (p: AssetPosition) => Promise<void>;
 };
 
-export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImport, onExport }: Props) {
+function formatNative(currency: string, value: number): string {
+  const symbol = currency === "USD" ? "$" : "R$";
+  return `${symbol} ${value.toFixed(2).replace(".", ",")}`;
+}
+
+export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImport, onExport, onRefreshQuote }: Props) {
+  const [refreshing, setRefreshing] = useState<Record<string, boolean>>({});
+
+  async function handleRefresh(p: AssetPosition) {
+    setRefreshing((r) => ({ ...r, [p.id]: true }));
+    try {
+      await onRefreshQuote(p);
+    } finally {
+      setRefreshing((r) => ({ ...r, [p.id]: false }));
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -56,6 +75,7 @@ export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImpor
                 <th className="text-right font-normal py-2 px-2">Moeda</th>
                 <th className="text-right font-normal py-2 px-2">Qty</th>
                 <th className="text-right font-normal py-2 px-2">Preço médio</th>
+                <th className="text-right font-normal py-2 px-2">Preço atual</th>
                 <th className="text-right font-normal py-2 px-2">Valor (BRL)</th>
                 <th className="text-right font-normal py-2 px-2">DY esp.</th>
                 <th className="text-right font-normal py-2 pl-2">Ações</th>
@@ -65,6 +85,10 @@ export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImpor
               {positions.map((p) => {
                 const meta = ASSET_CLASS_META[p.assetClass];
                 const valueBRL = positionValueBRL(p, macro);
+                const isRefreshing = !!refreshing[p.id];
+                const currentBRL = p.currentPrice && p.currency === "USD"
+                  ? p.currentPrice * macro.usdBrl
+                  : p.currentPrice;
                 return (
                   <tr key={p.id} className="border-b border-line-soft last:border-b-0 hover:bg-bg-2/50">
                     <td className="py-2 pr-2">
@@ -81,7 +105,42 @@ export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImpor
                     <td className="text-right py-2 px-2 text-ink-3">{p.currency}</td>
                     <td className="text-right py-2 px-2 tabular text-ink-2">{p.quantity}</td>
                     <td className="text-right py-2 px-2 tabular text-ink-2">
-                      {p.currency === "USD" ? "$" : "R$"} {p.avgPrice.toFixed(2).replace(".", ",")}
+                      {formatNative(p.currency, p.avgPrice)}
+                    </td>
+                    <td className="text-right py-2 px-2 tabular">
+                      {p.currentPrice && currentBRL ? (
+                        <div className="leading-tight">
+                          <div className="text-ink">{formatRs(currentBRL)}</div>
+                          <div className="text-[10.5px] text-ink-3 flex items-center justify-end gap-1">
+                            {p.currency === "USD" && <span>{formatNative("USD", p.currentPrice)} · </span>}
+                            {p.asOf && <span>{relativeTime(p.asOf)}</span>}
+                            <button
+                              type="button"
+                              aria-label={`Atualizar cotação ${p.ticker}`}
+                              onClick={() => handleRefresh(p)}
+                              disabled={isRefreshing}
+                              className="p-0.5 hover:text-ink"
+                            >
+                              {isRefreshing
+                                ? <Loader2 className="w-3 h-3 animate-spin" />
+                                : <RefreshCw className="w-3 h-3" />}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          aria-label={`Buscar cotação ${p.ticker}`}
+                          onClick={() => handleRefresh(p)}
+                          disabled={isRefreshing}
+                          className="text-ink-3 hover:text-ink inline-flex items-center gap-1"
+                        >
+                          {isRefreshing
+                            ? <Loader2 className="w-3 h-3 animate-spin" />
+                            : <RefreshCw className="w-3 h-3" />}
+                          <span>Buscar</span>
+                        </button>
+                      )}
                     </td>
                     <td className="text-right py-2 px-2 tabular text-ink">{formatRs(valueBRL)}</td>
                     <td className="text-right py-2 px-2 tabular text-ink-2">{formatPercent(p.expectedYield, 2)}</td>

@@ -5,6 +5,8 @@ import { useAssetsStore } from "@/lib/ativos-store";
 import { useMacro } from "@/lib/api";
 import { ativosKpis, byAssetClass, byMarket } from "@/lib/ativos-derive";
 import { exportCsv, importCsv } from "@/lib/ativos-csv";
+import { fetchQuote, QuoteNotFoundError } from "@/lib/quotes";
+import { ASSET_CLASS_META } from "@/lib/ativos-schema";
 import { ErrorCard } from "@/components/error/ErrorCard";
 import { KpiSkeleton } from "@/components/kpi/KpiSkeleton";
 import { AssetsTable } from "./AssetsTable";
@@ -68,6 +70,15 @@ export function AtivosPageContent() {
         onDelete={remove}
         onImport={() => fileRef.current?.click()}
         onExport={() => downloadFile(exportCsv(positions), "ativos.csv")}
+        onRefreshQuote={async (p) => {
+          try {
+            const q = await fetchQuote(p.ticker, ASSET_CLASS_META[p.assetClass].market);
+            upsert({ ...p, currentPrice: q.price, asOf: q.asOf });
+          } catch (e) {
+            const msg = e instanceof QuoteNotFoundError ? "Cotação não encontrada" : "Cotação indisponível";
+            alert(`${p.ticker}: ${msg}`);
+          }
+        }}
       />
       <input
         ref={fileRef}
