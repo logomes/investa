@@ -35,45 +35,11 @@ GoalCard goal value is now click-to-edit: button → input pre-filled with curre
 
 ## Ativos
 
-### Auto-fetch current quote (`currentPrice` + `asOf`) on add/edit
+### Auto-fetch current quote (`currentPrice` + `asOf`) on add/edit — ✅ shipped 2026-05-09 (backend + dialog)
 
-**Phase target:** Fase 4 (próxima)
+**Shipped scope:** `GET /api/quotes?ticker=&market=` with provider chain (BR: BRAPI → Yahoo `.SA`; US: Yahoo → Stooq), 60s server cache, 3s per-provider timeout, no API keys. Frontend `AssetDialog` fetches on ticker blur and shows price + relative time + source inline; saved quote rerenders on edit.
 
-**Current behavior:** `/ativos` form coleta `ticker`, `quantity` e `avgPrice` manualmente. Não há cotação de mercado armazenada — todo cálculo de "ganho não realizado" depende de o user re-digitar o preço atual.
-
-**Desired:** quando o user digita o `ticker` (com debounce ~500ms) ou clica num botão "Atualizar cotação" no dialog, o backend busca a cotação atual e pré-preenche um novo campo `currentPrice` + `asOf` (timestamp ISO). `avgPrice` continua sendo o que o user pagou (custo) — não é sobrescrito.
-
-**Schema changes (`web/lib/ativos-schema.ts`):**
-```ts
-currentPrice: z.number().positive().optional(),
-asOf: z.string().datetime().optional(), // ISO 8601
-```
-Manter `optional()` porque ativos antigos não têm essas cotações.
-
-**Backend route (`api/routers/quotes.py` — novo):**
-- `GET /api/quotes?ticker=PETR4&market=BR` → `{ price, currency, asOf, source }`
-- BR usa BRAPI (`https://brapi.dev/api/quote/PETR4`) — free tier, sem cadastro pra cotações simples.
-- US usa Yahoo Finance via biblioteca `yfinance` ou Finnhub (free 60/min) — escolher na implementação.
-- Cache server-side de 60s por ticker (evita rate-limit em digitação rápida).
-- Retornar 404 se o ticker não existir (front mostra "Ticker não encontrado").
-
-**UX no `AtivosTable` / dialog de edição:**
-- Após o user digitar o ticker e o dialog perder foco do campo (blur), dispara fetch.
-- Spinner inline ao lado do campo enquanto carrega.
-- Se sucesso: mostra `R$ 32,45 · há 3 min` abaixo do campo, popula hidden state.
-- Se erro: mensagem discreta `Cotação indisponível, preencher manual` (não bloqueia salvar).
-- Botão "🔄 Atualizar" ao lado, manual.
-
-**Considerações:**
-- Fora de pregão: a API retorna a última cotação de fechamento — `asOf` deixa claro que está defasado.
-- Para US assets, a cotação vem em USD — armazenar em USD e converter pra BRL no momento da renderização usando o FX de `/api/macro` (já cacheado 1h server-side).
-- Não armazenar credenciais de API no front. Toda chamada externa passa pelo backend.
-
-**Tests:**
-- Backend: `test_quotes.py` mockando BRAPI e Yahoo, casos OK/404/timeout.
-- Frontend: `ativos-quote-fetch.test.tsx` usando MSW, valida debounce, spinner, sucesso, erro silencioso.
-
-**Estimate:** ~1 dia (backend route + cache + front integração + tests). Não inclui FX automático para US (escopo separado).
+**Still deferred (next pass):** new column on `AssetsTable` showing currentPrice/asOf with manual refresh button per row, FX USD→BRL rendering for US assets using `/api/macro`.
 
 ## Drawer / Form
 
