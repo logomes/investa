@@ -97,11 +97,11 @@ Macro is cached for 1h server-side. Cloudflare CDN cache could absorb burst traf
 
 ## Testing
 
-### Playwright E2E
+### Playwright E2E — ✅ shipped 2026-05-09 (smoke only)
 
-**Phase target:** Fase 6
+`web/e2e/smoke.spec.ts` covers: (a) Visão Geral renders the four KPI labels, (b) GoalCard click-to-edit updates the value and the "Probabilidade de meta" KPI subtitle. Mocks `/api/macro`, `/api/simulate`, `/api/simulate/monte-carlo` via `page.route()` so the test is deterministic and doesn't need the FastAPI backend running. Run with `pnpm test:e2e` from `web/`.
 
-Plan calls for one smoke test (load `/`, verify 4 KPIs render). Currently deferred.
+**Still deferred:** wiring into `web-ci.yml` (needs chromium browser caching strategy in CI to avoid 100MB downloads per run) and broader coverage (carteira, ativos, exportar pages).
 
 ### API integration tests with TestClient
 
