@@ -27,8 +27,8 @@ import type { AssetPosition } from "@/lib/ativos-schema";
 
 async function fileToRows(file: File): Promise<(string | number | null)[][]> {
   if (file.name.toLowerCase().endsWith(".xlsx")) {
-    const readXlsx = (await import("read-excel-file/browser")).default;
-    const rows = await readXlsx(file);
+    const { readSheet } = await import("read-excel-file/browser");
+    const rows = await readSheet(file, 1);
     return rows as unknown as (string | number | null)[][];
   }
   const text = await file.text();
