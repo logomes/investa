@@ -5,6 +5,7 @@ api/converters.py before being passed to these models.
 """
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
@@ -104,6 +105,15 @@ class PortfolioDefaultsOut(_CamelModel):
 class HealthOut(_CamelModel):
     status: str
     version: str
+
+
+class QuoteOut(_CamelModel):
+    ticker: str
+    market: Literal["BR", "US"]
+    price: float
+    currency: str
+    as_of: datetime
+    source: str
 
 
 class ApiError(_CamelModel):
