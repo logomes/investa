@@ -21,13 +21,9 @@ Estimate: ~1 day if scoped only to Evolution; longer if applied to other charts 
 
 ## Goal Card
 
-### Editable goal target
+### Editable goal target — ✅ shipped 2026-05-09
 
-**Phase target:** Fase 4
-
-**Current behavior:** `goalTarget` is hardcoded R$ 600k from `defaults.ts`, persisted in Zustand but no UI to edit.
-
-**Desired:** inline edit on the GoalCard, OR new section in ScenarioDrawer.
+GoalCard goal value is now click-to-edit: button → input pre-filled with current `goalTarget`, Enter/blur commits via `setGoalTarget`, Esc cancels, invalid input (≤0 or non-numeric) reverts silently. Persists through Zustand and propagates to "Probabilidade de meta" KPI + progress bar.
 
 ### Real recommendation engine
 
