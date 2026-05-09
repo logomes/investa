@@ -26,11 +26,9 @@ GoalCard goal value is now click-to-edit: button → input pre-filled with curre
 
 ## Ativos
 
-### Auto-fetch current quote (`currentPrice` + `asOf`) on add/edit — ✅ shipped 2026-05-09 (backend + dialog)
+### Auto-fetch current quote (`currentPrice` + `asOf`) on add/edit — ✅ shipped 2026-05-09
 
-**Shipped scope:** `GET /api/quotes?ticker=&market=` with provider chain (BR: BRAPI → Yahoo `.SA`; US: Yahoo → Stooq), 60s server cache, 3s per-provider timeout, no API keys. Frontend `AssetDialog` fetches on ticker blur and shows price + relative time + source inline; saved quote rerenders on edit.
-
-**Still deferred (next pass):** new column on `AssetsTable` showing currentPrice/asOf with manual refresh button per row, FX USD→BRL rendering for US assets using `/api/macro`.
+**Shipped scope:** `GET /api/quotes?ticker=&market=` with provider chain (BR: BRAPI → Yahoo `.SA`; US: Yahoo → Stooq), 60s server cache, 3s per-provider timeout, no API keys. Frontend `AssetDialog` fetches on ticker blur. `AssetsTable` shows a "Preço atual" column with currentPrice converted to BRL (US assets use `macro.usdBrl`), native USD as subtext, relative `asOf`, and per-row refresh button.
 
 ## Drawer / Form
 
