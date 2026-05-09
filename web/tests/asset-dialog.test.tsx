@@ -167,6 +167,44 @@ describe("AssetDialog", () => {
     expect(screen.queryByText(/via /i)).not.toBeInTheDocument(); // source="saved" → not shown
   });
 
+  it("auto-classifica ticker em mode add: PETR4 → ACAO_BR_DIVIDENDO", async () => {
+    const onSubmit = vi.fn();
+    render(<AssetDialog open={true} mode="add" onClose={() => {}} onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByLabelText(/ticker/i), { target: { value: "PETR4" } });
+    fireEvent.change(screen.getByLabelText(/quantidade/i), { target: { value: "10" } });
+    fireEvent.change(screen.getByLabelText(/preço médio/i), { target: { value: "40" } });
+    fireEvent.click(screen.getByRole("button", { name: /salvar/i }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(onSubmit.mock.calls[0][0].assetClass).toBe("ACAO_BR_DIVIDENDO");
+  });
+
+  it("auto-classifica AAPL → STOCK_US e USD", async () => {
+    const onSubmit = vi.fn();
+    render(<AssetDialog open={true} mode="add" onClose={() => {}} onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByLabelText(/ticker/i), { target: { value: "AAPL" } });
+    fireEvent.change(screen.getByLabelText(/quantidade/i), { target: { value: "5" } });
+    fireEvent.change(screen.getByLabelText(/preço médio/i), { target: { value: "200" } });
+    fireEvent.click(screen.getByRole("button", { name: /salvar/i }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    const arg = onSubmit.mock.calls[0][0];
+    expect(arg.assetClass).toBe("STOCK_US");
+    expect(arg.currency).toBe("USD");
+  });
+
+  it("auto-classifica BOVA11 → ETF_BR (whitelist)", async () => {
+    const onSubmit = vi.fn();
+    render(<AssetDialog open={true} mode="add" onClose={() => {}} onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByLabelText(/ticker/i), { target: { value: "BOVA11" } });
+    fireEvent.change(screen.getByLabelText(/quantidade/i), { target: { value: "10" } });
+    fireEvent.change(screen.getByLabelText(/preço médio/i), { target: { value: "100" } });
+    fireEvent.click(screen.getByRole("button", { name: /salvar/i }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(onSubmit.mock.calls[0][0].assetClass).toBe("ETF_BR");
+  });
+
   it("mode edit mostra botão Excluir", () => {
     render(
       <AssetDialog

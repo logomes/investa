@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { ASSET_CLASS_META } from "@/lib/ativos-schema";
 import type { AssetClass, AssetPosition, Currency } from "@/lib/ativos-schema";
+import { inferAssetClass } from "@/lib/ativos-classify";
 import { fetchQuote, QuoteNotFoundError } from "@/lib/quotes";
 import { relativeTime } from "@/lib/relative-time";
 import type { QuoteOut } from "@/lib/api-types";
@@ -79,6 +80,11 @@ export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }
     },
   });
 
+  // Tracks whether the user manually picked the class. While false, the dialog
+  // auto-classifies based on ticker pattern; once true, ticker changes no
+  // longer overwrite the user's explicit choice.
+  const [classManuallySet, setClassManuallySet] = useState(false);
+
   const [quote, setQuote] = useState<QuoteState>(() => {
     if (initial?.currentPrice && initial.asOf) {
       return {
@@ -128,6 +134,8 @@ export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }
       } else {
         setQuote({ status: "idle" });
       }
+      // Edit mode = trust the saved class. Add mode = let auto-classify run.
+      setClassManuallySet(initial !== undefined);
     }
   }, [open, initial, form]);
 
@@ -142,6 +150,16 @@ export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }
       form.setValue("capitalGain", m.defaultCapitalGain * 100);
     }
   }, [watchedClass, open, initial, form]);
+
+  // Auto-classify by ticker pattern while the user hasn't picked a class manually.
+  const watchedTicker = form.watch("ticker");
+  useEffect(() => {
+    if (!open || initial || classManuallySet) return;
+    const inferred = inferAssetClass(watchedTicker);
+    if (inferred && inferred !== form.getValues("assetClass")) {
+      form.setValue("assetClass", inferred);
+    }
+  }, [watchedTicker, open, initial, classManuallySet, form]);
 
   async function loadQuote(rawTicker: string, cls: AssetClass) {
     const ticker = rawTicker.trim().toUpperCase();
@@ -198,7 +216,10 @@ export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }
             <Label htmlFor="a-class">Classe</Label>
             <Select
               value={form.watch("assetClass")}
-              onValueChange={(v) => form.setValue("assetClass", v as AssetClass)}
+              onValueChange={(v) => {
+                setClassManuallySet(true);
+                form.setValue("assetClass", v as AssetClass);
+              }}
             >
               <SelectTrigger id="a-class">
                 <SelectValue />
