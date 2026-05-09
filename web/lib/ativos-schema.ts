@@ -28,6 +28,8 @@ export const assetPositionSchema = z.object({
   expectedYield: z.number().min(0).max(1),
   capitalGain: z.number().min(-1).max(1),
   color: z.string().regex(colorRegex),
+  currentPrice: z.number().positive().optional(),
+  asOf: z.string().datetime().optional(),
 });
 
 export type AssetPosition = z.infer<typeof assetPositionSchema>;

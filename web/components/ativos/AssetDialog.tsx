@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/select";
 import { ASSET_CLASS_META } from "@/lib/ativos-schema";
 import type { AssetClass, AssetPosition, Currency } from "@/lib/ativos-schema";
+import { fetchQuote, QuoteNotFoundError } from "@/lib/quotes";
+import type { QuoteOut } from "@/lib/api-types";
 
 const formSchema = z.object({
   id: z.string(),
@@ -31,6 +33,8 @@ const formSchema = z.object({
   avgPrice: z.number().positive(),
   expectedYield: z.number().min(0, "yield 0–100%").max(100, "yield 0–100%"),
   capitalGain: z.number().min(-100, "ganho -100–100%").max(100, "ganho -100–100%"),
+  currentPrice: z.number().positive().optional(),
+  asOf: z.string().datetime().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -38,6 +42,21 @@ type FormValues = z.infer<typeof formSchema>;
 const CLASS_OPTIONS: Array<{ value: AssetClass; label: string }> = (
   Object.entries(ASSET_CLASS_META) as Array<[AssetClass, typeof ASSET_CLASS_META[AssetClass]]>
 ).map(([value, meta]) => ({ value, label: meta.label }));
+
+type QuoteState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "success"; data: QuoteOut }
+  | { status: "error"; message: string };
+
+function relativeTime(iso: string): string {
+  const diffMin = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (diffMin < 1) return "agora";
+  if (diffMin < 60) return `há ${diffMin} min`;
+  const h = Math.floor(diffMin / 60);
+  if (h < 24) return `há ${h} h`;
+  return `há ${Math.floor(h / 24)} d`;
+}
 
 type Props = {
   open: boolean;
@@ -63,8 +82,28 @@ export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }
       avgPrice: initial?.avgPrice ?? 0,
       expectedYield: initial !== undefined ? initial.expectedYield * 100 : meta.defaultYield * 100,
       capitalGain: initial !== undefined ? initial.capitalGain * 100 : meta.defaultCapitalGain * 100,
+      currentPrice: initial?.currentPrice,
+      asOf: initial?.asOf,
     },
   });
+
+  const [quote, setQuote] = useState<QuoteState>(() => {
+    if (initial?.currentPrice && initial.asOf) {
+      return {
+        status: "success",
+        data: {
+          ticker: initial.ticker,
+          market: ASSET_CLASS_META[initial.assetClass].market,
+          price: initial.currentPrice,
+          currency: initial.currency,
+          asOf: initial.asOf,
+          source: "saved",
+        },
+      };
+    }
+    return { status: "idle" };
+  });
+  const fetchSeq = useRef(0);
 
   useEffect(() => {
     if (open) {
@@ -79,7 +118,24 @@ export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }
         avgPrice: initial?.avgPrice ?? 0,
         expectedYield: initial !== undefined ? initial.expectedYield * 100 : m.defaultYield * 100,
         capitalGain: initial !== undefined ? initial.capitalGain * 100 : m.defaultCapitalGain * 100,
+        currentPrice: initial?.currentPrice,
+        asOf: initial?.asOf,
       });
+      if (initial?.currentPrice && initial.asOf) {
+        setQuote({
+          status: "success",
+          data: {
+            ticker: initial.ticker,
+            market: m.market,
+            price: initial.currentPrice,
+            currency: initial.currency,
+            asOf: initial.asOf,
+            source: "saved",
+          },
+        });
+      } else {
+        setQuote({ status: "idle" });
+      }
     }
   }, [open, initial, form]);
 
@@ -89,12 +145,34 @@ export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }
     if (!open || !watchedClass) return;
     const m = ASSET_CLASS_META[watchedClass as AssetClass];
     if (!initial) {
-      // Em mode add, sempre puxa defaults
       form.setValue("currency", m.defaultCurrency);
       form.setValue("expectedYield", m.defaultYield * 100);
       form.setValue("capitalGain", m.defaultCapitalGain * 100);
     }
   }, [watchedClass, open, initial, form]);
+
+  async function loadQuote(rawTicker: string, cls: AssetClass) {
+    const ticker = rawTicker.trim().toUpperCase();
+    if (!ticker || !/^[A-Za-z0-9.]+$/.test(ticker)) {
+      setQuote({ status: "idle" });
+      return;
+    }
+    const seq = ++fetchSeq.current;
+    setQuote({ status: "loading" });
+    try {
+      const data = await fetchQuote(ticker, ASSET_CLASS_META[cls].market);
+      if (seq !== fetchSeq.current) return; // stale response
+      setQuote({ status: "success", data });
+      form.setValue("currentPrice", data.price);
+      form.setValue("asOf", data.asOf);
+    } catch (e) {
+      if (seq !== fetchSeq.current) return;
+      const message = e instanceof QuoteNotFoundError ? "Cotação não encontrada" : "Cotação indisponível";
+      setQuote({ status: "error", message });
+      form.setValue("currentPrice", undefined);
+      form.setValue("asOf", undefined);
+    }
+  }
 
   const handleSubmit = form.handleSubmit((data) => {
     onSubmit({
@@ -114,7 +192,14 @@ export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="space-y-1">
             <Label htmlFor="a-ticker">Ticker</Label>
-            <Input id="a-ticker" {...form.register("ticker")} placeholder="HGCR11 / JNJ" />
+            <Input
+              id="a-ticker"
+              {...form.register("ticker", {
+                onBlur: (e) => loadQuote(e.target.value, form.getValues("assetClass")),
+              })}
+              placeholder="HGCR11 / JNJ"
+            />
+            <QuoteStatusLine quote={quote} />
           </div>
 
           <div className="space-y-1">
@@ -218,5 +303,28 @@ export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function QuoteStatusLine({ quote }: { quote: QuoteState }) {
+  if (quote.status === "idle") return null;
+  if (quote.status === "loading") {
+    return (
+      <p className="text-[12px] text-ink-3 flex items-center gap-1.5" role="status">
+        <Loader2 className="w-3 h-3 animate-spin" /> Buscando cotação…
+      </p>
+    );
+  }
+  if (quote.status === "error") {
+    return <p className="text-[12px] text-ink-3" role="status">{quote.message} — preencher manual</p>;
+  }
+  const { price, currency, asOf, source } = quote.data;
+  const formatted = currency === "BRL"
+    ? price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+    : price.toLocaleString("en-US", { style: "currency", currency: "USD" });
+  return (
+    <p className="text-[12px] text-ink-2" role="status">
+      {formatted} · {relativeTime(asOf)}{source !== "saved" ? ` · via ${source}` : ""}
+    </p>
   );
 }

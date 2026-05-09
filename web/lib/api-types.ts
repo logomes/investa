@@ -132,3 +132,12 @@ export type ApiError = {
   message: string;
   details?: Record<string, unknown> | null;
 };
+
+export type QuoteOut = {
+  ticker: string;
+  market: "BR" | "US";
+  price: number;
+  currency: string;
+  asOf: string; // ISO 8601
+  source: string;
+};
