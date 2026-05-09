@@ -7,6 +7,7 @@ import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { TimelineFilter, type TimelineValue } from "@/components/charts/TimelineFilter";
 import { ErrorCard } from "@/components/error/ErrorCard";
 import { formatRsK } from "@/lib/format";
+import { interpolateMonthly } from "@/lib/interpolation";
 
 function rangeToSlice(range: TimelineValue, totalYears: number): number {
   if (range === "1A") return Math.min(2, totalYears);
@@ -37,14 +38,20 @@ export function EvolutionCard() {
   const data = sim.data!;
   const totalYears = data.portfolio.years.length;
   const sliceN = rangeToSlice(range, totalYears);
+  const isMonthly = range === "1A";
+
+  const project = (arr: number[]) =>
+    isMonthly ? interpolateMonthly(arr.slice(0, sliceN)) : arr.slice(0, sliceN);
 
   const series = [
-    { name: data.portfolio.label, color: data.portfolio.color, values: data.portfolio.patrimony.slice(0, sliceN) },
-    { name: data.realEstate.label, color: data.realEstate.color, values: data.realEstate.patrimony.slice(0, sliceN) },
-    { name: data.benchmark.label, color: data.benchmark.color, values: data.benchmark.patrimony.slice(0, sliceN) },
+    { name: data.portfolio.label, color: data.portfolio.color, values: project(data.portfolio.patrimony) },
+    { name: data.realEstate.label, color: data.realEstate.color, values: project(data.realEstate.patrimony) },
+    { name: data.benchmark.label, color: data.benchmark.color, values: project(data.benchmark.patrimony) },
   ];
 
-  const bands = mc.data
+  // MC bands are annual-only — skip on monthly view to avoid showing flat
+  // segments interpolated from 2 yearly percentiles.
+  const bands = !isMonthly && mc.data
     ? [
         {
           name: `${mc.data.portfolio.label} p10–p90`,
@@ -61,7 +68,9 @@ export function EvolutionCard() {
       ]
     : undefined;
 
-  const xLabels = Array.from({ length: sliceN }, (_, i) => `Y${i}`);
+  const xLabels = isMonthly
+    ? Array.from({ length: 13 }, (_, i) => `M${i}`)
+    : Array.from({ length: sliceN }, (_, i) => `Y${i}`);
 
   return (
     <div className="bg-bg-2 border border-line rounded-card p-5">
