@@ -20,6 +20,7 @@ const baseProps = {
   onEdit: vi.fn(),
   onDelete: vi.fn(),
   onImport: vi.fn(),
+  onImportB3: vi.fn(),
   onExport: vi.fn(),
 };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Upload, Download, Pencil, Trash2, RefreshCw, Loader2 } from "lucide-react";
+import { Plus, Upload, Download, Pencil, Trash2, RefreshCw, Loader2, FileSpreadsheet } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { positionValueBRL } from "@/lib/ativos-derive";
@@ -18,6 +18,7 @@ type Props = {
   onEdit: (p: AssetPosition) => void;
   onDelete: (id: string) => void;
   onImport: () => void;
+  onImportB3: () => void;
   onExport: () => void;
   onRefreshQuote: (p: AssetPosition) => Promise<void>;
 };
@@ -27,7 +28,7 @@ function formatNative(currency: string, value: number): string {
   return `${symbol} ${value.toFixed(2).replace(".", ",")}`;
 }
 
-export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImport, onExport, onRefreshQuote }: Props) {
+export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImport, onImportB3, onExport, onRefreshQuote }: Props) {
   const [refreshing, setRefreshing] = useState<Record<string, boolean>>({});
 
   async function handleRefresh(p: AssetPosition) {
@@ -48,6 +49,10 @@ export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImpor
             <Button variant="outline" size="sm" onClick={onImport}>
               <Upload className="w-3.5 h-3.5 mr-1.5" />
               Importar CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={onImportB3}>
+              <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
+              Importar B3
             </Button>
             <Button variant="outline" size="sm" onClick={onExport} disabled={positions.length === 0}>
               <Download className="w-3.5 h-3.5 mr-1.5" />
