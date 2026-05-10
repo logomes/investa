@@ -8,11 +8,11 @@ export default function VisaoGeralPage() {
   return (
     <div className="space-y-6">
       <KpiRow />
-      <div className="grid grid-cols-[1.6fr_1fr] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-6">
         <EvolutionCard />
         <GoalCard />
       </div>
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <MonthlyIncomeCard />
         <ComparativoTable />
       </div>

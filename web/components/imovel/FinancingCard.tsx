@@ -30,7 +30,7 @@ export function FinancingCard({ re, simulation }: Props) {
         <h3 className="text-[13.5px] font-semibold text-ink">Financiamento</h3>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <KpiCard label="Entrada" value={formatRs(summary.entry)} sub={`${(re.financing!.entryPct * 100).toFixed(0)}% do imóvel`} />
           <KpiCard label="Parcela inicial" value={formatRs(summary.firstPayment)} sub={summary.systemLabel} />
           <KpiCard label="Total de juros" value={formatRsK(summary.totalInterest)} sub={`prazo ${summary.termYears} anos`} />

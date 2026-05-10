@@ -215,7 +215,7 @@ export function AtivosPageContent() {
 
   if (!hydrated || macro.isLoading) {
     return (
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiSkeleton /><KpiSkeleton /><KpiSkeleton /><KpiSkeleton />
       </div>
     );
@@ -287,7 +287,7 @@ export function AtivosPageContent() {
           }
         }}
       />
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ByAssetClassCard groups={groups} />
         <ByMarketCard split={split} macro={macro.data!} />
       </div>

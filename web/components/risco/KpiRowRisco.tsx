@@ -19,7 +19,7 @@ export function KpiRowRisco({ reStats, pfStats, hasTarget }: Props) {
   const probMetaColor = hasTarget && pfStats.probTarget! >= 0.7 ? "green" : "default";
 
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       <KpiCard
         label="Probabilidade de bater meta"
         value={probMetaValue}

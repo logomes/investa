@@ -6,8 +6,8 @@ type Props = {
 export function ChartSkeleton({ width = 780, height = 300 }: Props) {
   return (
     <div
-      className="bg-bg-2 border border-line rounded-card animate-pulse"
-      style={{ width, height }}
+      className="bg-bg-2 border border-line rounded-card animate-pulse w-full"
+      style={{ maxWidth: width, height }}
     />
   );
 }

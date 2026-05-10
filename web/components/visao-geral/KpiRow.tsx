@@ -16,7 +16,7 @@ export function KpiRow() {
 
   if (sim.isLoading || mc.isLoading) {
     return (
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiSkeleton />
         <KpiSkeleton />
         <KpiSkeleton />
@@ -41,7 +41,7 @@ export function KpiRow() {
   const drawdownAvg = pfMc.maxDrawdowns.reduce((a, b) => a + b, 0) / pfMc.maxDrawdowns.length;
 
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       <KpiCard
         label={`Patrimônio projetado · ${horizon}a`}
         value={formatRsK(pfFinal)}

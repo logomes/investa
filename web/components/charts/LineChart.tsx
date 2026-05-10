@@ -88,7 +88,11 @@ export function LineChart({
   const yVals = Array.from({ length: yTicks + 1 }, (_, i) => yMin + (i * (yMax - yMin)) / yTicks);
 
   return (
-    <svg width={width} height={height} style={{ display: "block" }}>
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="xMidYMid meet"
+      style={{ display: "block", width: "100%", height: "auto", maxWidth: width }}
+    >
       {/* Grid + Y labels */}
       {yVals.map((v, i) => (
         <g key={`y${i}`}>

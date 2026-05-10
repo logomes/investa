@@ -20,7 +20,7 @@ export function KpiRowTributacao({ realEstate, portfolio }: Props) {
     : `Carteira paga +${formatPercent(absBurden, 2)} a mais`;
 
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       <KpiCard
         label="Imposto Imóvel"
         value={formatRs(realEstate.annualTax)}

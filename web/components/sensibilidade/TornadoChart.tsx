@@ -32,7 +32,7 @@ export function TornadoChart({ rows, base }: Props) {
         <h3 className="text-[13.5px] font-semibold text-ink">Tornado — sensibilidade do patrimônio</h3>
       </CardHeader>
       <CardContent>
-        <svg width={WIDTH} height={height} role="img" aria-label="Tornado de sensibilidade">
+        <svg viewBox={`0 0 ${WIDTH} ${height}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tornado de sensibilidade" style={{ display: "block", width: "100%", height: "auto", maxWidth: WIDTH }}>
           <text x={PAD_LEFT} y={PAD_TOP - 18} fill={COLOR_INK3} fontSize="10" textAnchor="start">
             {formatRsK(bounds.min)}
           </text>

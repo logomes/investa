@@ -21,7 +21,7 @@ export function DistributionCard({ realEstate, portfolio, target }: Props) {
         <h3 className="text-[13.5px] font-semibold text-ink">Distribuição final do patrimônio</h3>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
             <p className="text-[12px] font-medium text-ink mb-2">{portfolio.label}</p>
             <Histogram

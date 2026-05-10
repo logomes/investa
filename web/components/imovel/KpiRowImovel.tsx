@@ -19,7 +19,7 @@ export function KpiRowImovel({ re }: Props) {
   const yieldDelta = ny - gy;
 
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       <KpiCard
         label="Yield Bruto"
         value={formatPercent(gy, 2)}

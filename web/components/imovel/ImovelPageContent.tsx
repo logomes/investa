@@ -19,7 +19,7 @@ export function ImovelPageContent() {
   if (sim.isLoading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <KpiSkeleton />
           <KpiSkeleton />
           <KpiSkeleton />
@@ -40,7 +40,7 @@ export function ImovelPageContent() {
     <div className="space-y-6">
       <KpiRowImovel re={re} />
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <CostBreakdownCard re={re} />
         <IncomeVsCostsCard re={re} />
       </div>
@@ -49,7 +49,7 @@ export function ImovelPageContent() {
         <FinancingCard re={re} simulation={realEstateSim} />
       )}
 
-      <div className="grid grid-cols-[1.6fr_1fr] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-6">
         <EvolutionCard simulation={realEstateSim} />
         <div className="space-y-6">
           <AcquisitionCostsCard re={re} />

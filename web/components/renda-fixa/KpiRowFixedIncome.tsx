@@ -18,7 +18,7 @@ export function KpiRowFixedIncome() {
 
   if (macro.isLoading) {
     return (
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiSkeleton />
         <KpiSkeleton />
         <KpiSkeleton />
@@ -36,7 +36,7 @@ export function KpiRowFixedIncome() {
   const irRate = effectiveIrRate(positions, today);
 
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       <KpiCard
         label="Total alocado RF"
         value={total > 0 ? formatRsK(total) : "—"}

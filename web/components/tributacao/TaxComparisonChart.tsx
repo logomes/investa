@@ -35,7 +35,7 @@ export function TaxComparisonChart({ realEstate, portfolio }: Props) {
         <h3 className="text-[13.5px] font-semibold text-ink">Receita bruta vs imposto</h3>
       </CardHeader>
       <CardContent>
-        <svg width={WIDTH} height={HEIGHT} role="img" aria-label="Comparativo tributário">
+        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Comparativo tributário" style={{ display: "block", width: "100%", height: "auto", maxWidth: WIDTH }}>
           {rows.map((entry, i) => {
             const yCenter = PAD_TOP + i * ROW_HEIGHT + ROW_HEIGHT / 2;
             const yBar = yCenter - BAR_HEIGHT / 2;

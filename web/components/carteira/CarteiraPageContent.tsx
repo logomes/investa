@@ -16,7 +16,7 @@ export function CarteiraPageContent() {
   if (macro.isLoading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <KpiSkeleton /><KpiSkeleton /><KpiSkeleton /><KpiSkeleton />
         </div>
       </div>
@@ -30,7 +30,7 @@ export function CarteiraPageContent() {
   return (
     <div className="space-y-6">
       <KpiRowCarteira pf={scenario.portfolio} />
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AllocationDonutCard pf={scenario.portfolio} />
         <AllocationTable pf={scenario.portfolio} />
       </div>

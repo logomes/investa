@@ -34,7 +34,7 @@ export function Histogram({
 
   if (values.length === 0) {
     return (
-      <svg width={width} height={height}>
+      <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" style={{ display: "block", width: "100%", height: "auto", maxWidth: width }}>
         <text x={width / 2} y={height / 2} textAnchor="middle" fill={COLOR_INK3} fontSize="11">
           Sem dados
         </text>
@@ -60,7 +60,7 @@ export function Histogram({
   }
 
   return (
-    <svg width={width} height={height} role="img" aria-label="Distribuição final">
+    <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Distribuição final" style={{ display: "block", width: "100%", height: "auto", maxWidth: width }}>
       {/* Bars */}
       {bins.map((b, i) => {
         const x = xOf(b.start);
