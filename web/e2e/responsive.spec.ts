@@ -71,6 +71,31 @@ test.describe("Responsive KPI grid", () => {
   });
 });
 
+test.describe("Phone viewport (393×852, iPhone 15 Pro portrait)", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 852 });
+    await mockBackend(page);
+  });
+
+  test("the desktop-only splash is no longer triggered", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByText("Use tablet ou desktop")).not.toBeVisible();
+  });
+
+  test("the four KPI cards stack to a single column", async ({ page }) => {
+    await page.goto("/");
+    await page.getByText("Patrimônio projetado", { exact: false }).first().waitFor();
+    const grid = await page
+      .getByText("Patrimônio projetado", { exact: false })
+      .first()
+      .evaluate((el) => {
+        const row = el.closest(".grid") as HTMLElement | null;
+        return row ? getComputedStyle(row).gridTemplateColumns : "";
+      });
+    expect(grid.split(" ").length).toBe(1);
+  });
+});
+
 test.describe("Desktop shell (1440x900)", () => {
   test.beforeEach(async ({ page }) => {
     // Default project viewport is already 1440x900 from playwright.config.ts.
