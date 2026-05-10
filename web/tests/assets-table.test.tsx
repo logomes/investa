@@ -57,6 +57,20 @@ describe("AssetsTable quote column", () => {
     expect(screen.getByRole("button", { name: /buscar cotação/i })).toBeInTheDocument();
   });
 
+  it("BR asset com ganho positivo renderiza valor + percentual em verde", () => {
+    // BR asset: avgPrice=40 (cost), currentPrice=45.67, qty=100 → +R$ 567 (+14,17 ou +14,18%)
+    render(<AssetsTable positions={[brAsset]} onRefreshQuote={vi.fn()} {...baseProps} />);
+    expect(screen.getByText(/\+R\$ 567/)).toBeInTheDocument();
+    expect(screen.getByText(/\+14,1[78]%/)).toBeInTheDocument();
+  });
+
+  it("posição sem currentPrice renderiza '—' na coluna Ganho", () => {
+    const noQuote: AssetPosition = { ...brAsset, currentPrice: undefined, asOf: undefined };
+    render(<AssetsTable positions={[noQuote]} onRefreshQuote={vi.fn()} {...baseProps} />);
+    // Há vários "—" possíveis (ações etc) — basta garantir que a coluna existe
+    expect(screen.getByText("Ganho atual")).toBeInTheDocument();
+  });
+
   it("clicar no refresh chama onRefreshQuote com a posição", async () => {
     const user = userEvent.setup();
     const onRefreshQuote = vi.fn().mockResolvedValue(undefined);

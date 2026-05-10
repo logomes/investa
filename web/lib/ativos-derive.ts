@@ -7,6 +7,26 @@ export function positionValueBRL(p: AssetPosition, macro: MacroOut): number {
   return p.currency === "USD" ? localValue * macro.usdBrl : localValue;
 }
 
+/**
+ * Unrealized gain since the avgPrice was paid. Returns null when we don't
+ * have a current quote — the caller should render an em-dash in that case.
+ *
+ * For US assets, the BRL gain is computed in native currency first then
+ * converted with the live FX, so the rendered value reflects asset-level
+ * P&L, not USD/BRL drift on the cost basis.
+ */
+export type UnrealizedGain = { gainBRL: number; gainPct: number };
+
+export function unrealizedGain(p: AssetPosition, macro: MacroOut): UnrealizedGain | null {
+  if (!p.currentPrice || !Number.isFinite(p.currentPrice)) return null;
+  const cost = p.quantity * p.avgPrice;
+  const market = p.quantity * p.currentPrice;
+  const fx = p.currency === "USD" ? macro.usdBrl : 1;
+  const gainBRL = (market - cost) * fx;
+  const gainPct = cost > 0 ? (market - cost) / cost : 0;
+  return { gainBRL, gainPct };
+}
+
 export type AtivosKpis = {
   totalAllocated: number;
   blendedYield: number;

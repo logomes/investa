@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Plus, Upload, Download, Pencil, Trash2, RefreshCw, Loader2, FileSpreadsheet } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { positionValueBRL } from "@/lib/ativos-derive";
+import { positionValueBRL, unrealizedGain } from "@/lib/ativos-derive";
 import { ASSET_CLASS_META } from "@/lib/ativos-schema";
 import type { AssetPosition } from "@/lib/ativos-schema";
 import type { MacroOut } from "@/lib/api-types";
@@ -73,7 +73,7 @@ export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImpor
           </div>
         ) : (
           <div className="overflow-x-auto -mx-2 sm:mx-0">
-          <table className="w-full min-w-[760px] text-[12px]">
+          <table className="w-full min-w-[840px] text-[12px]">
             <thead>
               <tr className="text-ink-3 border-b border-line-soft">
                 <th className="text-left font-normal py-2 pr-2">Ticker</th>
@@ -83,6 +83,7 @@ export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImpor
                 <th className="text-right font-normal py-2 px-2">Preço médio</th>
                 <th className="text-right font-normal py-2 px-2">Preço atual</th>
                 <th className="text-right font-normal py-2 px-2">Valor (BRL)</th>
+                <th className="text-right font-normal py-2 px-2">Ganho atual</th>
                 <th className="text-right font-normal py-2 px-2">DY esp.</th>
                 <th className="text-right font-normal py-2 pl-2">Ações</th>
               </tr>
@@ -91,6 +92,7 @@ export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImpor
               {positions.map((p) => {
                 const meta = ASSET_CLASS_META[p.assetClass];
                 const valueBRL = positionValueBRL(p, macro);
+                const gain = unrealizedGain(p, macro);
                 const isRefreshing = !!refreshing[p.id];
                 const currentBRL = p.currentPrice && p.currency === "USD"
                   ? p.currentPrice * macro.usdBrl
@@ -149,6 +151,16 @@ export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImpor
                       )}
                     </td>
                     <td className="text-right py-2 px-2 tabular text-ink">{formatRs(valueBRL)}</td>
+                    <td className="text-right py-2 px-2 tabular">
+                      {gain ? (
+                        <div className={`leading-tight ${gain.gainBRL >= 0 ? "text-brand-bright" : "text-accent-coral"}`}>
+                          <div>{gain.gainBRL >= 0 ? "+" : ""}{formatRs(gain.gainBRL)}</div>
+                          <div className="text-[10.5px] opacity-80">{gain.gainPct >= 0 ? "+" : ""}{formatPercent(gain.gainPct, 2)}</div>
+                        </div>
+                      ) : (
+                        <span className="text-ink-3">—</span>
+                      )}
+                    </td>
                     <td className="text-right py-2 px-2 tabular text-ink-2">{formatPercent(p.expectedYield, 2)}</td>
                     <td className="text-right py-2 pl-2">
                       <div className="flex items-center justify-end gap-1">

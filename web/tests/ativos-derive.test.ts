@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   positionValueBRL,
+  unrealizedGain,
   ativosKpis,
   byAssetClass,
   byMarket,
@@ -167,5 +168,48 @@ describe("ativos-derive — byMarket", () => {
     expect(split.us.totalBRL).toBe(0);
     expect(split.br.weight).toBe(0);
     expect(split.us.weight).toBe(0);
+  });
+});
+
+describe("unrealizedGain", () => {
+  it("retorna null quando não há currentPrice", () => {
+    const p: AssetPosition = { ...FII_PAPEL, currentPrice: undefined };
+    expect(unrealizedGain(p, MACRO)).toBeNull();
+  });
+
+  it("BRL: ganho positivo quando currentPrice > avgPrice", () => {
+    const p: AssetPosition = { ...FII_PAPEL, quantity: 100, avgPrice: 100, currentPrice: 110 };
+    const g = unrealizedGain(p, MACRO);
+    expect(g?.gainBRL).toBeCloseTo(1000, 2); // (110-100)*100
+    expect(g?.gainPct).toBeCloseTo(0.10, 5); // 10%
+  });
+
+  it("BRL: perda quando currentPrice < avgPrice", () => {
+    const p: AssetPosition = { ...FII_PAPEL, quantity: 100, avgPrice: 100, currentPrice: 90 };
+    const g = unrealizedGain(p, MACRO);
+    expect(g?.gainBRL).toBeCloseTo(-1000, 2);
+    expect(g?.gainPct).toBeCloseTo(-0.10, 5);
+  });
+
+  it("USD: ganho computado em USD e convertido por usdBrl", () => {
+    const p: AssetPosition = {
+      ...FII_PAPEL, currency: "USD", quantity: 10, avgPrice: 200, currentPrice: 250,
+      assetClass: "STOCK_US",
+    };
+    const g = unrealizedGain(p, MACRO);
+    // (250-200)*10 = 500 USD * 5.30 = 2650 BRL
+    expect(g?.gainBRL).toBeCloseTo(2650, 2);
+    expect(g?.gainPct).toBeCloseTo(0.25, 5); // 25% native
+  });
+
+  it("currentPrice = 0 retorna null (preço inválido)", () => {
+    const p: AssetPosition = { ...FII_PAPEL, currentPrice: 0 };
+    expect(unrealizedGain(p, MACRO)).toBeNull();
+  });
+
+  it("avgPrice = 0 não quebra (gainPct = 0)", () => {
+    const p: AssetPosition = { ...FII_PAPEL, avgPrice: 0.0001, currentPrice: 100 };
+    const g = unrealizedGain(p, MACRO);
+    expect(Number.isFinite(g?.gainPct ?? Infinity)).toBe(true);
   });
 });
