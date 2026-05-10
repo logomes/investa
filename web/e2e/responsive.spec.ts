@@ -41,6 +41,36 @@ test.describe("Responsive shell (tablet 820x1180)", () => {
   });
 });
 
+test.describe("Responsive KPI grid", () => {
+  test.beforeEach(async ({ page }) => {
+    await mockBackend(page);
+  });
+
+  test("at sm (800px) the four KPI cards stack 2 columns", async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 1180 });
+    await page.goto("/");
+    await page.getByText("Patrimônio projetado", { exact: false }).first().waitFor();
+    const kpiCard = page.getByText("Patrimônio projetado", { exact: false }).first();
+    const grid = await kpiCard.evaluate((el) => {
+      const row = el.closest(".grid") as HTMLElement | null;
+      return row ? getComputedStyle(row).gridTemplateColumns : "";
+    });
+    expect(grid.split(" ").length).toBe(2);
+  });
+
+  test("at xl (1440px) the four KPI cards are 4 columns wide", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    await page.getByText("Patrimônio projetado", { exact: false }).first().waitFor();
+    const kpiCard = page.getByText("Patrimônio projetado", { exact: false }).first();
+    const grid = await kpiCard.evaluate((el) => {
+      const row = el.closest(".grid") as HTMLElement | null;
+      return row ? getComputedStyle(row).gridTemplateColumns : "";
+    });
+    expect(grid.split(" ").length).toBe(4);
+  });
+});
+
 test.describe("Desktop shell (1440x900)", () => {
   test.beforeEach(async ({ page }) => {
     // Default project viewport is already 1440x900 from playwright.config.ts.
