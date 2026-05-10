@@ -94,7 +94,14 @@ export function planContribution(
   const suggestions = new Map<AssetClass, number>();
   if (totalPositiveDeficit > 0 && safeAporte > 0) {
     for (const [cls, deficit] of Array.from(deficits.entries())) {
-      const share = deficit > 0 ? (deficit / totalPositiveDeficit) * safeAporte : 0;
+      // Overweighted classes (deficit ≤ 0) get nothing — never push them
+      // further from the target. This guards against Math.min(share, deficit)
+      // returning a large negative number when deficit < 0.
+      if (deficit <= 0) {
+        suggestions.set(cls, 0);
+        continue;
+      }
+      const share = (deficit / totalPositiveDeficit) * safeAporte;
       suggestions.set(cls, Math.min(share, deficit)); // don't overshoot the target
     }
     // Any leftover (when target was reached for all positive deficits)
@@ -102,11 +109,23 @@ export function planContribution(
     suggestions.forEach((v) => { allocated += v; });
     const leftover = safeAporte - allocated;
     if (leftover > 0.01) {
-      // Distribute leftover by current weight
-      for (const [cls, currentValue] of Array.from(grouped.entries())) {
-        const w = totalCurrent > 0 ? currentValue / totalCurrent : 1 / grouped.size;
-        suggestions.set(cls, (suggestions.get(cls) ?? 0) + leftover * w);
+      // Distribute leftover proportionally to remaining (still-underweight)
+      // deficits — never to overweighted classes.
+      const remainingByDeficit = Array.from(deficits.entries()).filter(([cls, d]) => {
+        const used = suggestions.get(cls) ?? 0;
+        return d > 0 && used < d;
+      });
+      const remainingTotal = remainingByDeficit.reduce((s, [cls, d]) => s + (d - (suggestions.get(cls) ?? 0)), 0);
+      if (remainingTotal > 0) {
+        for (const [cls, d] of remainingByDeficit) {
+          const room = d - (suggestions.get(cls) ?? 0);
+          const extra = (room / remainingTotal) * leftover;
+          suggestions.set(cls, (suggestions.get(cls) ?? 0) + extra);
+        }
       }
+      // If even after this the leftover doesn't fully fit (target reached
+      // for all underweight classes), the remainder stays unallocated —
+      // any other treatment would push us away from target.
     }
   } else {
     for (const [cls, currentValue] of Array.from(grouped.entries())) {

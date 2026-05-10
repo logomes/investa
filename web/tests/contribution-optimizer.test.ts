@@ -90,6 +90,27 @@ describe("planContribution", () => {
     expect(plan.totalProjectedBRL).toBe(plan.totalCurrentBRL);
   });
 
+  it("regression: classe super-alocada NÃO recebe parte do aporte", () => {
+    // Cenário real: 4 classes, FII em 75% (super), outras 3 sub-alocadas
+    const positions: AssetPosition[] = [
+      pos({ ticker: "A", assetClass: "ACAO_BR_DIVIDENDO", quantity: 100, avgPrice: 815 }),  // 81,500 (~21%)
+      pos({ ticker: "B", assetClass: "STOCK_US", currency: "USD", quantity: 1, avgPrice: 1850 }), // 9,620 BRL (~2.5%)
+      pos({ ticker: "C", assetClass: "ETF_BR", quantity: 1, avgPrice: 6155 }),               // 6,155 (~1.6%)
+      pos({ ticker: "D", assetClass: "FII_PAPEL", quantity: 1, avgPrice: 287000 }),          // 287,000 (~74.6%)
+    ];
+    const plan = planContribution(positions, macro, 1000, "balanced");
+    const fii = plan.byClass.find((c) => c.assetClass === "FII_PAPEL");
+    // FII está super-alocado — não deve receber centavo.
+    expect(fii?.suggestedR$).toBe(0);
+    // Soma das sugestões das classes sub-alocadas fecha com o aporte.
+    const sum = plan.byClass.reduce((s, c) => s + c.suggestedR$, 0);
+    expect(sum).toBeCloseTo(1000, 1);
+    // A classe MAIS sub-alocada (ETF, gap maior) recebe MAIS aporte.
+    const etf = plan.byClass.find((c) => c.assetClass === "ETF_BR");
+    const acao = plan.byClass.find((c) => c.assetClass === "ACAO_BR_DIVIDENDO");
+    expect(etf!.suggestedR$).toBeGreaterThan(acao!.suggestedR$);
+  });
+
   it("soma das sugestões fecha com o aporte (dentro de tolerância)", () => {
     const positions: AssetPosition[] = [
       pos({ ticker: "A", assetClass: "ACAO_BR_DIVIDENDO", quantity: 100, avgPrice: 30 }),
