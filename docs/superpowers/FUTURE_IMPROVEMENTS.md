@@ -26,11 +26,11 @@ GoalCard goal value is now click-to-edit: button → input pre-filled with curre
 
 ## Ativos
 
-### B3 import (Posição + Movimentação) — ✅ shipped 2026-05-09
+### B3 import — ✅ shipped 2026-05-09
 
-`/ativos` ganha botão "Importar B3" que aceita até 2 arquivos do portal Investidor B3 (CSV ou XLSX): `Minha Carteira → Investimentos` (Posição) e `Extratos → Movimentação`. Posição agrega quantidades entre brokers (BTG, Nu, etc) e classifica via Tipo + ticker. Movimentação extrai trades de "Transferência - Liquidação" e computa preço médio ponderado segundo o método fiscal brasileiro. Merge por ticker preserva posições manuais (US stocks, FIIs custom). Avisa se a Movimentação cobre menos de 24 meses (sinaliza que avgPrice pode ser parcial).
+`/ativos` "Importar B3" aceita 4 tipos de export do portal Investidor B3 (CSV ou XLSX): **Posição** (Minha Carteira → Investimentos), **Movimentação**, **Negociação** e **Eventos** (Extratos → ...). Posição agrega quantidades entre brokers e classifica via sheet name + Tipo. Negociação é a fonte preferida pra preço médio (cleaner que Movimentação) e normaliza o suffix `F` do Mercado Fracionário (BBDC3F → BBDC3). Eventos popula um banner "Renda agendada" persistente acima da tabela com total de proventos futuros + número de pagamentos + ticker count + range de datas.
 
-**Deferido (próxima rodada):** suporte a Tesouro Direto, Eventos Corporativos (split/inplit/bonificação) que afetam quantidade histórica, integração com Pluggy/Belvo aggregators pra atualização contínua sem upload manual.
+**Deferido:** Tesouro Direto (aba separada do portal, formato distinto), eventos corporativos quantitativos (split/inplit/bonificação — aparecem em Movimentação como `Bonificação em Ativos`/`Desdobro` mas o user não tem amostra ainda), integração com Pluggy/Belvo aggregators pra atualização contínua sem upload manual.
 
 ### Auto-fetch current quote (`currentPrice` + `asOf`) on add/edit — ✅ shipped 2026-05-09
 
