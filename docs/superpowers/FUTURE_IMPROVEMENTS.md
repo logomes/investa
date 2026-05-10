@@ -64,11 +64,9 @@ Macro is cached for 1h server-side. Cloudflare CDN cache could absorb burst traf
 
 **Still deferred:** wiring into `web-ci.yml` (needs chromium browser caching strategy in CI to avoid 100MB downloads per run) and broader coverage (carteira, ativos, exportar pages).
 
-### API integration tests with TestClient
+### API integration tests with TestClient — ✅ shipped 2026-05-09
 
-**Phase target:** Could land anytime
-
-Backend has unit tests but no end-to-end flow tests (`POST /simulate` → `POST /simulate/monte-carlo` → assert response shapes match Pydantic).
+`api/tests/test_integration.py` covers cross-endpoint invariants the unit tests miss: simulate median falls inside MC p10..p90 band, `/portfolio/defaults` round-trips through `/simulate`, financing scenario produces monotonically-decreasing debtBalance to ~0, seeded MC is byte-identical on repeats, simulate is idempotent for identical payloads, horizon change yields consistent array lengths across both endpoints.
 
 ## Mobile
 
