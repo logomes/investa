@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Shell } from "@/components/shell/Shell";
 import { Providers } from "./providers";
@@ -21,6 +21,16 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "investa — Análise patrimonial",
   description: "Imóvel vs Carteira diversificada — análise patrimonial",
+};
+
+// viewport-fit=cover prevents iOS Safari from subtracting the Dynamic
+// Island / home-indicator safe areas from the layout viewport width.
+// Without this, iPhone 15 Pro in landscape reports ~756px instead of 852px
+// and falsely triggers the desktop-only gate.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
