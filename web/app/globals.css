@@ -143,20 +143,10 @@
   }
 }
 
-/* Mobile gate — only the smallest viewports get the desktop-only screen.
-   Tablet (768-1279) uses the same shell with a collapsed off-canvas sidebar. */
+/* The .desktop-only-warning is no longer triggered — kept only as a fallback
+   in case a future viewport-detection bug forces it back. */
 @layer utilities {
   .desktop-only-warning {
     display: none;
-  }
-
-  @media (max-width: 767px) {
-    .desktop-only-warning {
-      display: flex;
-    }
-
-    .shell-grid {
-      display: none;
-    }
   }
 }

@@ -13,7 +13,8 @@ export function SensibilidadeTable({ rows }: Props) {
         <h3 className="text-[13.5px] font-semibold text-ink">Detalhamento</h3>
       </CardHeader>
       <CardContent>
-        <table className="w-full text-[12px]">
+        <div className="overflow-x-auto -mx-2 sm:mx-0">
+        <table className="w-full min-w-[480px] text-[12px]">
           <thead>
             <tr className="text-ink-3 border-b border-line-soft">
               <th className="text-left font-normal py-2 pr-2">Parâmetro</th>
@@ -39,6 +40,7 @@ export function SensibilidadeTable({ rows }: Props) {
             })}
           </tbody>
         </table>
+        </div>
       </CardContent>
     </Card>
   );

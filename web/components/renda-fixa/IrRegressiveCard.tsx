@@ -16,7 +16,8 @@ export function IrRegressiveCard() {
         <p className="text-[11px] text-ink-3 mt-0.5">tabela vigente</p>
       </CardHeader>
       <CardContent>
-        <table className="w-full text-[12px]">
+        <div className="overflow-x-auto -mx-2 sm:mx-0">
+        <table className="w-full min-w-[440px] text-[12px]">
           <thead>
             <tr className="text-[10.5px] uppercase tracking-wider text-ink-3 font-semibold">
               <th className="text-left py-1 font-semibold">Prazo</th>
@@ -36,6 +37,7 @@ export function IrRegressiveCard() {
             ))}
           </tbody>
         </table>
+        </div>
       </CardContent>
     </Card>
   );

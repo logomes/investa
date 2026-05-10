@@ -55,8 +55,8 @@ export function ExportPreviewCard({ rows, horizonYears }: Props) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="max-h-[440px] overflow-y-auto">
-          <table className="w-full text-[12px]">
+        <div className="max-h-[440px] overflow-auto -mx-2 sm:mx-0">
+          <table className="w-full min-w-[560px] text-[12px]">
             <thead className="sticky top-0 bg-bg-2 z-10">
               <tr className="text-ink-3 border-b border-line-soft">
                 <th className="text-left font-normal py-2 pr-2">Cenário</th>

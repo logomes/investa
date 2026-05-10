@@ -22,7 +22,8 @@ export function ComparativoTable() {
         <h3 className="text-[13.5px] font-semibold text-ink">Comparativo final · ano {horizon}</h3>
         <span className="text-[11px] text-ink-3">cenário base</span>
       </div>
-      <table className="w-full text-[13px]">
+      <div className="overflow-x-auto -mx-2 sm:mx-0">
+      <table className="w-full min-w-[440px] text-[13px]">
         <thead>
           <tr className="text-[11px] font-semibold uppercase tracking-wider text-ink-3">
             <th className="text-left py-2 font-semibold">Cenário</th>
@@ -54,6 +55,7 @@ export function ComparativoTable() {
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

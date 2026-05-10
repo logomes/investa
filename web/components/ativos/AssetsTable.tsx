@@ -72,7 +72,8 @@ export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImpor
             <p className="text-xs text-ink-4 mt-1">Adicione a primeira ou importe via CSV.</p>
           </div>
         ) : (
-          <table className="w-full text-[12px]">
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+          <table className="w-full min-w-[760px] text-[12px]">
             <thead>
               <tr className="text-ink-3 border-b border-line-soft">
                 <th className="text-left font-normal py-2 pr-2">Ticker</th>
@@ -176,6 +177,7 @@ export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImpor
               })}
             </tbody>
           </table>
+          </div>
         )}
       </CardContent>
     </Card>
