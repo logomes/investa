@@ -55,6 +55,7 @@ async function handleB3Import(
   existing: AssetPosition[],
   upsert: (p: Omit<AssetPosition, "color"> & { color?: string }) => void,
   replaceScheduledEvents: (events: B3ScheduledEvent[]) => void,
+  replaceTrades: (trades: B3Trade[]) => void,
 ): Promise<void> {
   const positions: ParsedB3Position[] = [];
   const trades: B3Trade[] = [];
@@ -150,6 +151,9 @@ async function handleB3Import(
   if (events.length > 0) {
     replaceScheduledEvents(events);
   }
+  if (trades.length > 0) {
+    replaceTrades(trades);
+  }
 
   for (const p of positions) {
     const existingPos = existing.find((x) => x.ticker === p.ticker);
@@ -200,6 +204,7 @@ export function AtivosPageContent() {
   const remove = useAssetsStore((s) => s.removePosition);
   const replaceAll = useAssetsStore((s) => s.replaceAllPositions);
   const replaceScheduledEvents = useAssetsStore((s) => s.replaceScheduledEvents);
+  const replaceTrades = useAssetsStore((s) => s.replaceTrades);
   const macro = useMacro();
   const fileRef = useRef<HTMLInputElement>(null);
   const b3FileRef = useRef<HTMLInputElement>(null);
@@ -282,7 +287,7 @@ export function AtivosPageContent() {
           const files = e.target.files ? Array.from(e.target.files) : [];
           if (files.length === 0) return;
           try {
-            await handleB3Import(files, positions, upsert, replaceScheduledEvents);
+            await handleB3Import(files, positions, upsert, replaceScheduledEvents, replaceTrades);
           } finally {
             e.target.value = "";
           }
