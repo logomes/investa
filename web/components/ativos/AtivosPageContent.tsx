@@ -29,6 +29,7 @@ import { KpiRowAtivos } from "./KpiRowAtivos";
 import { ByAssetClassCard } from "./ByAssetClassCard";
 import { ByMarketCard } from "./ByMarketCard";
 import { ScheduledEventsBanner } from "./ScheduledEventsBanner";
+import { ContributionPlanner } from "./ContributionPlanner";
 import type { AssetPosition } from "@/lib/ativos-schema";
 
 type SheetSlice = { name: string; rows: (string | number | null)[][] };
@@ -291,6 +292,7 @@ export function AtivosPageContent() {
         <ByAssetClassCard groups={groups} />
         <ByMarketCard split={split} macro={macro.data!} />
       </div>
+      <ContributionPlanner positions={positions} macro={macro.data!} />
       <AssetDialog
         open={dialog.open}
         mode={dialog.mode}
