@@ -2,15 +2,33 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { X } from "lucide-react";
 import { NAV_GROUPS } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
-export function Sidebar() {
+type Props = {
+  /** When the viewport is below xl, the sidebar is an off-canvas drawer.
+   *  This flag controls whether it's visible. Ignored above xl (always shown). */
+  mobileOpen?: boolean;
+  /** Invoked when the user dismisses the drawer (close button, route change, Esc, backdrop). */
+  onClose?: () => void;
+};
+
+export function Sidebar({ mobileOpen = false, onClose }: Props) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-60 h-screen bg-bg-0 border-r border-line-soft flex flex-col flex-shrink-0">
-      {/* Logo */}
+    <aside
+      className={cn(
+        "w-60 h-screen bg-bg-0 border-r border-line-soft flex flex-col flex-shrink-0",
+        // ≥xl: in flow; <xl: fixed off-canvas drawer.
+        "xl:relative xl:translate-x-0 xl:transition-none",
+        "fixed inset-y-0 left-0 z-40 transition-transform",
+        mobileOpen ? "translate-x-0" : "-translate-x-full xl:translate-x-0",
+      )}
+      aria-hidden={!mobileOpen ? undefined : false}
+    >
+      {/* Logo + mobile-only close button */}
       <div className="px-5 py-6 flex items-center gap-3">
         <div
           className="w-9 h-9 rounded-[10px] flex items-center justify-center text-bg-0 font-bold"
@@ -18,10 +36,20 @@ export function Sidebar() {
         >
           i
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold text-ink leading-tight">investa</div>
           <div className="text-[11px] text-ink-3 leading-tight">análise patrimonial</div>
         </div>
+        {onClose && (
+          <button
+            type="button"
+            aria-label="Fechar menu"
+            onClick={onClose}
+            className="xl:hidden w-8 h-8 rounded-md hover:bg-bg-2 flex items-center justify-center text-ink-3 hover:text-ink"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Nav groups */}

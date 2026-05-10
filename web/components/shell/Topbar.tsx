@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Search, Sparkles } from "lucide-react";
+import { Menu, Search, Sparkles } from "lucide-react";
 import { NAV_BY_HREF } from "@/lib/nav";
 import { Button } from "@/components/ui/button";
 import { useScenarioStore } from "@/lib/store";
@@ -12,13 +12,29 @@ function deriveTitle(pathname: string): string {
   return item?.label ?? "investa";
 }
 
-export function Topbar() {
+type Props = {
+  /** Invoked when the hamburger is clicked (only visible below xl). */
+  onMenuClick?: () => void;
+};
+
+export function Topbar({ onMenuClick }: Props) {
   const pathname = usePathname();
   const title = deriveTitle(pathname);
   const setDrawerOpen = useScenarioStore((s) => s.setDrawerOpen);
 
   return (
-    <header className="h-16 sticky top-0 z-10 backdrop-blur-[8px] bg-bg-1/60 border-b border-line-soft flex items-center px-6 gap-4">
+    <header className="h-16 sticky top-0 z-10 backdrop-blur-[8px] bg-bg-1/60 border-b border-line-soft flex items-center px-4 sm:px-6 gap-3">
+      {onMenuClick && (
+        <button
+          type="button"
+          aria-label="Abrir menu"
+          onClick={onMenuClick}
+          className="xl:hidden w-9 h-9 -ml-1 rounded-lg hover:bg-bg-2 flex items-center justify-center text-ink-2 hover:text-ink"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      )}
+
       {/* Title + breadcrumb */}
       <div className="flex-shrink-0 min-w-0">
         <h1 className="text-[19px] font-bold tracking-[-0.015em] text-ink leading-tight truncate">
@@ -29,8 +45,8 @@ export function Topbar() {
         </p>
       </div>
 
-      {/* Search */}
-      <div className="flex-1 flex justify-center">
+      {/* Search — hidden on small to give the title room; visible from md up */}
+      <div className="hidden md:flex flex-1 justify-center">
         <div className="relative w-full max-w-[360px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-3" />
           <input
@@ -44,6 +60,9 @@ export function Topbar() {
         </div>
       </div>
 
+      {/* Push actions to the right when search is hidden */}
+      <div className="flex-1 md:hidden" />
+
       {/* Actions */}
       <div className="flex-shrink-0 flex items-center gap-2">
         <Button
@@ -52,7 +71,8 @@ export function Topbar() {
           style={{ background: "linear-gradient(135deg, #2af0c4 0%, #00b894 100%)" }}
         >
           <Sparkles className="w-4 h-4 mr-1.5" />
-          Simular cenário
+          <span className="hidden sm:inline">Simular cenário</span>
+          <span className="sm:hidden">Simular</span>
         </Button>
       </div>
     </header>

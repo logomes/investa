@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { Sidebar } from "@/components/shell/Sidebar";
-import { Topbar } from "@/components/shell/Topbar";
-import { ScenarioDrawer } from "@/components/scenario-drawer/ScenarioDrawer";
+import { Shell } from "@/components/shell/Shell";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -33,25 +31,18 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="font-sans antialiased">
-        {/* Desktop-only message */}
+        {/* Mobile-only fallback (<768px). Tablet+ uses the responsive Shell. */}
         <div className="desktop-only-warning min-h-screen flex items-center justify-center px-6 text-center">
           <div className="max-w-sm">
-            <h1 className="text-xl font-bold text-ink mb-2">Use desktop ≥1280px</h1>
+            <h1 className="text-xl font-bold text-ink mb-2">Use tablet ou desktop</h1>
             <p className="text-sm text-ink-2">
-              O dashboard é desenhado para telas ≥1280px. Mobile vem em uma fase futura.
+              O dashboard é desenhado para telas ≥768px. Mobile-first vem em uma fase futura.
             </p>
           </div>
         </div>
 
         <Providers>
-          <div className="shell-grid relative z-[1] flex min-h-screen">
-            <Sidebar />
-            <main className="flex-1 flex flex-col min-w-0">
-              <Topbar />
-              <div className="flex-1 px-8 py-6">{children}</div>
-            </main>
-          </div>
-          <ScenarioDrawer />
+          <Shell>{children}</Shell>
         </Providers>
       </body>
     </html>
