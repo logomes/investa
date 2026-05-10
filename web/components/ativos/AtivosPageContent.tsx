@@ -123,17 +123,23 @@ async function handleB3Import(
     const existingPos = existing.find((x) => x.ticker === p.ticker);
     const meta = ASSET_CLASS_META[p.assetClass];
     const realAvg = avgCosts.get(p.ticker);
+    // Trust B3's asset class — it's authoritative (sheet name on the export
+    // tells us if a ticker is in Acoes, ETF, or Fundo de Investimento). When
+    // the class changes, also reset currency/yield/capitalGain to the new
+    // class defaults instead of carrying forward defaults that belonged to a
+    // wrong classification.
+    const classChanged = existingPos && existingPos.assetClass !== p.assetClass;
     upsert({
       id: existingPos?.id ?? crypto.randomUUID(),
       ticker: p.ticker,
-      assetClass: existingPos?.assetClass ?? p.assetClass,
+      assetClass: p.assetClass,
       currency: "BRL",
       quantity: p.quantity,
       avgPrice: realAvg ?? existingPos?.avgPrice ?? p.closingPrice,
       currentPrice: p.closingPrice,
       asOf: p.asOf,
-      expectedYield: existingPos?.expectedYield ?? meta.defaultYield,
-      capitalGain: existingPos?.capitalGain ?? meta.defaultCapitalGain,
+      expectedYield: classChanged ? meta.defaultYield : existingPos?.expectedYield ?? meta.defaultYield,
+      capitalGain: classChanged ? meta.defaultCapitalGain : existingPos?.capitalGain ?? meta.defaultCapitalGain,
       color: existingPos?.color,
     });
   }
