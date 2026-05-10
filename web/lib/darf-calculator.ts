@@ -195,10 +195,14 @@ export function computeMonthlyDarf(
 
 /**
  * Helper to build a tickerToClass lookup from current positions.
- * Falls back to null when the ticker isn't in the position list (sold all).
+ * Falls back to inferAssetClass(ticker) when the ticker isn't in the
+ * position list (typical case: position was fully sold and no longer
+ * shows up — but we still need to classify the sell for DARF).
  */
+import { inferAssetClass } from "./ativos-classify";
+
 export function tickerToClassMap(positions: readonly AssetPosition[]): (ticker: string) => AssetClass | null {
   const map = new Map<string, AssetClass>();
   for (const p of positions) map.set(p.ticker.toUpperCase(), p.assetClass);
-  return (ticker) => map.get(ticker.toUpperCase()) ?? null;
+  return (ticker) => map.get(ticker.toUpperCase()) ?? inferAssetClass(ticker);
 }

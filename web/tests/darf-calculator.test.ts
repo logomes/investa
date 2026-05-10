@@ -151,6 +151,15 @@ describe("tickerToClassMap", () => {
     const lookup = tickerToClassMap(positions);
     expect(lookup("petr4")).toBe("ACAO_BR_DIVIDENDO");
     expect(lookup("PETR4")).toBe("ACAO_BR_DIVIDENDO");
-    expect(lookup("ZZZZ4")).toBeNull();
+  });
+
+  it("ticker fora das posições cai pra inferAssetClass (suporta sells totais)", () => {
+    // Sells de ticker que foi vendido por completo (e não está mais em
+    // positions) ainda precisam ser classificados pra DARF — caso
+    // contrário a venda some do cálculo. Fallback: pattern do ticker.
+    const lookup = tickerToClassMap([]);
+    expect(lookup("BAZA3")).toBe("ACAO_BR_DIVIDENDO"); // *3 = ON
+    expect(lookup("ROXO34")).toBe("BDR");              // *34 = BDR
+    expect(lookup("HGCR11")).toBe("FII_PAPEL");        // *11 sem whitelist = FII
   });
 });
