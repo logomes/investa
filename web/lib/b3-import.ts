@@ -47,6 +47,20 @@ export type B3MovementsResult = {
   latestDate: string | null;
 };
 
+export type B3ScheduledEvent = {
+  ticker: string;
+  type: string; // "RENDIMENTO" / "DIVIDENDO" / "JUROS SOBRE CAPITAL PRÓPRIO" / "Reembolso - ..."
+  paymentDate: string; // ISO YYYY-MM-DD
+  quantity: number;
+  unitPrice: number;
+  netValue: number;
+};
+
+export type B3EventsResult = {
+  events: B3ScheduledEvent[];
+  errors: B3ImportError[];
+};
+
 export function isB3PositionHeader(row: readonly (string | null | undefined)[]): boolean {
   if (!row) return false;
   // Discriminator columns are enough — ações sheets have 14 cols, ETF/FII sheets 13.
@@ -235,6 +249,142 @@ export function parseB3Movements(rows: readonly (readonly (string | number | nul
   }
 
   return { trades, errors, earliestDate, latestDate };
+}
+
+// ---------- Negociação export ("Extratos → Negociação") ----------
+// Cleaner trade-only history: only Compra/Venda rows, no provent noise.
+// Tickers may carry an `F` suffix on the Mercado Fracionário (e.g. BBDC3F).
+// We normalize to the integer-market ticker (BBDC3) so the same asset
+// aggregates across whole-lot and fractional-lot trades.
+
+const NEGOCIACAO_HEADERS = ["Data do Negócio", "Tipo de Movimentação", "Código de Negociação", "Quantidade", "Preço"];
+
+export function isB3NegociacaoHeader(row: readonly (string | null | undefined)[]): boolean {
+  if (!row) return false;
+  return NEGOCIACAO_HEADERS.every((h) => row.includes(h));
+}
+
+function stripFractionalSuffix(ticker: string): string {
+  // "BBDC3F" → "BBDC3"; "TAEE11F" → "TAEE11"; "AAPL34" → "AAPL34" (no F)
+  const m = ticker.match(/^([A-Z0-9]*\d)F$/);
+  return m ? m[1] : ticker;
+}
+
+export function parseB3Negociacao(rows: readonly (readonly (string | number | null | undefined)[])[]): B3MovementsResult {
+  if (rows.length === 0) {
+    return { trades: [], errors: [{ row: 0, message: "arquivo vazio" }], earliestDate: null, latestDate: null };
+  }
+  const header = rows[0].map((c) => (typeof c === "string" ? c.trim() : ""));
+  if (!isB3NegociacaoHeader(header)) {
+    return { trades: [], errors: [{ row: 0, message: "cabeçalho não corresponde ao relatório B3 Negociação" }], earliestDate: null, latestDate: null };
+  }
+
+  const colIdx = (name: string) => header.indexOf(name);
+  const DATE = colIdx("Data do Negócio");
+  const TYPE = colIdx("Tipo de Movimentação");
+  const TICKER = colIdx("Código de Negociação");
+  const QTY = colIdx("Quantidade");
+  const PRICE = colIdx("Preço");
+
+  const trades: B3Trade[] = [];
+  const errors: B3ImportError[] = [];
+  let earliestDate: string | null = null;
+  let latestDate: string | null = null;
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    const tipoRaw = typeof row[TYPE] === "string" ? (row[TYPE] as string).trim() : "";
+    const side: "buy" | "sell" | null = tipoRaw === "Compra" ? "buy" : tipoRaw === "Venda" ? "sell" : null;
+    if (!side) continue;
+
+    const tickerRaw = typeof row[TICKER] === "string" ? (row[TICKER] as string).trim().toUpperCase() : "";
+    if (!tickerRaw) continue;
+    const ticker = stripFractionalSuffix(tickerRaw);
+
+    const dateRaw = typeof row[DATE] === "string" ? (row[DATE] as string) : "";
+    const date = parseBrDate(dateRaw);
+    if (!date) {
+      errors.push({ row: i + 1, message: `linha ${i + 1}: data inválida '${dateRaw}'` });
+      continue;
+    }
+
+    const qty = parseBrNumber(row[QTY]);
+    const price = parseBrNumber(row[PRICE]);
+    if (qty === null || qty <= 0 || price === null || price <= 0) continue;
+
+    trades.push({ ticker, side, quantity: qty, price, date });
+
+    if (!earliestDate || date < earliestDate) earliestDate = date;
+    if (!latestDate || date > latestDate) latestDate = date;
+  }
+
+  return { trades, errors, earliestDate, latestDate };
+}
+
+// ---------- Events export ("Extratos → Eventos") ----------
+// These are *scheduled future* income payments (RENDIMENTO/DIVIDENDO/JCP).
+// They do not affect quantity or cost basis — they are forward-looking yield.
+
+export function isB3EventsHeader(row: readonly (string | null | undefined)[]): boolean {
+  if (!row) return false;
+  return row.includes("Tipo de Evento") && row.includes("Previsão de pagamento") && row.includes("Valor líquido");
+}
+
+export function parseB3Events(rows: readonly (readonly (string | number | null | undefined)[])[]): B3EventsResult {
+  if (rows.length === 0) {
+    return { events: [], errors: [{ row: 0, message: "arquivo vazio" }] };
+  }
+  const header = rows[0].map((c) => (typeof c === "string" ? c.trim() : ""));
+  if (!isB3EventsHeader(header)) {
+    return { events: [], errors: [{ row: 0, message: "cabeçalho não corresponde ao relatório B3 Eventos" }] };
+  }
+
+  const colIdx = (name: string) => header.indexOf(name);
+  const PRODUTO = colIdx("Produto");
+  const TIPO_EVENTO = colIdx("Tipo de Evento");
+  const PREVISAO = colIdx("Previsão de pagamento");
+  const QTY = colIdx("Quantidade");
+  const PRICE = colIdx("Preço unitário");
+  const NET = colIdx("Valor líquido");
+
+  const events: B3ScheduledEvent[] = [];
+  const errors: B3ImportError[] = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    const produto = typeof row[PRODUTO] === "string" ? (row[PRODUTO] as string) : "";
+    const ticker = tickerFromProduto(produto);
+    if (!ticker) continue;
+
+    const type = typeof row[TIPO_EVENTO] === "string" ? (row[TIPO_EVENTO] as string).trim() : "";
+    if (!type) continue;
+
+    const dateRaw = typeof row[PREVISAO] === "string" ? (row[PREVISAO] as string) : "";
+    const paymentDate = parseBrDate(dateRaw);
+    if (!paymentDate) {
+      errors.push({ row: i + 1, message: `linha ${i + 1}: data de pagamento inválida '${dateRaw}'` });
+      continue;
+    }
+
+    const qty = parseBrNumber(row[QTY]) ?? 0;
+    const unitPrice = parseBrNumber(row[PRICE]) ?? 0;
+    const netValue = parseBrNumber(row[NET]) ?? 0;
+
+    events.push({ ticker, type, paymentDate, quantity: qty, unitPrice, netValue });
+  }
+
+  return { events, errors };
+}
+
+/**
+ * Sum scheduled net income per ticker.
+ */
+export function aggregateScheduledIncome(events: readonly B3ScheduledEvent[]): Map<string, number> {
+  const byTicker = new Map<string, number>();
+  for (const e of events) {
+    byTicker.set(e.ticker, (byTicker.get(e.ticker) ?? 0) + e.netValue);
+  }
+  return byTicker;
 }
 
 /**

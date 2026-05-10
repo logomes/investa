@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { parseB3Position, isB3PositionHeader, parseB3Movements, isB3MovementsHeader, computeAverageCost } from "@/lib/b3-import";
+import {
+  parseB3Position, isB3PositionHeader,
+  parseB3Movements, isB3MovementsHeader,
+  parseB3Negociacao, isB3NegociacaoHeader,
+  parseB3Events, isB3EventsHeader, aggregateScheduledIncome,
+  computeAverageCost,
+} from "@/lib/b3-import";
 
 const HEADER = [
   "Produto", "Instituição", "Conta", "Código de Negociação", "CNPJ da Empresa",
@@ -196,5 +202,107 @@ describe("computeAverageCost", () => {
     ]);
     // After sort: jan → buy 100@10, mar → buy 100@20 → avg = 15
     expect(result.get("X")).toBeCloseTo(15, 5);
+  });
+});
+
+const EVENTS_HEADER = [
+  "Produto", "Tipo", "Tipo de Evento", "Previsão de pagamento",
+  "Instituição", "Conta", "Quantidade", "Preço unitário", "Valor líquido",
+];
+
+describe("parseB3Events", () => {
+  it("isB3EventsHeader reconhece o cabeçalho de Eventos", () => {
+    expect(isB3EventsHeader(EVENTS_HEADER)).toBe(true);
+    expect(isB3EventsHeader(HEADER)).toBe(false);
+    expect(isB3EventsHeader(MOV_HEADER)).toBe(false);
+  });
+
+  it("parseia eventos de RENDIMENTO/DIVIDENDO/JCP com valores e datas BR", () => {
+    const rows: (string | number | null)[][] = [
+      EVENTS_HEADER,
+      ["KNCA11 - KINEA", "Fundo", "RENDIMENTO", "14/05/2026", "BTG", "5864332", 157, "1,1", "172,7"],
+      ["VALE3 - VALE", "Renda Variável", "DIVIDENDO", "20/05/2026", "BTG", "5864332", 48, "0,5", 24],
+      ["B3SA3 - B3", "Renda Variável", "JUROS SOBRE CAPITAL PRÓPRIO", "25/05/2026", "BTG", "5864332", 179, "0,1", "17,9"],
+    ];
+    const result = parseB3Events(rows);
+    expect(result.errors).toEqual([]);
+    expect(result.events.length).toBe(3);
+
+    const knca = result.events.find((e) => e.ticker === "KNCA11");
+    expect(knca?.type).toBe("RENDIMENTO");
+    expect(knca?.paymentDate).toBe("2026-05-14");
+    expect(knca?.netValue).toBe(172.7);
+  });
+
+  it("aggregateScheduledIncome soma por ticker", () => {
+    const events = [
+      { ticker: "X", type: "RENDIMENTO", paymentDate: "2026-05-14", quantity: 100, unitPrice: 1, netValue: 100 },
+      { ticker: "X", type: "RENDIMENTO", paymentDate: "2026-06-14", quantity: 100, unitPrice: 0.5, netValue: 50 },
+      { ticker: "Y", type: "DIVIDENDO", paymentDate: "2026-05-20", quantity: 50, unitPrice: 0.5, netValue: 25 },
+    ];
+    const result = aggregateScheduledIncome(events);
+    expect(result.get("X")).toBe(150);
+    expect(result.get("Y")).toBe(25);
+  });
+
+  it("ignora linhas sem ticker reconhecível", () => {
+    const rows: (string | number | null)[][] = [
+      EVENTS_HEADER,
+      ["", "Fundo", "RENDIMENTO", "14/05/2026", "BTG", "5864332", 100, "1", "100"],
+      [null, "Fundo", "RENDIMENTO", "14/05/2026", "BTG", "5864332", 100, "1", "100"],
+    ];
+    const result = parseB3Events(rows);
+    expect(result.events).toEqual([]);
+  });
+});
+
+const NEGOCIACAO_HEADER = [
+  "Data do Negócio", "Tipo de Movimentação", "Mercado", "Prazo/Vencimento",
+  "Instituição", "Código de Negociação", "Quantidade", "Preço", "Valor",
+];
+
+describe("parseB3Negociacao", () => {
+  it("isB3NegociacaoHeader reconhece o cabeçalho", () => {
+    expect(isB3NegociacaoHeader(NEGOCIACAO_HEADER)).toBe(true);
+    expect(isB3NegociacaoHeader(MOV_HEADER)).toBe(false);
+  });
+
+  it("Compra → buy, Venda → sell, e suffix F é normalizado", () => {
+    const rows: (string | number | null)[][] = [
+      NEGOCIACAO_HEADER,
+      ["08/05/2026", "Compra", "Mercado Fracionário", "-", "BTG", "BBDC3F", 40, "16,18", "647,2"],
+      ["06/05/2026", "Venda", "Mercado à Vista", "-", "BTG", "BBDC4", 100, "19,29", 1929],
+      ["08/05/2026", "Compra", "Mercado Fracionário", "-", "BTG", "TAEE11F", 30, "41,25", "1237,5"],
+    ];
+    const result = parseB3Negociacao(rows);
+    expect(result.errors).toEqual([]);
+    expect(result.trades.length).toBe(3);
+    expect(result.trades.find((t) => t.ticker === "BBDC3")?.side).toBe("buy");
+    expect(result.trades.find((t) => t.ticker === "BBDC4")?.side).toBe("sell");
+    expect(result.trades.find((t) => t.ticker === "TAEE11")?.quantity).toBe(30);
+  });
+
+  it("BBDC3 e BBDC3F agregam no mesmo ticker pelo computeAverageCost", () => {
+    const rows: (string | number | null)[][] = [
+      NEGOCIACAO_HEADER,
+      ["01/01/2026", "Compra", "Mercado à Vista", "-", "BTG", "BBDC3", 100, "15,00", "1500"],
+      ["02/01/2026", "Compra", "Mercado Fracionário", "-", "BTG", "BBDC3F", 50, "20,00", "1000"],
+    ];
+    const result = parseB3Negociacao(rows);
+    const avgs = computeAverageCost(result.trades);
+    // 100*15 + 50*20 = 1500 + 1000 = 2500 / 150 = 16.6667
+    expect(avgs.get("BBDC3")).toBeCloseTo(16.667, 2);
+    expect(avgs.has("BBDC3F")).toBe(false);
+  });
+
+  it("reporta earliestDate / latestDate corretos", () => {
+    const rows: (string | number | null)[][] = [
+      NEGOCIACAO_HEADER,
+      ["10/01/2026", "Compra", "Vista", "-", "BTG", "X3", 1, "10", "10"],
+      ["05/05/2026", "Compra", "Vista", "-", "BTG", "X3", 1, "20", "20"],
+    ];
+    const result = parseB3Negociacao(rows);
+    expect(result.earliestDate).toBe("2026-01-10");
+    expect(result.latestDate).toBe("2026-05-05");
   });
 });
