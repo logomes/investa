@@ -36,6 +36,42 @@ GoalCard goal value is now click-to-edit: button → input pre-filled with curre
 
 **Shipped scope:** `GET /api/quotes?ticker=&market=` with provider chain (BR: BRAPI → Yahoo `.SA`; US: Yahoo → Stooq), 60s server cache, 3s per-provider timeout, no API keys. Frontend `AssetDialog` fetches on ticker blur. `AssetsTable` shows a "Preço atual" column with currentPrice converted to BRL (US assets use `macro.usdBrl`), native USD as subtext, relative `asOf`, and per-row refresh button.
 
+## Open Finance
+
+### Open Finance Brasil — sync automatizado de carteira
+
+**Phase target:** Future — gated em decisão personal-tool vs SaaS
+
+Open Finance Brasil é o padrão regulado pelo Bacen pra compartilhamento de dados financeiros via APIs. Fase 4 (ativa desde 2022) cobre **investimentos**: posições e movimentações em renda fixa, renda variável, fundos, previdência, COE. Substitui o upload manual de XLSX por sync automatizado direto dos brokers.
+
+**Caminhos:**
+
+| Opção | Custo | Esforço | Notas |
+|---|---|---|---|
+| **Pluggy aggregator** (recomendado) | Free dev (sandbox); ~R$ 12-50/mês prod por # brokers | ~6-8h | SDK React (`react-pluggy-connect`), docs em PT, melhor tração BR |
+| Belvo | Free dev; pago prod | ~6-8h | Foco LATAM/ES, menos market BR |
+| Klavi | Pago do início | ~6-8h | OF Brasil certified, menos tração |
+| Direct OF via Bacen | Free per-call | Multi-meses | Requer registro Bacen, ICP-Brasil, SOC2/ISO27001 — fora de escopo |
+| Status quo (XLSX manual) | Zero | Já shipped | Caminho atual via "Importar B3" |
+
+**Prerequisites que faltam hoje:**
+- Secret management — investa não tem nenhum env var de secret hoje. Adicionar `PLUGGY_CLIENT_ID` + `PLUGGY_CLIENT_SECRET` via Render dashboard (não via render.yaml, pra não commitar).
+- (Opcional para SaaS) backend persistence + auth — hoje tudo é localStorage single-user. Manter assim no caminho personal-tool, evoluir só se virar SaaS.
+
+**Implementation outline (quando aprovado):**
+- **Backend:** `api/core/data_sources/pluggy.py` (HTTP client seguindo padrão de `bcb.py`) + `api/routers/pluggy.py` com `POST /api/pluggy/connect-token` (token efêmero pro widget) e `POST /api/pluggy/sync` (recebe `itemId`, retorna posições em shape compatível com `AssetPosition`).
+- **Frontend:** `react-pluggy-connect` widget + botão "Conectar OpenFinance" em `/ativos`. Callback do widget chama `/api/pluggy/sync` e usa o mesmo merge-by-ticker do `handleB3Import` (em `AtivosPageContent.tsx`).
+- **Reuse:** `inferAssetClass` (`web/lib/ativos-classify.ts`) pra mapear categorias Pluggy → AssetClass; `cachetools.TTLCache` pra cachear positions 5min server-side; padrão do `core/data_sources/bcb.py` pra HTTP client com erro tipado.
+
+**Out of scope até pedido explícito:**
+- Webhook recorrente (Pluggy notifica push) — polling on-demand basta pra personal tool
+- Multi-user / NextAuth / Postgres — sobe junto se virar SaaS
+- Histórico de transações (Pluggy `transactions` API) — primeira passada só posições
+- Renda fixa (CDB/TD/LCI) — schema Pluggy `FIXED_INCOME` é diferente, combina com refator de `fi-store` em rodada própria
+- Disconnect/revoke de conexão — pode vir na rodada 2
+
+**Cost ballpark prod:** R$ 12-50/mês dependendo de quantos brokers o user conecta (Pluggy cobra por conexão ativa).
+
 ## Drawer / Form
 
 ### Asset list editing UX — ✅ shipped 2026-05-06
