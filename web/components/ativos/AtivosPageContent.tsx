@@ -10,11 +10,16 @@ import { ASSET_CLASS_META } from "@/lib/ativos-schema";
 import {
   isB3PositionHeader,
   isB3MovementsHeader,
+  isB3NegociacaoHeader,
+  isB3EventsHeader,
   parseB3Position,
   parseB3Movements,
+  parseB3Negociacao,
+  parseB3Events,
   computeAverageCost,
   type ParsedB3Position,
   type B3Trade,
+  type B3ScheduledEvent,
 } from "@/lib/b3-import";
 import { ErrorCard } from "@/components/error/ErrorCard";
 import { KpiSkeleton } from "@/components/kpi/KpiSkeleton";
@@ -23,6 +28,7 @@ import { AssetDialog } from "./AssetDialog";
 import { KpiRowAtivos } from "./KpiRowAtivos";
 import { ByAssetClassCard } from "./ByAssetClassCard";
 import { ByMarketCard } from "./ByMarketCard";
+import { ScheduledEventsBanner } from "./ScheduledEventsBanner";
 import type { AssetPosition } from "@/lib/ativos-schema";
 
 type SheetSlice = { name: string; rows: (string | number | null)[][] };
@@ -47,9 +53,11 @@ async function handleB3Import(
   files: File[],
   existing: AssetPosition[],
   upsert: (p: Omit<AssetPosition, "color"> & { color?: string }) => void,
+  replaceScheduledEvents: (events: B3ScheduledEvent[]) => void,
 ): Promise<void> {
   const positions: ParsedB3Position[] = [];
   const trades: B3Trade[] = [];
+  const events: B3ScheduledEvent[] = [];
   const brokers = new Set<string>();
   let earliestDate: string | null = null;
   const errors: string[] = [];
@@ -72,20 +80,32 @@ async function handleB3Import(
         r.brokers.forEach((b) => brokers.add(b));
         r.errors.forEach((e) => errors.push(`${file.name}/${sheet.name}: ${e.message}`));
         if (r.positions.length > 0) recognizedSheets.push(`${sheet.name} (${r.positions.length})`);
+      } else if (isB3NegociacaoHeader(header)) {
+        // Negociação is preferred when present — cleaner trade-only history.
+        const r = parseB3Negociacao(sheet.rows);
+        trades.push(...r.trades);
+        if (r.earliestDate && (!earliestDate || r.earliestDate < earliestDate)) earliestDate = r.earliestDate;
+        r.errors.forEach((e) => errors.push(`${file.name}/${sheet.name}: ${e.message}`));
+        if (r.trades.length > 0) recognizedSheets.push(`Negociação (${r.trades.length} trades)`);
       } else if (isB3MovementsHeader(header)) {
         const r = parseB3Movements(sheet.rows);
         trades.push(...r.trades);
         if (r.earliestDate && (!earliestDate || r.earliestDate < earliestDate)) earliestDate = r.earliestDate;
         r.errors.forEach((e) => errors.push(`${file.name}/${sheet.name}: ${e.message}`));
-        if (r.trades.length > 0) recognizedSheets.push(`${sheet.name} (${r.trades.length} trades)`);
+        if (r.trades.length > 0) recognizedSheets.push(`Movimentação (${r.trades.length} trades)`);
+      } else if (isB3EventsHeader(header)) {
+        const r = parseB3Events(sheet.rows);
+        events.push(...r.events);
+        r.errors.forEach((e) => errors.push(`${file.name}/${sheet.name}: ${e.message}`));
+        if (r.events.length > 0) recognizedSheets.push(`Eventos (${r.events.length} agendados)`);
       }
     }
   }
 
-  if (positions.length === 0) {
+  if (positions.length === 0 && events.length === 0 && trades.length === 0) {
     alert(
-      `Nenhuma posição reconhecida.${errors.length ? "\n\n" + errors.join("\n") : ""}\n\n` +
-      `Esperado: arquivo de Posição (Minha Carteira → Investimentos) e/ou Movimentação (Extratos).`,
+      `Nenhum dado reconhecido.${errors.length ? "\n\n" + errors.join("\n") : ""}\n\n` +
+      `Esperado: arquivo de Posição (Minha Carteira → Investimentos), Movimentação, Negociação ou Eventos (Extratos).`,
     );
     return;
   }
@@ -107,17 +127,28 @@ async function handleB3Import(
     }
   }
 
+  const totalScheduledIncome = events.reduce((sum, e) => sum + e.netValue, 0);
+  const eventsLine = events.length > 0
+    ? `\nRenda agendada: R$ ${totalScheduledIncome.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} em ${events.length} pagamento(s) futuro(s)`
+    : "";
+
   const summary =
-    `Importar ${positions.length} posições da B3?\n\n` +
+    `Importar dados da B3?\n\n` +
     `Sheets reconhecidos: ${recognizedSheets.join(", ") || "—"}\n` +
     `Brokers: ${Array.from(brokers).join(", ") || "—"}\n` +
-    `Posições com preço médio real (via Movimentação): ${positionsWithRealAvg}/${positions.length}\n` +
-    `Posições sem histórico de compra: avgPrice = preço de fechamento (custo aproximado).\n\n` +
-    `Posições já cadastradas (não-B3) serão preservadas.` +
+    (positions.length > 0
+      ? `Posições: ${positions.length} (com preço médio real: ${positionsWithRealAvg})\n` +
+        `Posições sem histórico de compra: avgPrice = preço de fechamento.`
+      : `Sem novo arquivo de Posição — posições atuais serão preservadas.`) +
+    eventsLine +
     historyWarning +
     (errors.length ? `\n\nAvisos:\n${errors.slice(0, 5).join("\n")}` : "");
 
   if (!confirm(summary)) return;
+
+  if (events.length > 0) {
+    replaceScheduledEvents(events);
+  }
 
   for (const p of positions) {
     const existingPos = existing.find((x) => x.ticker === p.ticker);
@@ -143,10 +174,10 @@ async function handleB3Import(
       color: existingPos?.color,
     });
   }
-  alert(
-    `${positions.length} posições importadas/atualizadas.\n` +
-    `${positionsWithRealAvg} com preço médio real.`,
-  );
+  const lines: string[] = [];
+  if (positions.length > 0) lines.push(`${positions.length} posições importadas (${positionsWithRealAvg} com preço médio real)`);
+  if (events.length > 0) lines.push(`${events.length} eventos agendados (R$ ${totalScheduledIncome.toFixed(2)})`);
+  alert(lines.join("\n") || "Sem alterações.");
 }
 
 function downloadFile(content: string, filename: string) {
@@ -163,9 +194,11 @@ function downloadFile(content: string, filename: string) {
 
 export function AtivosPageContent() {
   const positions = useAssetsStore((s) => s.positions);
+  const scheduledEvents = useAssetsStore((s) => s.scheduledEvents);
   const upsert = useAssetsStore((s) => s.upsertPosition);
   const remove = useAssetsStore((s) => s.removePosition);
   const replaceAll = useAssetsStore((s) => s.replaceAllPositions);
+  const replaceScheduledEvents = useAssetsStore((s) => s.replaceScheduledEvents);
   const macro = useMacro();
   const fileRef = useRef<HTMLInputElement>(null);
   const b3FileRef = useRef<HTMLInputElement>(null);
@@ -196,6 +229,7 @@ export function AtivosPageContent() {
   return (
     <div className="space-y-6">
       <KpiRowAtivos kpis={kpis} />
+      <ScheduledEventsBanner events={scheduledEvents} />
       <AssetsTable
         positions={positions}
         macro={macro.data!}
@@ -247,7 +281,7 @@ export function AtivosPageContent() {
           const files = e.target.files ? Array.from(e.target.files) : [];
           if (files.length === 0) return;
           try {
-            await handleB3Import(files, positions, upsert);
+            await handleB3Import(files, positions, upsert, replaceScheduledEvents);
           } finally {
             e.target.value = "";
           }
