@@ -55,7 +55,7 @@ async function handleB3Import(
   existing: AssetPosition[],
   upsert: (p: Omit<AssetPosition, "color"> & { color?: string }) => void,
   replaceScheduledEvents: (events: B3ScheduledEvent[]) => void,
-  replaceTrades: (trades: B3Trade[]) => void,
+  mergeTrades: (trades: B3Trade[]) => void,
 ): Promise<void> {
   const positions: ParsedB3Position[] = [];
   const trades: B3Trade[] = [];
@@ -152,7 +152,7 @@ async function handleB3Import(
     replaceScheduledEvents(events);
   }
   if (trades.length > 0) {
-    replaceTrades(trades);
+    mergeTrades(trades);
   }
 
   for (const p of positions) {
@@ -182,6 +182,7 @@ async function handleB3Import(
   const lines: string[] = [];
   if (positions.length > 0) lines.push(`${positions.length} posições importadas (${positionsWithRealAvg} com preço médio real)`);
   if (events.length > 0) lines.push(`${events.length} eventos agendados (R$ ${totalScheduledIncome.toFixed(2)})`);
+  if (trades.length > 0) lines.push(`${trades.length} trades adicionados ao histórico (deduplicados se já existentes)`);
   alert(lines.join("\n") || "Sem alterações.");
 }
 
@@ -204,7 +205,7 @@ export function AtivosPageContent() {
   const remove = useAssetsStore((s) => s.removePosition);
   const replaceAll = useAssetsStore((s) => s.replaceAllPositions);
   const replaceScheduledEvents = useAssetsStore((s) => s.replaceScheduledEvents);
-  const replaceTrades = useAssetsStore((s) => s.replaceTrades);
+  const mergeTrades = useAssetsStore((s) => s.mergeTrades);
   const macro = useMacro();
   const fileRef = useRef<HTMLInputElement>(null);
   const b3FileRef = useRef<HTMLInputElement>(null);
@@ -287,7 +288,7 @@ export function AtivosPageContent() {
           const files = e.target.files ? Array.from(e.target.files) : [];
           if (files.length === 0) return;
           try {
-            await handleB3Import(files, positions, upsert, replaceScheduledEvents, replaceTrades);
+            await handleB3Import(files, positions, upsert, replaceScheduledEvents, mergeTrades);
           } finally {
             e.target.value = "";
           }

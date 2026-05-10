@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FileText, AlertCircle } from "lucide-react";
+import { FileText, AlertCircle, Trash2 } from "lucide-react";
 import { useAssetsStore } from "@/lib/ativos-store";
 import { computeMonthlyDarf, tickerToClassMap, type TaxBucket, type MonthlyBucketSummary } from "@/lib/darf-calculator";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { KpiCard } from "@/components/kpi/KpiCard";
+import { Button } from "@/components/ui/button";
 import { formatRs2, formatPercent } from "@/lib/format";
 
 const BUCKET_LABEL: Record<TaxBucket, string> = {
@@ -29,6 +30,7 @@ function buildDarfStatusLabel(b: MonthlyBucketSummary): string {
 export function IrPageContent() {
   const positions = useAssetsStore((s) => s.positions);
   const trades = useAssetsStore((s) => s.trades);
+  const clearTrades = useAssetsStore((s) => s.clearTrades);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -79,8 +81,38 @@ export function IrPageContent() {
 
   const totalDarfPaid = darfs.reduce((s, d) => s + d.totalDarfBRL, 0);
 
+  // Earliest / latest trade date for the "histórico acumulado" banner
+  const sortedDates = trades.map((t) => t.date).sort();
+  const earliestTrade = sortedDates[0];
+  const latestTrade = sortedDates[sortedDates.length - 1];
+
   return (
     <div className="space-y-6">
+      <Card>
+        <CardContent className="py-4 flex flex-wrap items-center gap-4">
+          <div className="flex-1 min-w-[200px]">
+            <p className="text-[12.5px] text-ink">
+              <strong>{trades.length}</strong> trades acumulados {earliestTrade && latestTrade && (
+                <span className="text-ink-3">· período {earliestTrade.slice(0, 7).split("-").reverse().join("/")} → {latestTrade.slice(0, 7).split("-").reverse().join("/")}</span>
+              )}
+            </p>
+            <p className="text-[11.5px] text-ink-3 mt-0.5">
+              Importes adicionais são <strong>mesclados</strong> com dedupe. B3 limita exports a 12 meses — pra cobrir histórico completo, importe vários XLSX em sequência.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (confirm(`Limpar todos os ${trades.length} trades acumulados?`)) clearTrades();
+            }}
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+            Limpar histórico
+          </Button>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard
           label="DARF a pagar (mês corrente)"

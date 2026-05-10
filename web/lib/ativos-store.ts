@@ -18,8 +18,14 @@ type Store = {
   removePosition: (id: string) => void;
   replaceAllPositions: (positions: AssetPosition[]) => void;
   replaceScheduledEvents: (events: B3ScheduledEvent[]) => void;
-  replaceTrades: (trades: B3Trade[]) => void;
+  mergeTrades: (trades: B3Trade[]) => void;
+  clearTrades: () => void;
 };
+
+function tradeKey(t: B3Trade): string {
+  // Signature for dedupe across overlapping import windows.
+  return `${t.date}|${t.ticker.toUpperCase()}|${t.side}|${t.quantity}|${t.price}`;
+}
 
 export const useAssetsStore = create<Store>()(
   persist(
@@ -39,7 +45,15 @@ export const useAssetsStore = create<Store>()(
       removePosition: (id) => set({ positions: get().positions.filter((p) => p.id !== id) }),
       replaceAllPositions: (positions) => set({ positions }),
       replaceScheduledEvents: (events) => set({ scheduledEvents: events }),
-      replaceTrades: (trades) => set({ trades }),
+      mergeTrades: (incoming) => {
+        const existing = get().trades;
+        const map = new Map<string, B3Trade>();
+        for (const t of existing) map.set(tradeKey(t), t);
+        for (const t of incoming) map.set(tradeKey(t), t); // last-write-wins on key collision
+        const merged = Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+        set({ trades: merged });
+      },
+      clearTrades: () => set({ trades: [] }),
     }),
     {
       name: "investa-assets-v1",
