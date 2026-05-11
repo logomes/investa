@@ -31,6 +31,7 @@ import { KpiRowAtivos } from "./KpiRowAtivos";
 import { ByAssetClassCard } from "./ByAssetClassCard";
 import { ByMarketCard } from "./ByMarketCard";
 import { ScheduledEventsBanner } from "./ScheduledEventsBanner";
+import { MissingPositionsBanner } from "./MissingPositionsBanner";
 import { ContributionPlanner } from "./ContributionPlanner";
 import type { AssetPosition } from "@/lib/ativos-schema";
 
@@ -192,10 +193,21 @@ async function handleB3Import(
   }
   const totalPaidProvents = provents.reduce((s, p) => s + p.netValue, 0);
   const lines: string[] = [];
-  if (positions.length > 0) lines.push(`${positions.length} posições importadas (${positionsWithRealAvg} com preço médio real)`);
-  if (events.length > 0) lines.push(`${events.length} eventos agendados (R$ ${totalScheduledIncome.toFixed(2)})`);
-  if (trades.length > 0) lines.push(`${trades.length} trades adicionados ao histórico (deduplicados se já existentes)`);
-  if (provents.length > 0) lines.push(`${provents.length} proventos pagos importados (R$ ${totalPaidProvents.toFixed(2)})`);
+  if (positions.length > 0) lines.push(`✓ ${positions.length} posições importadas (${positionsWithRealAvg} com preço médio real)`);
+  if (events.length > 0) lines.push(`✓ ${events.length} eventos agendados (R$ ${totalScheduledIncome.toFixed(2)})`);
+  if (trades.length > 0) lines.push(`✓ ${trades.length} trades no histórico — visível em /ir (DARF mensal)`);
+  if (provents.length > 0) lines.push(`✓ ${provents.length} proventos pagos (R$ ${totalPaidProvents.toFixed(2)}) — visível em /proventos`);
+
+  // Hint when the user only imported a Movimentação (history) without Posição.
+  // Common cause of "importei mas não vejo nada" on /ativos — make it explicit.
+  const importedHistory = trades.length > 0 || provents.length > 0;
+  const importedPositions = positions.length > 0;
+  const hasExistingPositions = existing.length > 0;
+  if (importedHistory && !importedPositions && !hasExistingPositions) {
+    lines.push("");
+    lines.push("→ /ativos continua vazio. Pra ver suas posições atuais, importe também o");
+    lines.push("  XLSX 'Posição' (B3 → Minha Carteira → Investimentos → Posição).");
+  }
   alert(lines.join("\n") || "Sem alterações.");
 }
 
@@ -214,6 +226,8 @@ function downloadFile(content: string, filename: string) {
 export function AtivosPageContent() {
   const positions = useAssetsStore((s) => s.positions);
   const scheduledEvents = useAssetsStore((s) => s.scheduledEvents);
+  const trades = useAssetsStore((s) => s.trades);
+  const proventsPaid = useAssetsStore((s) => s.proventsPaid);
   const upsert = useAssetsStore((s) => s.upsertPosition);
   const remove = useAssetsStore((s) => s.removePosition);
   const replaceAll = useAssetsStore((s) => s.replaceAllPositions);
@@ -250,6 +264,9 @@ export function AtivosPageContent() {
   return (
     <div className="space-y-6">
       <KpiRowAtivos kpis={kpis} />
+      {positions.length === 0 && (trades.length > 0 || proventsPaid.length > 0) && (
+        <MissingPositionsBanner trades={trades.length} provents={proventsPaid.length} />
+      )}
       <ScheduledEventsBanner events={scheduledEvents} />
       <AssetsTable
         positions={positions}
