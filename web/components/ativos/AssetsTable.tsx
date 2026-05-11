@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, Upload, Download, Pencil, Trash2, RefreshCw, Loader2, FileSpreadsheet } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { B3ImportGuide } from "./B3ImportGuide";
 import { positionValueBRL, unrealizedGain } from "@/lib/ativos-derive";
 import { ASSET_CLASS_META } from "@/lib/ativos-schema";
 import type { AssetPosition } from "@/lib/ativos-schema";
@@ -50,10 +51,13 @@ export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImpor
               <Upload className="w-3.5 h-3.5 mr-1.5" />
               Importar CSV
             </Button>
-            <Button variant="outline" size="sm" onClick={onImportB3}>
-              <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
-              Importar B3
-            </Button>
+            <div className="flex items-center gap-0.5">
+              <Button variant="outline" size="sm" onClick={onImportB3}>
+                <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
+                Importar B3
+              </Button>
+              <B3ImportGuide />
+            </div>
             <Button variant="outline" size="sm" onClick={onExport} disabled={positions.length === 0}>
               <Download className="w-3.5 h-3.5 mr-1.5" />
               Exportar CSV
