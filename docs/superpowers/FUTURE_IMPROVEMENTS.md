@@ -32,6 +32,10 @@ GoalCard goal value is now click-to-edit: button → input pre-filled with curre
 
 **Deferido:** Tesouro Direto (aba separada do portal, formato distinto), eventos corporativos quantitativos (split/inplit/bonificação — aparecem em Movimentação como `Bonificação em Ativos`/`Desdobro` mas o user não tem amostra ainda), integração com Pluggy/Belvo aggregators pra atualização contínua sem upload manual.
 
+### Snapshot mensal de patrimônio — ✅ shipped 2026-05-11
+
+`/historico` permite capturar manualmente o PL marcado a mercado (RV + RF). RV usa `currentPrice ?? avgPrice`; RF compõe `initialAmount × (1 + effectiveAnnualRate)^years`. Snapshot persiste em store separado (`investa-patrimony-snapshots-v1`) e popula 3 KPIs + line chart SVG + tabela com delete. Replace-by-date evita duplicatas no mesmo dia. Base para TWR / drawdown / curva aporte-vs-valorização futuros.
+
 ### Dashboard de Proventos — ✅ shipped 2026-05-11
 
 `/proventos` agrega histórico de Rendimento/Dividendo/JCP pagos (extraídos automaticamente da Movimentação) com agendados futuros (Eventos). KPIs: recebido 12m, agendado futuro, DY realizado vs esperado ponderado, próximo pagamento. Bar chart 24m passados + 3m futuros (futuros em opacity baixa). Tabela por ativo com DY realizado vs esperado e gap colorido. Trades duplicados são deduplicados via key `date|ticker|type|netValue`.

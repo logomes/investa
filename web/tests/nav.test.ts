@@ -2,10 +2,10 @@ import { describe, it, expect } from "vitest";
 import { NAV_GROUPS, NAV_BY_HREF } from "@/lib/nav";
 
 describe("nav config", () => {
-  it("has 11 nav items in one ANÁLISE group", () => {
+  it("has 12 nav items in one ANÁLISE group", () => {
     expect(NAV_GROUPS).toHaveLength(1);
     expect(NAV_GROUPS[0].label).toBe("ANÁLISE");
-    expect(NAV_GROUPS[0].items).toHaveLength(11);
+    expect(NAV_GROUPS[0].items).toHaveLength(12);
   });
 
   it("first item is Visão Geral at root href", () => {
@@ -25,6 +25,7 @@ describe("nav config", () => {
     expect(NAV_BY_HREF["/renda-fixa"]?.label).toBe("Renda Fixa");
     expect(NAV_BY_HREF["/ativos"]?.label).toBe("Ativos");
     expect(NAV_BY_HREF["/proventos"]?.label).toBe("Proventos");
+    expect(NAV_BY_HREF["/historico"]?.label).toBe("Histórico PL");
   });
 
   it("every item has a fase number indicating when content lands", () => {

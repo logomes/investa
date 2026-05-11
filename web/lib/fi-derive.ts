@@ -37,6 +37,34 @@ export function totalAllocated(positions: FixedIncomePosition[]): number {
   return positions.reduce((sum, p) => sum + p.initialAmount, 0);
 }
 
+/**
+ * Marked-to-market value of a fixed-income position: compounds the initial
+ * principal by the effective annual rate over the holding period. Returns
+ * gross value (bruto) — IR só sai no resgate, então saldo atual no banco/
+ * broker reflete esse número.
+ *
+ * Limitation: assumes a flat rate over the holding period. For CDI/Selic/
+ * IPCA-linked positions the real path varies; using the current macro
+ * snapshot is a reasonable approximation for a personal-tool view.
+ */
+export function rfCurrentValue(
+  p: FixedIncomePosition,
+  macro: MacroOut,
+  today: Date = new Date(),
+): number {
+  const annualRate = effectiveAnnualRate(p, macro);
+  const years = holdingDays(p, today) / 365;
+  return p.initialAmount * Math.pow(1 + annualRate, years);
+}
+
+export function totalCurrentValue(
+  positions: FixedIncomePosition[],
+  macro: MacroOut,
+  today: Date = new Date(),
+): number {
+  return positions.reduce((sum, p) => sum + rfCurrentValue(p, macro, today), 0);
+}
+
 export function weightedYield(
   positions: FixedIncomePosition[],
   macro: MacroOut,
