@@ -97,7 +97,7 @@ function refineClassFromTipo(ticker: string, tipo: string | null | undefined): A
   const t = (tipo ?? "").trim().toUpperCase();
   // ON / PN / UNIT are share classes for ações — pattern-based inference works.
   // FII / ETF tipos in B3 exports normally read literally — handle them explicitly.
-  if (t === "FII") return "FII_PAPEL";
+  if (t === "FII") return "FII";
   if (t === "ETF") return "ETF_BR";
   return inferAssetClass(ticker) ?? "ACAO_BR_DIVIDENDO";
 }
@@ -107,7 +107,7 @@ function refineClassFromTipo(ticker: string, tipo: string | null | undefined): A
 function classFromSheetName(name: string): AssetClass | null {
   switch (name.trim()) {
     case "ETF": return "ETF_BR";
-    case "Fundo de Investimento": return "FII_PAPEL";
+    case "Fundo de Investimento": return "FII";
     case "Acoes": return null; // delegate to refineClassFromTipo (ON/PN/UNIT)
     default: return null;
   }

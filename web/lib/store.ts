@@ -36,9 +36,9 @@ export const useScenarioStore = create<ScenarioStore>()(
         }),
     }),
     {
-      // v2: bumped from v1 to invalidate stale state with nTrajectories=10000
-      // (caused 500s on Render free tier; default lowered to 2000).
-      name: "investa-scenario-v2",
+      // v3: bumped from v2 to drop stale FII_PAPEL/FII_TIJOLO labels in
+      // persisted portfolio rows (consolidated into a single "FIIs" entry).
+      name: "investa-scenario-v3",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         scenario: state.scenario,

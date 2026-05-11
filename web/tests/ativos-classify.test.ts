@@ -17,12 +17,12 @@ describe("inferAssetClass", () => {
   });
 
   describe("BR FII e ETF (*11)", () => {
-    it("HGCR11 (FII) → FII_PAPEL", () => {
-      expect(inferAssetClass("HGCR11")).toBe("FII_PAPEL");
+    it("HGCR11 (FII) → FII", () => {
+      expect(inferAssetClass("HGCR11")).toBe("FII");
     });
 
-    it("MXRF11 (FII) → FII_PAPEL", () => {
-      expect(inferAssetClass("MXRF11")).toBe("FII_PAPEL");
+    it("MXRF11 (FII) → FII", () => {
+      expect(inferAssetClass("MXRF11")).toBe("FII");
     });
 
     it("BOVA11 (ETF whitelist) → ETF_BR", () => {

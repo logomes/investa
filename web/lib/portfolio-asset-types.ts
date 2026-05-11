@@ -1,6 +1,5 @@
 export type PortfolioAssetTypeId =
-  | "FII_PAPEL"
-  | "FII_TIJOLO"
+  | "FII"
   | "ACAO_BR_DIV"
   | "ACAO_BR_CRESC"
   | "ETF_BR"
@@ -23,8 +22,7 @@ export type PortfolioAssetTypeMeta = {
 };
 
 export const PORTFOLIO_ASSET_TYPES: PortfolioAssetTypeMeta[] = [
-  { id: "FII_PAPEL",     label: "FII de Papel",                defaults: { expectedYield: 0.130, capitalGain: 0.00, taxRate: 0.000, volatility: 0.14 } },
-  { id: "FII_TIJOLO",    label: "FII de Tijolo",               defaults: { expectedYield: 0.090, capitalGain: 0.02, taxRate: 0.000, volatility: 0.16 } },
+  { id: "FII",           label: "FII (Papel/Tijolo/Agro/FoF)", defaults: { expectedYield: 0.110, capitalGain: 0.01, taxRate: 0.000, volatility: 0.15 } },
   { id: "ACAO_BR_DIV",   label: "Ações BR (dividendos)",       defaults: { expectedYield: 0.090, capitalGain: 0.03, taxRate: 0.000, volatility: 0.27 } },
   { id: "ACAO_BR_CRESC", label: "Ações BR (crescimento)",      defaults: { expectedYield: 0.030, capitalGain: 0.07, taxRate: 0.150, volatility: 0.30 } },
   { id: "ETF_BR",        label: "ETFs BR",                     defaults: { expectedYield: 0.020, capitalGain: 0.08, taxRate: 0.150, volatility: 0.20 } },

@@ -33,12 +33,12 @@ describe("planContribution", () => {
   it("balanced: aporte vai 100% pra classe sub-alocada", () => {
     const positions: AssetPosition[] = [
       pos({ ticker: "A", assetClass: "ACAO_BR_DIVIDENDO", quantity: 100, avgPrice: 30 }), // 3000 BRL
-      pos({ ticker: "B", assetClass: "FII_PAPEL", quantity: 10, avgPrice: 100 }),         // 1000 BRL
+      pos({ ticker: "B", assetClass: "FII", quantity: 10, avgPrice: 100 }),         // 1000 BRL
     ];
     // Total 4000, balanced target = 50% / 50%, ACAO está em 75% (super), FII em 25% (sub)
     // Aporte 1000 → tudo pra FII (sub-alocada)
     const plan = planContribution(positions, macro, 1000, "balanced");
-    const fii = plan.byClass.find((c) => c.assetClass === "FII_PAPEL");
+    const fii = plan.byClass.find((c) => c.assetClass === "FII");
     const acao = plan.byClass.find((c) => c.assetClass === "ACAO_BR_DIVIDENDO");
     expect(fii?.suggestedR$).toBeGreaterThan(900); // grande maioria do aporte
     expect(acao?.suggestedR$ ?? 0).toBeLessThan(100);
@@ -47,12 +47,12 @@ describe("planContribution", () => {
   it("balanced: já balanceado → distribui pelo peso atual (preserve fallback)", () => {
     const positions: AssetPosition[] = [
       pos({ ticker: "A", assetClass: "ACAO_BR_DIVIDENDO", quantity: 100, avgPrice: 50 }), // 5000
-      pos({ ticker: "B", assetClass: "FII_PAPEL", quantity: 50, avgPrice: 100 }),         // 5000
+      pos({ ticker: "B", assetClass: "FII", quantity: 50, avgPrice: 100 }),         // 5000
     ];
     // 50/50, target balanced 50/50 → sem deficit positivo
     const plan = planContribution(positions, macro, 1000, "balanced");
     const a = plan.byClass.find((c) => c.assetClass === "ACAO_BR_DIVIDENDO");
-    const b = plan.byClass.find((c) => c.assetClass === "FII_PAPEL");
+    const b = plan.byClass.find((c) => c.assetClass === "FII");
     expect(a?.suggestedR$).toBeCloseTo(500, 1);
     expect(b?.suggestedR$).toBeCloseTo(500, 1);
   });
@@ -60,11 +60,11 @@ describe("planContribution", () => {
   it("preserve: distribui aporte proporcional aos pesos atuais", () => {
     const positions: AssetPosition[] = [
       pos({ ticker: "A", assetClass: "ACAO_BR_DIVIDENDO", quantity: 100, avgPrice: 30 }), // 3000 (75%)
-      pos({ ticker: "B", assetClass: "FII_PAPEL", quantity: 10, avgPrice: 100 }),         // 1000 (25%)
+      pos({ ticker: "B", assetClass: "FII", quantity: 10, avgPrice: 100 }),         // 1000 (25%)
     ];
     const plan = planContribution(positions, macro, 1000, "preserve");
     const acao = plan.byClass.find((c) => c.assetClass === "ACAO_BR_DIVIDENDO");
-    const fii = plan.byClass.find((c) => c.assetClass === "FII_PAPEL");
+    const fii = plan.byClass.find((c) => c.assetClass === "FII");
     expect(acao?.suggestedR$).toBeCloseTo(750, 1);
     expect(fii?.suggestedR$).toBeCloseTo(250, 1);
   });
@@ -96,10 +96,10 @@ describe("planContribution", () => {
       pos({ ticker: "A", assetClass: "ACAO_BR_DIVIDENDO", quantity: 100, avgPrice: 815 }),  // 81,500 (~21%)
       pos({ ticker: "B", assetClass: "STOCK_US", currency: "USD", quantity: 1, avgPrice: 1850 }), // 9,620 BRL (~2.5%)
       pos({ ticker: "C", assetClass: "ETF_BR", quantity: 1, avgPrice: 6155 }),               // 6,155 (~1.6%)
-      pos({ ticker: "D", assetClass: "FII_PAPEL", quantity: 1, avgPrice: 287000 }),          // 287,000 (~74.6%)
+      pos({ ticker: "D", assetClass: "FII", quantity: 1, avgPrice: 287000 }),          // 287,000 (~74.6%)
     ];
     const plan = planContribution(positions, macro, 1000, "balanced");
-    const fii = plan.byClass.find((c) => c.assetClass === "FII_PAPEL");
+    const fii = plan.byClass.find((c) => c.assetClass === "FII");
     // FII está super-alocado — não deve receber centavo.
     expect(fii?.suggestedR$).toBe(0);
     // Soma das sugestões das classes sub-alocadas fecha com o aporte.
@@ -114,7 +114,7 @@ describe("planContribution", () => {
   it("soma das sugestões fecha com o aporte (dentro de tolerância)", () => {
     const positions: AssetPosition[] = [
       pos({ ticker: "A", assetClass: "ACAO_BR_DIVIDENDO", quantity: 100, avgPrice: 30 }),
-      pos({ ticker: "B", assetClass: "FII_PAPEL", quantity: 10, avgPrice: 100 }),
+      pos({ ticker: "B", assetClass: "FII", quantity: 10, avgPrice: 100 }),
       pos({ ticker: "C", assetClass: "ETF_BR", quantity: 5, avgPrice: 80 }),
     ];
     const plan = planContribution(positions, macro, 1500, "balanced");

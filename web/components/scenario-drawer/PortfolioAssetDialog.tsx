@@ -40,7 +40,7 @@ type Props = {
   onDelete?: () => void;
 };
 
-const DEFAULT_TYPE: PortfolioAssetTypeId = "FII_PAPEL";
+const DEFAULT_TYPE: PortfolioAssetTypeId = "FII";
 
 const toPct = (decimal: number) => Math.round(decimal * 10000) / 100;
 

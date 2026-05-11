@@ -56,7 +56,7 @@ const ACOES_ISENTA_CLASSES: AssetClass[] = [
 const ACOES_TRIBUTADA_CLASSES: AssetClass[] = [
   "BDR", "STOCK_US", "REIT_US", "ETF_US",
 ];
-const FII_CLASSES: AssetClass[] = ["FII_PAPEL", "FII_TIJOLO"];
+const FII_CLASSES: AssetClass[] = ["FII"];
 
 function bucketFromClass(cls: AssetClass | null): TaxBucket | null {
   if (!cls) return null;

@@ -43,7 +43,7 @@ describe("AtivosPageContent", () => {
       positions: [{
         id: "1",
         ticker: "HGCR11",
-        assetClass: "FII_PAPEL",
+        assetClass: "FII",
         currency: "BRL",
         quantity: 100,
         avgPrice: 100,

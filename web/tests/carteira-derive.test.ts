@@ -58,7 +58,7 @@ describe("carteira-derive — KPIs blended", () => {
 
 describe("carteira-derive — normalizedWeights", () => {
   it("pesos somando 1 ficam iguais", () => {
-    expect(normalizedWeights(PF)).toEqual([0.25, 0.25, 0.20, 0.15, 0.15]);
+    expect(normalizedWeights(PF)).toEqual([0.50, 0.20, 0.15, 0.15]);
   });
 
   it("pesos somando 2 são divididos por 2", () => {
@@ -68,7 +68,7 @@ describe("carteira-derive — normalizedWeights", () => {
     };
     const w = normalizedWeights(pf);
     expect(w.reduce((s, v) => s + v, 0)).toBeCloseTo(1, 5);
-    expect(w[0]).toBeCloseTo(0.25, 5);
+    expect(w[0]).toBeCloseTo(0.50, 5);
   });
 
   it("pesos zerados retornam zeros (não NaN)", () => {
@@ -76,17 +76,16 @@ describe("carteira-derive — normalizedWeights", () => {
       ...PF,
       assets: PF.assets.map((a) => ({ ...a, weight: 0 })),
     };
-    expect(normalizedWeights(pf)).toEqual([0, 0, 0, 0, 0]);
+    expect(normalizedWeights(pf)).toEqual([0, 0, 0, 0]);
   });
 });
 
 describe("carteira-derive — allocationSegments", () => {
-  it("retorna 5 segmentos para defaults", () => {
+  it("retorna 4 segmentos para defaults (FII consolidado)", () => {
     const segs = allocationSegments(PF);
-    expect(segs).toHaveLength(5);
+    expect(segs).toHaveLength(4);
     expect(segs.map((s) => s.name)).toEqual([
-      "FIIs de Papel",
-      "FIIs de Tijolo",
+      "FIIs",
       "Ações BR Dividendos",
       "Dividend Aristocrats US",
       "Tesouro IPCA+ / LCI",
@@ -101,19 +100,21 @@ describe("carteira-derive — allocationSegments", () => {
 
   it("amount = capital × weight", () => {
     const segs = allocationSegments(PF);
-    expect(segs[0].amount).toBe(57_500);
-    expect(segs[3].amount).toBe(34_500);
+    // FIIs 50% × 230k = 115k; Aristocrats US (idx 2) 15% × 230k = 34.5k
+    expect(segs[0].amount).toBe(115_000);
+    expect(segs[2].amount).toBe(34_500);
   });
 
   it("netYield = expectedYield × (1 - taxRate)", () => {
     const segs = allocationSegments(PF);
-    expect(segs[3].netYield).toBeCloseTo(0.04 * 0.7, 5);
+    // Aristocrats US (idx 2): 0.04 × (1 - 0.30) = 0.028
+    expect(segs[2].netYield).toBeCloseTo(0.04 * 0.7, 5);
   });
 
   it("color usa ASSET_COLORS pelo índice", () => {
     const segs = allocationSegments(PF);
     expect(segs[0].color).toBe(ASSET_COLORS[0]);
-    expect(segs[4].color).toBe(ASSET_COLORS[4]);
+    expect(segs[3].color).toBe(ASSET_COLORS[3]);
   });
 });
 

@@ -8,7 +8,7 @@ describe("donutSlices", () => {
   it("retorna um slice por segmento não-zero", () => {
     const segs = allocationSegments(PF);
     const slices = donutSlices({ segments: segs, cx: 140, cy: 140, outerR: 110, innerR: 70 });
-    expect(slices).toHaveLength(5);
+    expect(slices).toHaveLength(4);
   });
 
   it("filtra segmentos com weight = 0", () => {
@@ -17,7 +17,7 @@ describe("donutSlices", () => {
       assets: PF.assets.map((a, i) => ({ ...a, weight: i === 0 ? 0 : a.weight })),
     });
     const slices = donutSlices({ segments: segs, cx: 140, cy: 140, outerR: 110, innerR: 70 });
-    expect(slices).toHaveLength(4);
+    expect(slices).toHaveLength(3);
   });
 
   it("1 segmento (weight=1) gera path com 2 arcos (split)", () => {
@@ -31,15 +31,15 @@ describe("donutSlices", () => {
     expect(arcCount).toBeGreaterThanOrEqual(2);
   });
 
-  it("5 segmentos uniformes têm midAngle distribuídos a cada 72°", () => {
+  it("4 segmentos uniformes têm midAngle distribuídos a cada 90°", () => {
     const segs = allocationSegments({
       ...PF,
-      assets: PF.assets.map((a) => ({ ...a, weight: 0.2 })),
+      assets: PF.assets.map((a) => ({ ...a, weight: 0.25 })),
     });
     const slices = donutSlices({ segments: segs, cx: 140, cy: 140, outerR: 110, innerR: 70 });
     for (let i = 1; i < slices.length; i++) {
       const diff = slices[i].midAngle - slices[i - 1].midAngle;
-      expect(diff).toBeCloseTo((2 * Math.PI) / 5, 4);
+      expect(diff).toBeCloseTo((2 * Math.PI) / 4, 4);
     }
   });
 

@@ -1,8 +1,7 @@
 import { z } from "zod";
 
 export const assetClassSchema = z.enum([
-  "FII_PAPEL",
-  "FII_TIJOLO",
+  "FII",
   "ACAO_BR_DIVIDENDO",
   "ACAO_BR_CRESCIMENTO",
   "ETF_BR",
@@ -46,25 +45,15 @@ type AssetClassMeta = {
 };
 
 export const ASSET_CLASS_META: Record<AssetClass, AssetClassMeta> = {
-  FII_PAPEL: {
-    label: "FII de Papel",
+  FII: {
+    label: "FII",
     market: "BR",
     defaultCurrency: "BRL",
     taxRate: 0,
-    taxNote: "Rendimentos isentos PF",
+    taxNote: "Rendimentos isentos PF (Papel, Tijolo, Agro, FoF, Híbrido)",
     color: "#FFC857",
-    defaultYield: 0.13,
-    defaultCapitalGain: 0,
-  },
-  FII_TIJOLO: {
-    label: "FII de Tijolo",
-    market: "BR",
-    defaultCurrency: "BRL",
-    taxRate: 0,
-    taxNote: "Rendimentos isentos PF",
-    color: "#FF6B5B",
-    defaultYield: 0.09,
-    defaultCapitalGain: 0.02,
+    defaultYield: 0.11,
+    defaultCapitalGain: 0.01,
   },
   ACAO_BR_DIVIDENDO: {
     label: "Ação BR (dividendo)",

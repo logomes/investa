@@ -16,8 +16,10 @@ const LABEL_TO_CLASS: Record<string, AssetClass> = {
       (cls) => [ASSET_CLASS_META[cls].label, cls],
     ),
   ),
-  "FII Papel":             "FII_PAPEL",
-  "FII Tijolo":             "FII_TIJOLO",
+  "FII Papel":             "FII",
+  "FII Tijolo":             "FII",
+  "FII de Papel":          "FII",
+  "FII de Tijolo":         "FII",
   "Ação BR Dividendo":     "ACAO_BR_DIVIDENDO",
   "Ação BR Crescimento":   "ACAO_BR_CRESCIMENTO",
 };

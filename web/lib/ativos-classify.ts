@@ -26,7 +26,7 @@ export function inferAssetClass(ticker: string): AssetClass | null {
   if (!t) return null;
 
   if (BDR.test(t)) return "BDR";
-  if (FII_OR_ETF_11.test(t)) return KNOWN_ETF_BR.has(t) ? "ETF_BR" : "FII_PAPEL";
+  if (FII_OR_ETF_11.test(t)) return KNOWN_ETF_BR.has(t) ? "ETF_BR" : "FII";
   if (ACAO_BR.test(t)) return "ACAO_BR_DIVIDENDO";
   if (/^[A-Z]+$/.test(t)) return "STOCK_US";
 

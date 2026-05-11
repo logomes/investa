@@ -8,7 +8,7 @@ function trade(t: Partial<B3Trade> & { ticker: string; date: string; side: "buy"
 }
 
 const lookupAcao = () => "ACAO_BR_DIVIDENDO" as AssetClass;
-const lookupFii = () => "FII_PAPEL" as AssetClass;
+const lookupFii = () => "FII" as AssetClass;
 const lookupBdr = () => "BDR" as AssetClass;
 
 describe("computeMonthlyDarf", () => {
@@ -79,7 +79,7 @@ describe("computeMonthlyDarf", () => {
       trade({ ticker: "HGCR11", date: "2026-01-15", side: "sell", quantity: 50, price: 80 }),
     ];
     // mock per-ticker class
-    const lookup = (t: string): AssetClass => t === "HGCR11" ? "FII_PAPEL" : "ACAO_BR_DIVIDENDO";
+    const lookup = (t: string): AssetClass => t === "HGCR11" ? "FII" : "ACAO_BR_DIVIDENDO";
     const trades2 = [
       ...trades,
       // Ação lucro 5000 acima de 20k vendas (sem prejuízo a compensar do bucket ações)
@@ -160,6 +160,6 @@ describe("tickerToClassMap", () => {
     const lookup = tickerToClassMap([]);
     expect(lookup("BAZA3")).toBe("ACAO_BR_DIVIDENDO"); // *3 = ON
     expect(lookup("ROXO34")).toBe("BDR");              // *34 = BDR
-    expect(lookup("HGCR11")).toBe("FII_PAPEL");        // *11 sem whitelist = FII
+    expect(lookup("HGCR11")).toBe("FII");        // *11 sem whitelist = FII
   });
 });

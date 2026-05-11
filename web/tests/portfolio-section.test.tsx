@@ -36,7 +36,7 @@ describe("PortfolioSection", () => {
       ...base,
       portfolio: {
         ...base.portfolio,
-        assets: base.portfolio.assets.map((a, i) => (i === 0 ? { ...a, weight: 0.5 } : a)),
+        assets: base.portfolio.assets.map((a, i) => (i === 0 ? { ...a, weight: 0.75 } : a)),
       },
     };
     render(<Harness initial={broken} />);
@@ -53,19 +53,20 @@ describe("PortfolioSection", () => {
   it("clicking the trash icon on a row removes that asset (after confirm)", () => {
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
     render(<Harness initial={base} />);
-    expect(screen.getByTestId("assets-count").textContent).toBe("5");
-    const firstRow = screen.getByText("FIIs de Papel").closest("[data-testid='asset-row']")!;
-    fireEvent.click(within(firstRow as HTMLElement).getByLabelText(/excluir/i));
     expect(screen.getByTestId("assets-count").textContent).toBe("4");
+    const firstRow = screen.getByText("FIIs").closest("[data-testid='asset-row']")!;
+    fireEvent.click(within(firstRow as HTMLElement).getByLabelText(/excluir/i));
+    expect(screen.getByTestId("assets-count").textContent).toBe("3");
     confirmSpy.mockRestore();
   });
 
   it("editing weight via dialog updates the row and the Σ badge live", async () => {
     render(<Harness initial={base} />);
-    const firstRow = screen.getByText("FIIs de Papel").closest("[data-testid='asset-row']")!;
+    const firstRow = screen.getByText("FIIs").closest("[data-testid='asset-row']")!;
     fireEvent.click(within(firstRow as HTMLElement).getByLabelText(/editar/i));
     const weightInput = await screen.findByLabelText(/peso/i);
-    fireEvent.input(weightInput, { target: { value: "50" } });
+    // FIIs default weight = 50% — push to 75% to make Σ = 125%
+    fireEvent.input(weightInput, { target: { value: "75" } });
     const form = screen.getByRole("button", { name: /salvar/i }).closest("form")!;
     fireEvent.submit(form);
     await waitFor(() => {

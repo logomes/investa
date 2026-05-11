@@ -18,10 +18,10 @@ const MACRO: MacroOut = {
   sourceLabel: "test",
 };
 
-const FII_PAPEL: AssetPosition = {
+const FII: AssetPosition = {
   id: "1",
   ticker: "HGCR11",
-  assetClass: "FII_PAPEL",
+  assetClass: "FII",
   currency: "BRL",
   quantity: 100,
   avgPrice: 100,
@@ -30,10 +30,10 @@ const FII_PAPEL: AssetPosition = {
   color: "#FFC857",
 };
 
-const FII_PAPEL_2: AssetPosition = {
+const FII_2: AssetPosition = {
   id: "2",
   ticker: "KNCR11",
-  assetClass: "FII_PAPEL",
+  assetClass: "FII",
   currency: "BRL",
   quantity: 50,
   avgPrice: 200,
@@ -68,7 +68,7 @@ const ETF_BR_POS: AssetPosition = {
 
 describe("ativos-derive — positionValueBRL", () => {
   it("BRL passa direto", () => {
-    expect(positionValueBRL(FII_PAPEL, MACRO)).toBe(10_000);
+    expect(positionValueBRL(FII, MACRO)).toBe(10_000);
   });
 
   it("USD multiplica por usdBrl", () => {
@@ -86,7 +86,7 @@ describe("ativos-derive — ativosKpis", () => {
   });
 
   it("FII Papel (taxRate=0) → blendedYield = expectedYield total", () => {
-    const k = ativosKpis([FII_PAPEL], MACRO);
+    const k = ativosKpis([FII], MACRO);
     expect(k.totalAllocated).toBe(10_000);
     expect(k.blendedYield).toBeCloseTo(0.13, 5);
     expect(k.blendedCapitalGain).toBe(0);
@@ -101,7 +101,7 @@ describe("ativos-derive — ativosKpis", () => {
   });
 
   it("mix FII + Stock US → blendedYield ponderado por valor BRL", () => {
-    const k = ativosKpis([FII_PAPEL, STOCK_US], MACRO);
+    const k = ativosKpis([FII, STOCK_US], MACRO);
     const fiiVal = 10_000;
     const usVal = 10 * 150 * 5.30;
     const total = fiiVal + usVal;
@@ -110,7 +110,7 @@ describe("ativos-derive — ativosKpis", () => {
   });
 
   it("totalReturn = blendedYield + blendedCapitalGain", () => {
-    const k = ativosKpis([FII_PAPEL, STOCK_US], MACRO);
+    const k = ativosKpis([FII, STOCK_US], MACRO);
     expect(k.totalReturn).toBeCloseTo(k.blendedYield + k.blendedCapitalGain, 5);
   });
 
@@ -129,24 +129,24 @@ describe("ativos-derive — byAssetClass", () => {
   });
 
   it("agrega 2 posições da mesma classe", () => {
-    const groups = byAssetClass([FII_PAPEL, FII_PAPEL_2], MACRO);
+    const groups = byAssetClass([FII, FII_2], MACRO);
     expect(groups).toHaveLength(1);
-    expect(groups[0].assetClass).toBe("FII_PAPEL");
+    expect(groups[0].assetClass).toBe("FII");
     expect(groups[0].positions).toBe(2);
     expect(groups[0].totalBRL).toBe(10_000 + 10_000);
     expect(groups[0].weight).toBe(1);
   });
 
   it("ordena por totalBRL desc", () => {
-    const groups = byAssetClass([FII_PAPEL, STOCK_US], MACRO);
-    // STOCK_US BRL = 10*150*5.30 = 7950; FII_PAPEL = 10000. So FII first.
-    expect(groups[0].assetClass).toBe("FII_PAPEL");
+    const groups = byAssetClass([FII, STOCK_US], MACRO);
+    // STOCK_US BRL = 10*150*5.30 = 7950; FII = 10000. So FII first.
+    expect(groups[0].assetClass).toBe("FII");
     expect(groups[1].assetClass).toBe("STOCK_US");
     expect(groups[0].totalBRL).toBeGreaterThan(groups[1].totalBRL);
   });
 
   it("weights somam 1", () => {
-    const groups = byAssetClass([FII_PAPEL, FII_PAPEL_2, STOCK_US], MACRO);
+    const groups = byAssetClass([FII, FII_2, STOCK_US], MACRO);
     const sumWeights = groups.reduce((s, g) => s + g.weight, 0);
     expect(sumWeights).toBeCloseTo(1, 5);
   });
@@ -154,7 +154,7 @@ describe("ativos-derive — byAssetClass", () => {
 
 describe("ativos-derive — byMarket", () => {
   it("BR/US split correto com USD convertido", () => {
-    const split = byMarket([FII_PAPEL, STOCK_US], MACRO);
+    const split = byMarket([FII, STOCK_US], MACRO);
     expect(split.br.totalBRL).toBe(10_000);
     expect(split.br.positions).toBe(1);
     expect(split.us.totalBRL).toBe(10 * 150 * 5.30);
@@ -173,19 +173,19 @@ describe("ativos-derive — byMarket", () => {
 
 describe("unrealizedGain", () => {
   it("retorna null quando não há currentPrice", () => {
-    const p: AssetPosition = { ...FII_PAPEL, currentPrice: undefined };
+    const p: AssetPosition = { ...FII, currentPrice: undefined };
     expect(unrealizedGain(p, MACRO)).toBeNull();
   });
 
   it("BRL: ganho positivo quando currentPrice > avgPrice", () => {
-    const p: AssetPosition = { ...FII_PAPEL, quantity: 100, avgPrice: 100, currentPrice: 110 };
+    const p: AssetPosition = { ...FII, quantity: 100, avgPrice: 100, currentPrice: 110 };
     const g = unrealizedGain(p, MACRO);
     expect(g?.gainBRL).toBeCloseTo(1000, 2); // (110-100)*100
     expect(g?.gainPct).toBeCloseTo(0.10, 5); // 10%
   });
 
   it("BRL: perda quando currentPrice < avgPrice", () => {
-    const p: AssetPosition = { ...FII_PAPEL, quantity: 100, avgPrice: 100, currentPrice: 90 };
+    const p: AssetPosition = { ...FII, quantity: 100, avgPrice: 100, currentPrice: 90 };
     const g = unrealizedGain(p, MACRO);
     expect(g?.gainBRL).toBeCloseTo(-1000, 2);
     expect(g?.gainPct).toBeCloseTo(-0.10, 5);
@@ -193,7 +193,7 @@ describe("unrealizedGain", () => {
 
   it("USD: ganho computado em USD e convertido por usdBrl", () => {
     const p: AssetPosition = {
-      ...FII_PAPEL, currency: "USD", quantity: 10, avgPrice: 200, currentPrice: 250,
+      ...FII, currency: "USD", quantity: 10, avgPrice: 200, currentPrice: 250,
       assetClass: "STOCK_US",
     };
     const g = unrealizedGain(p, MACRO);
@@ -203,12 +203,12 @@ describe("unrealizedGain", () => {
   });
 
   it("currentPrice = 0 retorna null (preço inválido)", () => {
-    const p: AssetPosition = { ...FII_PAPEL, currentPrice: 0 };
+    const p: AssetPosition = { ...FII, currentPrice: 0 };
     expect(unrealizedGain(p, MACRO)).toBeNull();
   });
 
   it("avgPrice = 0 não quebra (gainPct = 0)", () => {
-    const p: AssetPosition = { ...FII_PAPEL, avgPrice: 0.0001, currentPrice: 100 };
+    const p: AssetPosition = { ...FII, avgPrice: 0.0001, currentPrice: 100 };
     const g = unrealizedGain(p, MACRO);
     expect(Number.isFinite(g?.gainPct ?? Infinity)).toBe(true);
   });

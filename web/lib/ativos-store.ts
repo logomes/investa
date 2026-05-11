@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { AssetPosition } from "./ativos-schema";
+import type { AssetPosition, AssetClass } from "./ativos-schema";
 import type { B3PaidProvent, B3ScheduledEvent, B3Trade } from "./b3-import";
 
 const PALETTE = [
@@ -84,6 +84,22 @@ export const useAssetsStore = create<Store>()(
         proventsPaid: s.proventsPaid,
       }),
       skipHydration: true,
+      // v2: FII_PAPEL/FII_TIJOLO collapsed into FII. Migrate existing
+      // localStorage so users with imported positions don't lose them.
+      version: 2,
+      migrate: (persisted: unknown, fromVersion: number) => {
+        const state = (persisted ?? {}) as { positions?: AssetPosition[] };
+        if (fromVersion < 2 && Array.isArray(state.positions)) {
+          state.positions = state.positions.map((p) => {
+            const cls = p.assetClass as string;
+            if (cls === "FII_PAPEL" || cls === "FII_TIJOLO") {
+              return { ...p, assetClass: "FII" as AssetClass };
+            }
+            return p;
+          });
+        }
+        return state;
+      },
     },
   ),
 );

@@ -25,7 +25,7 @@ const formSchema = z.object({
   id: z.string(),
   ticker: z.string().min(1, "obrigatório").regex(/^[A-Za-z0-9.]+$/, "letras/números/ponto"),
   assetClass: z.enum([
-    "FII_PAPEL", "FII_TIJOLO",
+    "FII",
     "ACAO_BR_DIVIDENDO", "ACAO_BR_CRESCIMENTO",
     "ETF_BR", "BDR",
     "STOCK_US", "REIT_US", "ETF_US",
@@ -61,7 +61,7 @@ type Props = {
 };
 
 export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }: Props) {
-  const defaultClass: AssetClass = initial?.assetClass ?? "FII_PAPEL";
+  const defaultClass: AssetClass = initial?.assetClass ?? "FII";
   const meta = ASSET_CLASS_META[defaultClass];
 
   const form = useForm<FormValues>({
@@ -105,7 +105,7 @@ export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }
 
   useEffect(() => {
     if (open) {
-      const cls = initial?.assetClass ?? "FII_PAPEL";
+      const cls = initial?.assetClass ?? "FII";
       const m = ASSET_CLASS_META[cls];
       form.reset({
         id: initial?.id ?? crypto.randomUUID(),

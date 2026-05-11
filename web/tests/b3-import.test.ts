@@ -51,13 +51,13 @@ describe("parseB3Position", () => {
     expect(vale3?.assetClass).toBe("ACAO_BR_DIVIDENDO");
   });
 
-  it("Tipo='FII' explicito refina pra FII_PAPEL", () => {
+  it("Tipo='FII' explicito refina pra FII", () => {
     const rows: (string | number | null)[][] = [
       HEADER,
       ["HGCR11 FII", "BTG", "1", "HGCR11", "111", "BR", "FII", "BTG", 50, 50, "-", "-", "98,30", "4915"],
     ];
     const result = parseB3Position(rows);
-    expect(result.positions[0]?.assetClass).toBe("FII_PAPEL");
+    expect(result.positions[0]?.assetClass).toBe("FII");
   });
 
   it("Tipo='ETF' explicito refina pra ETF_BR", () => {

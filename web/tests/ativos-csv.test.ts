@@ -6,7 +6,7 @@ import { ASSET_CLASS_META } from "@/lib/ativos-schema";
 const samplePosition: AssetPosition = {
   id: "1",
   ticker: "HGCR11",
-  assetClass: "FII_PAPEL",
+  assetClass: "FII",
   currency: "BRL",
   quantity: 100,
   avgPrice: 100,
@@ -44,7 +44,7 @@ describe("ativos-csv — importCsv", () => {
     expect(result.errors).toHaveLength(0);
     expect(result.positions).toHaveLength(1);
     expect(result.positions[0].ticker).toBe("HGCR11");
-    expect(result.positions[0].assetClass).toBe("FII_PAPEL");
+    expect(result.positions[0].assetClass).toBe("FII");
     expect(result.positions[0].avgPrice).toBe(100);
   });
 

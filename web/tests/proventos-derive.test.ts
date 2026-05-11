@@ -19,7 +19,7 @@ const position = (overrides: Partial<AssetPosition> & { ticker: string }): Asset
   const { ticker } = overrides;
   return {
     id: ticker,
-    assetClass: "FII_PAPEL",
+    assetClass: "FII",
     currency: "BRL",
     quantity: 100,
     avgPrice: 100,

@@ -50,12 +50,12 @@ describe("CarteiraPageContent", () => {
     const { container } = render(wrap(<CarteiraPageContent />));
     const svg = container.querySelector(`svg[aria-label="Alocação da carteira"]`);
     expect(svg).toBeTruthy();
-    expect(svg!.querySelectorAll("path").length).toBeGreaterThanOrEqual(5);
+    expect(svg!.querySelectorAll("path").length).toBeGreaterThanOrEqual(4);
   });
 
-  it("renderiza tabela de detalhamento com 5 classes", () => {
+  it("renderiza tabela de detalhamento com 4 classes", () => {
     render(wrap(<CarteiraPageContent />));
-    expect(screen.getAllByText("FIIs de Papel").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("FIIs").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Tesouro IPCA+ / LCI").length).toBeGreaterThanOrEqual(1);
   });
 

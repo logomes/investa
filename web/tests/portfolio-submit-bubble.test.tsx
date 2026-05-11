@@ -33,10 +33,11 @@ describe("Portfolio submit bubble check", () => {
     const onOuterSubmit = vi.fn();
     render(<FullDrawerHarness initial={base} onOuterSubmit={onOuterSubmit} />);
 
-    const firstRow = screen.getByText("FIIs de Papel").closest("[data-testid='asset-row']")!;
+    const firstRow = screen.getByText("FIIs").closest("[data-testid='asset-row']")!;
     fireEvent.click(within(firstRow as HTMLElement).getByLabelText(/editar/i));
     const weightInput = await screen.findByLabelText(/peso/i);
-    fireEvent.input(weightInput, { target: { value: "50" } });
+    // FIIs default weight = 50%; push to 75% to land at Σ = 125%
+    fireEvent.input(weightInput, { target: { value: "75" } });
 
     // Click Salvar (real-browser-like)
     fireEvent.click(screen.getByRole("button", { name: /salvar/i }));
