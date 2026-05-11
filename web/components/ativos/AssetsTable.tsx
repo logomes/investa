@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { B3ImportGuide } from "./B3ImportGuide";
 import { positionValueBRL, unrealizedGain } from "@/lib/ativos-derive";
-import { ASSET_CLASS_META } from "@/lib/ativos-schema";
+import { ASSET_CLASS_META, FII_SUBTYPE_LABEL } from "@/lib/ativos-schema";
 import type { AssetPosition } from "@/lib/ativos-schema";
 import type { MacroOut } from "@/lib/api-types";
 import { formatRs, formatPercent } from "@/lib/format";
@@ -113,7 +113,12 @@ export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImpor
                         <span className="text-ink font-medium">{p.ticker}</span>
                       </div>
                     </td>
-                    <td className="py-2 px-2 text-ink-2">{meta.label}</td>
+                    <td className="py-2 px-2 text-ink-2">
+                      {meta.label}
+                      {p.fiiSubtype && (
+                        <span className="text-ink-3 text-[11px]"> · {FII_SUBTYPE_LABEL[p.fiiSubtype]}</span>
+                      )}
+                    </td>
                     <td className="text-right py-2 px-2 text-ink-3">{p.currency}</td>
                     <td className="text-right py-2 px-2 tabular text-ink-2">{p.quantity}</td>
                     <td className="text-right py-2 px-2 tabular text-ink-2">

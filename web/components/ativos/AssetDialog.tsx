@@ -14,9 +14,10 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { ASSET_CLASS_META } from "@/lib/ativos-schema";
-import type { AssetClass, AssetPosition, Currency } from "@/lib/ativos-schema";
+import { ASSET_CLASS_META, FII_SUBTYPE_LABEL } from "@/lib/ativos-schema";
+import type { AssetClass, AssetPosition, Currency, FiiSubtype } from "@/lib/ativos-schema";
 import { inferAssetClass } from "@/lib/ativos-classify";
+import { lookupFiiSubtype } from "@/lib/fii-subtypes";
 import { fetchQuote, QuoteNotFoundError } from "@/lib/quotes";
 import { relativeTime } from "@/lib/relative-time";
 import type { QuoteOut } from "@/lib/api-types";
@@ -37,6 +38,7 @@ const formSchema = z.object({
   capitalGain: z.number().min(-100, "ganho -100–100%").max(100, "ganho -100–100%"),
   currentPrice: z.number().positive().optional(),
   asOf: z.string().datetime().optional(),
+  fiiSubtype: z.enum(["papel", "tijolo", "agro", "fof", "hibrido", ""]).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -77,6 +79,7 @@ export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }
       capitalGain: initial !== undefined ? initial.capitalGain * 100 : meta.defaultCapitalGain * 100,
       currentPrice: initial?.currentPrice,
       asOf: initial?.asOf,
+      fiiSubtype: initial?.fiiSubtype ?? "",
     },
   });
 
@@ -118,6 +121,7 @@ export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }
         capitalGain: initial !== undefined ? initial.capitalGain * 100 : m.defaultCapitalGain * 100,
         currentPrice: initial?.currentPrice,
         asOf: initial?.asOf,
+        fiiSubtype: initial?.fiiSubtype ?? "",
       });
       if (initial?.currentPrice && initial.asOf) {
         setQuote({
@@ -159,6 +163,14 @@ export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }
     if (inferred && inferred !== form.getValues("assetClass")) {
       form.setValue("assetClass", inferred);
     }
+    // Auto-populate FII subtype from the curated lookup table whenever
+    // we land on the FII class and the user hasn't picked one manually.
+    if (inferred === "FII" || form.getValues("assetClass") === "FII") {
+      const subtype = lookupFiiSubtype(watchedTicker);
+      if (subtype && !form.getValues("fiiSubtype")) {
+        form.setValue("fiiSubtype", subtype);
+      }
+    }
   }, [watchedTicker, open, initial, classManuallySet, form]);
 
   async function loadQuote(rawTicker: string, cls: AssetClass) {
@@ -185,11 +197,19 @@ export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }
   }
 
   const handleSubmit = form.handleSubmit((data) => {
+    // Empty string from the subtype select = "no subtype" → drop the field
+    // entirely so it doesn't pollute the persisted shape.
+    const { fiiSubtype, ...rest } = data;
+    const subtypePart =
+      data.assetClass === "FII" && fiiSubtype
+        ? { fiiSubtype: fiiSubtype as FiiSubtype }
+        : {};
     onSubmit({
-      ...data,
+      ...rest,
       ticker: data.ticker.toUpperCase(),
       expectedYield: data.expectedYield / 100,
       capitalGain: data.capitalGain / 100,
+      ...subtypePart,
     });
   });
 
@@ -231,6 +251,26 @@ export function AssetDialog({ open, mode, initial, onClose, onSubmit, onDelete }
               </SelectContent>
             </Select>
           </div>
+
+          {form.watch("assetClass") === "FII" && (
+            <div className="space-y-1">
+              <Label htmlFor="a-fii-subtype">Subtipo (opcional)</Label>
+              <Select
+                value={form.watch("fiiSubtype") || ""}
+                onValueChange={(v) => form.setValue("fiiSubtype", v as FiiSubtype | "")}
+              >
+                <SelectTrigger id="a-fii-subtype">
+                  <SelectValue placeholder="(não definido)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">(não definido)</SelectItem>
+                  {(Object.entries(FII_SUBTYPE_LABEL) as Array<[FiiSubtype, string]>).map(([v, label]) => (
+                    <SelectItem key={v} value={v}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">

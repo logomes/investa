@@ -189,6 +189,10 @@ async function handleB3Import(
       expectedYield: classChanged ? meta.defaultYield : existingPos?.expectedYield ?? meta.defaultYield,
       capitalGain: classChanged ? meta.defaultCapitalGain : existingPos?.capitalGain ?? meta.defaultCapitalGain,
       color: existingPos?.color,
+      // Carry the subtype from B3 lookup, falling back to whatever the
+      // user already set on the existing position — only overwrite when
+      // the auto-classification has a confident hit.
+      fiiSubtype: p.fiiSubtype ?? existingPos?.fiiSubtype,
     });
   }
   const totalPaidProvents = provents.reduce((s, p) => s + p.netValue, 0);

@@ -15,7 +15,8 @@
  * Extratos → Negociação (separate scope, deferred).
  */
 import { inferAssetClass } from "./ativos-classify";
-import type { AssetClass } from "./ativos-schema";
+import { lookupFiiSubtype } from "./fii-subtypes";
+import type { AssetClass, FiiSubtype } from "./ativos-schema";
 
 export type ParsedB3Position = {
   ticker: string;
@@ -24,6 +25,7 @@ export type ParsedB3Position = {
   quantity: number;
   closingPrice: number;
   asOf: string; // ISO 8601
+  fiiSubtype?: FiiSubtype;
 };
 
 export type B3Trade = {
@@ -172,14 +174,18 @@ export function parseB3Position(rows: readonly (readonly (string | number | null
 
   const asOf = new Date().toISOString();
   const sheetHint = sheetName ? classFromSheetName(sheetName) : null;
-  const positions: ParsedB3Position[] = Array.from(agg.entries()).map(([ticker, v]) => ({
-    ticker,
-    assetClass: sheetHint ?? refineClassFromTipo(ticker, v.tipo),
-    currency: "BRL",
-    quantity: v.quantity,
-    closingPrice: v.closingPrice,
-    asOf,
-  }));
+  const positions: ParsedB3Position[] = Array.from(agg.entries()).map(([ticker, v]) => {
+    const assetClass = sheetHint ?? refineClassFromTipo(ticker, v.tipo);
+    return {
+      ticker,
+      assetClass,
+      currency: "BRL",
+      quantity: v.quantity,
+      closingPrice: v.closingPrice,
+      asOf,
+      ...(assetClass === "FII" ? { fiiSubtype: lookupFiiSubtype(ticker) } : {}),
+    };
+  });
 
   return { positions, brokers: Array.from(brokers).sort(), errors };
 }

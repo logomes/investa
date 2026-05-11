@@ -12,6 +12,23 @@ export const assetClassSchema = z.enum([
 ]);
 export type AssetClass = z.infer<typeof assetClassSchema>;
 
+export const fiiSubtypeSchema = z.enum([
+  "papel",   // Recebíveis (CRI/CRA, dívida imobiliária)
+  "tijolo",  // Imóveis físicos (galpões, shoppings, lajes)
+  "agro",    // Fiagro / agronegócio
+  "fof",     // Fund of funds (carteira de outros FIIs)
+  "hibrido", // Mix de papel + tijolo (ou outro)
+]);
+export type FiiSubtype = z.infer<typeof fiiSubtypeSchema>;
+
+export const FII_SUBTYPE_LABEL: Record<FiiSubtype, string> = {
+  papel: "Papel",
+  tijolo: "Tijolo",
+  agro: "Agro",
+  fof: "FoF",
+  hibrido: "Híbrido",
+};
+
 export const currencySchema = z.enum(["BRL", "USD"]);
 export type Currency = z.infer<typeof currencySchema>;
 
@@ -29,6 +46,7 @@ export const assetPositionSchema = z.object({
   color: z.string().regex(colorRegex),
   currentPrice: z.number().positive().optional(),
   asOf: z.string().datetime().optional(),
+  fiiSubtype: fiiSubtypeSchema.optional(),
 });
 
 export type AssetPosition = z.infer<typeof assetPositionSchema>;
