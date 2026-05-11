@@ -32,6 +32,10 @@ GoalCard goal value is now click-to-edit: button → input pre-filled with curre
 
 **Deferido:** Tesouro Direto (aba separada do portal, formato distinto), eventos corporativos quantitativos (split/inplit/bonificação — aparecem em Movimentação como `Bonificação em Ativos`/`Desdobro` mas o user não tem amostra ainda), integração com Pluggy/Belvo aggregators pra atualização contínua sem upload manual.
 
+### Dashboard de Proventos — ✅ shipped 2026-05-11
+
+`/proventos` agrega histórico de Rendimento/Dividendo/JCP pagos (extraídos automaticamente da Movimentação) com agendados futuros (Eventos). KPIs: recebido 12m, agendado futuro, DY realizado vs esperado ponderado, próximo pagamento. Bar chart 24m passados + 3m futuros (futuros em opacity baixa). Tabela por ativo com DY realizado vs esperado e gap colorido. Trades duplicados são deduplicados via key `date|ticker|type|netValue`.
+
 ### Auto-fetch current quote (`currentPrice` + `asOf`) on add/edit — ✅ shipped 2026-05-09
 
 **Shipped scope:** `GET /api/quotes?ticker=&market=` with provider chain (BR: BRAPI → Yahoo `.SA`; US: Yahoo → Stooq), 60s server cache, 3s per-provider timeout, no API keys. Frontend `AssetDialog` fetches on ticker blur. `AssetsTable` shows a "Preço atual" column with currentPrice converted to BRL (US assets use `macro.usdBrl`), native USD as subtext, relative `asOf`, and per-row refresh button.

@@ -9,6 +9,7 @@ import {
   Vault,
   Briefcase,
   FileText,
+  Coins,
   type LucideIcon,
 } from "lucide-react";
 
@@ -32,6 +33,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { slug: "sensibilidade", label: "Sensibilidade", href: "/sensibilidade", icon: Target, fase: 5 },
       { slug: "tributacao", label: "Tributação", href: "/tributacao", icon: Receipt, fase: 5 },
       { slug: "ir", label: "DARF / IR", href: "/ir", icon: FileText, fase: 5 },
+      { slug: "proventos", label: "Proventos", href: "/proventos", icon: Coins, fase: 5 },
       { slug: "risco", label: "Risco MC", href: "/risco", icon: Dices, badge: "MC", fase: 5 },
       { slug: "exportar", label: "Exportar", href: "/exportar", icon: Download, fase: 5 },
       { slug: "renda-fixa", label: "Renda Fixa", href: "/renda-fixa", icon: Vault, fase: 5 },

@@ -16,10 +16,12 @@ import {
   parseB3Movements,
   parseB3Negociacao,
   parseB3Events,
+  parseB3PaidProvents,
   computeAverageCost,
   type ParsedB3Position,
   type B3Trade,
   type B3ScheduledEvent,
+  type B3PaidProvent,
 } from "@/lib/b3-import";
 import { ErrorCard } from "@/components/error/ErrorCard";
 import { KpiSkeleton } from "@/components/kpi/KpiSkeleton";
@@ -56,10 +58,12 @@ async function handleB3Import(
   upsert: (p: Omit<AssetPosition, "color"> & { color?: string }) => void,
   replaceScheduledEvents: (events: B3ScheduledEvent[]) => void,
   mergeTrades: (trades: B3Trade[]) => void,
+  mergeProventsPaid: (provents: B3PaidProvent[]) => void,
 ): Promise<void> {
   const positions: ParsedB3Position[] = [];
   const trades: B3Trade[] = [];
   const events: B3ScheduledEvent[] = [];
+  const provents: B3PaidProvent[] = [];
   const brokers = new Set<string>();
   let earliestDate: string | null = null;
   const errors: string[] = [];
@@ -95,6 +99,10 @@ async function handleB3Import(
         if (r.earliestDate && (!earliestDate || r.earliestDate < earliestDate)) earliestDate = r.earliestDate;
         r.errors.forEach((e) => errors.push(`${file.name}/${sheet.name}: ${e.message}`));
         if (r.trades.length > 0) recognizedSheets.push(`Movimentação (${r.trades.length} trades)`);
+        // Same sheet also carries Rendimento/Dividendo/JCP payments — extract those too.
+        const rp = parseB3PaidProvents(sheet.rows);
+        provents.push(...rp.provents);
+        if (rp.provents.length > 0) recognizedSheets.push(`Proventos (${rp.provents.length})`);
       } else if (isB3EventsHeader(header)) {
         const r = parseB3Events(sheet.rows);
         events.push(...r.events);
@@ -104,7 +112,7 @@ async function handleB3Import(
     }
   }
 
-  if (positions.length === 0 && events.length === 0 && trades.length === 0) {
+  if (positions.length === 0 && events.length === 0 && trades.length === 0 && provents.length === 0) {
     alert(
       `Nenhum dado reconhecido.${errors.length ? "\n\n" + errors.join("\n") : ""}\n\n` +
       `Esperado: arquivo de Posição (Minha Carteira → Investimentos), Movimentação, Negociação ou Eventos (Extratos).`,
@@ -154,6 +162,9 @@ async function handleB3Import(
   if (trades.length > 0) {
     mergeTrades(trades);
   }
+  if (provents.length > 0) {
+    mergeProventsPaid(provents);
+  }
 
   for (const p of positions) {
     const existingPos = existing.find((x) => x.ticker === p.ticker);
@@ -179,10 +190,12 @@ async function handleB3Import(
       color: existingPos?.color,
     });
   }
+  const totalPaidProvents = provents.reduce((s, p) => s + p.netValue, 0);
   const lines: string[] = [];
   if (positions.length > 0) lines.push(`${positions.length} posições importadas (${positionsWithRealAvg} com preço médio real)`);
   if (events.length > 0) lines.push(`${events.length} eventos agendados (R$ ${totalScheduledIncome.toFixed(2)})`);
   if (trades.length > 0) lines.push(`${trades.length} trades adicionados ao histórico (deduplicados se já existentes)`);
+  if (provents.length > 0) lines.push(`${provents.length} proventos pagos importados (R$ ${totalPaidProvents.toFixed(2)})`);
   alert(lines.join("\n") || "Sem alterações.");
 }
 
@@ -206,6 +219,7 @@ export function AtivosPageContent() {
   const replaceAll = useAssetsStore((s) => s.replaceAllPositions);
   const replaceScheduledEvents = useAssetsStore((s) => s.replaceScheduledEvents);
   const mergeTrades = useAssetsStore((s) => s.mergeTrades);
+  const mergeProventsPaid = useAssetsStore((s) => s.mergeProventsPaid);
   const macro = useMacro();
   const fileRef = useRef<HTMLInputElement>(null);
   const b3FileRef = useRef<HTMLInputElement>(null);
@@ -288,7 +302,7 @@ export function AtivosPageContent() {
           const files = e.target.files ? Array.from(e.target.files) : [];
           if (files.length === 0) return;
           try {
-            await handleB3Import(files, positions, upsert, replaceScheduledEvents, mergeTrades);
+            await handleB3Import(files, positions, upsert, replaceScheduledEvents, mergeTrades, mergeProventsPaid);
           } finally {
             e.target.value = "";
           }

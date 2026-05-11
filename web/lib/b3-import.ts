@@ -61,6 +61,22 @@ export type B3EventsResult = {
   errors: B3ImportError[];
 };
 
+// Historical income that already settled (Movimentação shows them with
+// types Rendimento / Dividendo / Juros Sobre Capital Próprio / Reembolso).
+// Unlike B3ScheduledEvent (forward-looking, from Eventos export), these are
+// past payments and carry the cash that hit the account.
+export type B3PaidProvent = {
+  ticker: string;
+  type: string;       // raw type as B3 reports it
+  paidDate: string;   // ISO YYYY-MM-DD
+  netValue: number;   // in BRL
+};
+
+export type B3PaidProventsResult = {
+  provents: B3PaidProvent[];
+  errors: B3ImportError[];
+};
+
 export function isB3PositionHeader(row: readonly (string | null | undefined)[]): boolean {
   if (!row) return false;
   // Discriminator columns are enough — ações sheets have 14 cols, ETF/FII sheets 13.
@@ -249,6 +265,74 @@ export function parseB3Movements(rows: readonly (readonly (string | number | nul
   }
 
   return { trades, errors, earliestDate, latestDate };
+}
+
+// ---------- Paid provents from Movimentação ----------
+// Same header/file as parseB3Movements, but here we extract rows that
+// represent income paid out (Rendimento/Dividendo/JCP/Reembolso) instead
+// of trades. This gives us a historical view that complements the
+// forward-looking Eventos export.
+
+const PROVENT_TYPES = ["Rendimento", "Dividendo", "Juros Sobre Capital Próprio"] as const;
+
+function isProventType(t: string): boolean {
+  const upper = t.toUpperCase();
+  if (PROVENT_TYPES.some((p) => upper === p.toUpperCase())) return true;
+  // "Reembolso - ..." also represents cash that hit the account.
+  return upper.startsWith("REEMBOLSO");
+}
+
+export function parseB3PaidProvents(rows: readonly (readonly (string | number | null | undefined)[])[]): B3PaidProventsResult {
+  if (rows.length === 0) {
+    return { provents: [], errors: [{ row: 0, message: "arquivo vazio" }] };
+  }
+  const header = rows[0].map((c) => (typeof c === "string" ? c.trim() : ""));
+  if (!isB3MovementsHeader(header)) {
+    return { provents: [], errors: [{ row: 0, message: "cabeçalho não corresponde ao relatório B3 Movimentação" }] };
+  }
+
+  const colIdx = (name: string) => header.indexOf(name);
+  const DATE = colIdx("Data");
+  const TYPE = colIdx("Movimentação");
+  const PRODUTO = colIdx("Produto");
+  const QTY = colIdx("Quantidade");
+  const PRICE = colIdx("Preço unitário");
+  // "Valor da Operação" / "Valor da operação" — fall back to qty × price
+  // when the column is missing or empty.
+  const VALOR = header.findIndex((h) => /^valor\s+da\s+opera/i.test(h));
+
+  const provents: B3PaidProvent[] = [];
+  const errors: B3ImportError[] = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    const moveType = typeof row[TYPE] === "string" ? (row[TYPE] as string).trim() : "";
+    if (!isProventType(moveType)) continue;
+
+    const produto = typeof row[PRODUTO] === "string" ? (row[PRODUTO] as string) : "";
+    const ticker = tickerFromProduto(produto);
+    if (!ticker) continue;
+
+    const dateRaw = typeof row[DATE] === "string" ? (row[DATE] as string) : "";
+    const paidDate = parseBrDate(dateRaw);
+    if (!paidDate) {
+      errors.push({ row: i + 1, message: `linha ${i + 1}: data inválida '${dateRaw}'` });
+      continue;
+    }
+
+    const direct = VALOR >= 0 ? parseBrNumber(row[VALOR]) : null;
+    let netValue = direct;
+    if (netValue === null || netValue <= 0) {
+      const qty = parseBrNumber(row[QTY]);
+      const price = parseBrNumber(row[PRICE]);
+      if (qty !== null && price !== null && qty > 0 && price > 0) netValue = qty * price;
+    }
+    if (netValue === null || netValue <= 0) continue;
+
+    provents.push({ ticker, type: moveType, paidDate, netValue });
+  }
+
+  return { provents, errors };
 }
 
 // ---------- Negociação export ("Extratos → Negociação") ----------
