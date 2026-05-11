@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { AssetPosition, AssetClass } from "./ativos-schema";
 import type { B3PaidProvent, B3ScheduledEvent, B3Trade } from "./b3-import";
+import { lookupFiiSubtype } from "./fii-subtypes";
 
 const PALETTE = [
   "#5CC8FF", "#FFC857", "#46E8A4", "#FF6B5B",
@@ -84,18 +85,27 @@ export const useAssetsStore = create<Store>()(
         proventsPaid: s.proventsPaid,
       }),
       skipHydration: true,
-      // v2: FII_PAPEL/FII_TIJOLO collapsed into FII. Migrate existing
-      // localStorage so users with imported positions don't lose them.
-      version: 2,
+      // v2: FII_PAPEL/FII_TIJOLO collapsed into FII.
+      // v3: backfill fiiSubtype via the curated lookup table — positions
+      //     imported before auto-classify existed have undefined subtype.
+      version: 3,
       migrate: (persisted: unknown, fromVersion: number) => {
         const state = (persisted ?? {}) as { positions?: AssetPosition[] };
-        if (fromVersion < 2 && Array.isArray(state.positions)) {
+        if (!Array.isArray(state.positions)) return state;
+        if (fromVersion < 2) {
           state.positions = state.positions.map((p) => {
             const cls = p.assetClass as string;
             if (cls === "FII_PAPEL" || cls === "FII_TIJOLO") {
               return { ...p, assetClass: "FII" as AssetClass };
             }
             return p;
+          });
+        }
+        if (fromVersion < 3) {
+          state.positions = state.positions.map((p) => {
+            if (p.assetClass !== "FII" || p.fiiSubtype) return p;
+            const subtype = lookupFiiSubtype(p.ticker);
+            return subtype ? { ...p, fiiSubtype: subtype } : p;
           });
         }
         return state;
