@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Plus, Upload, Download, Pencil, Trash2, RefreshCw, Loader2, FileSpreadsheet } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -110,7 +111,12 @@ export function AssetsTable({ positions, macro, onAdd, onEdit, onDelete, onImpor
                           className="inline-block w-2 h-2 rounded-full flex-shrink-0"
                           style={{ backgroundColor: meta.color }}
                         />
-                        <span className="text-ink font-medium">{p.ticker}</span>
+                        <Link
+                          href={`/ativos/${encodeURIComponent(p.ticker)}`}
+                          className="text-ink font-medium hover:text-brand-bright transition-colors"
+                        >
+                          {p.ticker}
+                        </Link>
                       </div>
                     </td>
                     <td className="py-2 px-2 text-ink-2">
