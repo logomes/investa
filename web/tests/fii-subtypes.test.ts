@@ -42,9 +42,9 @@ describe("lookupFiiSubtype", () => {
     expect(subtypes).toContain("fof");
   });
 
-  it("todos os tickers seguem padrão *11", () => {
+  it("todos os tickers seguem padrão de FII (*11 ou *12 pra variações)", () => {
     for (const ticker of Object.keys(FII_SUBTYPES)) {
-      expect(ticker).toMatch(/^[A-Z]{4}11$/);
+      expect(ticker).toMatch(/^[A-Z]{4}(11|12)$/);
     }
   });
 });

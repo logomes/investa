@@ -21,6 +21,8 @@ export const FII_SUBTYPES: Record<string, FiiSubtype> = {
   KNCR11: "papel",
   KNIP11: "papel",
   KNHF11: "papel",
+  KNSC11: "papel",
+  KNDI11: "papel",
   IRDM11: "papel",
   RBRR11: "papel",
   CPTS11: "papel",
@@ -36,6 +38,17 @@ export const FII_SUBTYPES: Record<string, FiiSubtype> = {
   BARI11: "papel",
   KCRE11: "papel",
   PORD11: "papel",
+  AAZQ11: "papel",
+  ALZC11: "papel",
+  CDII11: "papel",
+  JURO11: "papel",
+  CACR11: "papel",
+  HABT11: "papel",
+  VCJR11: "papel",
+  PLCR11: "papel",
+  URPR11: "papel",
+  VSLH11: "papel",
+  RBRY11: "papel",
 
   // Tijolo — Imóveis físicos
   HGLG11: "tijolo",
@@ -44,6 +57,7 @@ export const FII_SUBTYPES: Record<string, FiiSubtype> = {
   BRCO11: "tijolo",
   XPLG11: "tijolo",
   BTLG11: "tijolo",
+  BTLG12: "tijolo",
   VILG11: "tijolo",
   ALZR11: "tijolo",
   VINO11: "tijolo",
@@ -64,6 +78,20 @@ export const FII_SUBTYPES: Record<string, FiiSubtype> = {
   TRXF11: "tijolo",
   HCTR11: "tijolo",
   KORE11: "tijolo",
+  AZPL11: "tijolo",
+  AZIN11: "tijolo",
+  BDIV11: "tijolo",
+  LVBI11: "tijolo",
+  TVRI11: "tijolo",
+  GGRC11: "tijolo",
+  RBRF11: "tijolo",
+  HUSC11: "tijolo",
+  HUCG11: "tijolo",
+  SARE11: "tijolo",
+  TORD11: "tijolo",
+  SDIL11: "tijolo",
+  JSAF11: "tijolo",
+  RECT11: "tijolo",
 
   // Agro — Fiagro / agronegócio
   RURA11: "agro",
@@ -73,6 +101,9 @@ export const FII_SUBTYPES: Record<string, FiiSubtype> = {
   VCRA11: "agro",
   CRAA11: "agro",
   TGAR11: "agro",
+  KNCA11: "agro",
+  BTAL11: "agro",
+  RZAT11: "agro",
 
   // FoF — Fund of Funds
   BCFF11: "fof",
@@ -84,6 +115,7 @@ export const FII_SUBTYPES: Record<string, FiiSubtype> = {
   HGFF11: "fof",
   CXTL11: "fof",
   CPFF11: "fof",
+  MGFF11: "fof",
 };
 
 /**

@@ -86,9 +86,12 @@ export const useAssetsStore = create<Store>()(
       }),
       skipHydration: true,
       // v2: FII_PAPEL/FII_TIJOLO collapsed into FII.
-      // v3: backfill fiiSubtype via the curated lookup table — positions
-      //     imported before auto-classify existed have undefined subtype.
-      version: 3,
+      // v3: backfill fiiSubtype via the curated lookup table.
+      // v4: re-run backfill — the curated table grew from 60 → ~95 entries
+      //     and existing users with FII positions still undefined should
+      //     pick up the new lookups. Idempotent: only fills when subtype
+      //     is still undefined, so a manual override survives.
+      version: 4,
       migrate: (persisted: unknown, fromVersion: number) => {
         const state = (persisted ?? {}) as { positions?: AssetPosition[] };
         if (!Array.isArray(state.positions)) return state;
@@ -101,7 +104,7 @@ export const useAssetsStore = create<Store>()(
             return p;
           });
         }
-        if (fromVersion < 3) {
+        if (fromVersion < 4) {
           state.positions = state.positions.map((p) => {
             if (p.assetClass !== "FII" || p.fiiSubtype) return p;
             const subtype = lookupFiiSubtype(p.ticker);
