@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import type { AssetPosition, AssetClass } from "./ativos-schema";
 import type { B3PaidProvent, B3ScheduledEvent, B3Trade } from "./b3-import";
 import { lookupFiiSubtype } from "./fii-subtypes";
+import { KNOWN_UNITS_BR } from "./ativos-classify";
 
 const PALETTE = [
   "#5CC8FF", "#FFC857", "#46E8A4", "#FF6B5B",
@@ -87,11 +88,11 @@ export const useAssetsStore = create<Store>()(
       skipHydration: true,
       // v2: FII_PAPEL/FII_TIJOLO collapsed into FII.
       // v3: backfill fiiSubtype via the curated lookup table.
-      // v4: re-run backfill — the curated table grew from 60 → ~95 entries
-      //     and existing users with FII positions still undefined should
-      //     pick up the new lookups. Idempotent: only fills when subtype
-      //     is still undefined, so a manual override survives.
-      version: 4,
+      // v4: re-run backfill — the curated table grew from 60 → ~95 entries.
+      // v5: reclassify UNITs (TAEE11, KLBN11, etc.) that were wrongly
+      //     classified as FII — they share the *11 suffix but are actually
+      //     composite share securities of regular companies.
+      version: 5,
       migrate: (persisted: unknown, fromVersion: number) => {
         const state = (persisted ?? {}) as { positions?: AssetPosition[] };
         if (!Array.isArray(state.positions)) return state;
@@ -109,6 +110,15 @@ export const useAssetsStore = create<Store>()(
             if (p.assetClass !== "FII" || p.fiiSubtype) return p;
             const subtype = lookupFiiSubtype(p.ticker);
             return subtype ? { ...p, fiiSubtype: subtype } : p;
+          });
+        }
+        if (fromVersion < 5) {
+          state.positions = state.positions.map((p) => {
+            if (p.assetClass !== "FII") return p;
+            if (!KNOWN_UNITS_BR.has(p.ticker.toUpperCase())) return p;
+            // UNITs misclassified as FII — fix the class, drop subtype.
+            // Yield/capitalGain are user-tunable so we leave them alone.
+            return { ...p, assetClass: "ACAO_BR_DIVIDENDO" as AssetClass, fiiSubtype: undefined };
           });
         }
         return state;

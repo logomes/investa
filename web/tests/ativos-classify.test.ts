@@ -32,6 +32,22 @@ describe("inferAssetClass", () => {
     it("IVVB11 (ETF whitelist) → ETF_BR", () => {
       expect(inferAssetClass("IVVB11")).toBe("ETF_BR");
     });
+
+    it("TAEE11 (UNIT whitelist) → ACAO_BR_DIVIDENDO", () => {
+      expect(inferAssetClass("TAEE11")).toBe("ACAO_BR_DIVIDENDO");
+    });
+
+    it("KLBN11 (UNIT Klabin) → ACAO_BR_DIVIDENDO", () => {
+      expect(inferAssetClass("KLBN11")).toBe("ACAO_BR_DIVIDENDO");
+    });
+
+    it("SAPR11 (UNIT Sanepar) → ACAO_BR_DIVIDENDO", () => {
+      expect(inferAssetClass("SAPR11")).toBe("ACAO_BR_DIVIDENDO");
+    });
+
+    it("ALUP11 (UNIT Alupar) → ACAO_BR_DIVIDENDO", () => {
+      expect(inferAssetClass("ALUP11")).toBe("ACAO_BR_DIVIDENDO");
+    });
   });
 
   describe("BR BDR (*34-*39)", () => {
