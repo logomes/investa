@@ -48,7 +48,6 @@ export const FII_SUBTYPES: Record<string, FiiSubtype> = {
   PLCR11: "papel",
   URPR11: "papel",
   VSLH11: "papel",
-  RBRY11: "papel",
 
   // Tijolo — Imóveis físicos
   HGLG11: "tijolo",
