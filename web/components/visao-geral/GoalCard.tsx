@@ -77,6 +77,8 @@ export function GoalCard() {
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
+          // commit() is idempotent — Enter triggers blur immediately after,
+          // so it fires twice; setGoalTarget with same value is a no-op.
           onBlur={commit}
           onKeyDown={(e) => {
             if (e.key === "Enter") commit();
@@ -126,9 +128,10 @@ export function GoalCard() {
           currentMonthly={scenario.portfolio.monthlyContribution}
           ipcaIndexed={scenario.portfolio.contributionInflationIndexed}
           onApply={(suggested) => {
+            const latest = useScenarioStore.getState().scenario;
             setScenario({
-              ...scenario,
-              portfolio: { ...scenario.portfolio, monthlyContribution: suggested },
+              ...latest,
+              portfolio: { ...latest.portfolio, monthlyContribution: suggested },
             });
           }}
         />
