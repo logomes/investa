@@ -41,24 +41,25 @@ export function recommend(i: RecommendInputs): Recommendation {
     return { state: "already-on-track", projectedFinal: i.projectedFinalPatrimony };
   }
 
+  // gap > 0 here — guaranteed by the `projectedFinalPatrimony >= goal` check above.
   const gap = i.goal - i.projectedFinalPatrimony;
-  const n_m = i.horizonYears * 12;
+  const monthlyPeriods = i.horizonYears * 12;
 
-  if (n_m === 0) {
+  if (monthlyPeriods === 0) {
     return { state: "unreachable", suggestedMonthly: i.currentMonthlyContribution };
   }
 
-  const r_annual = i.contributionInflationIndexed
+  const annualRate = i.contributionInflationIndexed
     ? (1 + i.totalReturnAnnualNet) / (1 + i.expectedInflation) - 1
     : i.totalReturnAnnualNet;
-  const r_m = Math.pow(1 + r_annual, 1 / 12) - 1;
+  const monthlyRate = Math.pow(1 + annualRate, 1 / 12) - 1;
 
-  const delta_c =
-    Math.abs(r_m) < 1e-9
-      ? gap / n_m
-      : (gap * r_m) / (Math.pow(1 + r_m, n_m) - 1);
+  const additionalMonthly =
+    Math.abs(monthlyRate) < 1e-9
+      ? gap / monthlyPeriods
+      : (gap * monthlyRate) / (Math.pow(1 + monthlyRate, monthlyPeriods) - 1);
 
-  const suggested = i.currentMonthlyContribution + delta_c;
+  const suggested = i.currentMonthlyContribution + additionalMonthly;
 
   const cap = Math.max(
     i.currentMonthlyContribution * UNREACHABLE_MULTIPLIER,
@@ -68,7 +69,7 @@ export function recommend(i: RecommendInputs): Recommendation {
     return { state: "unreachable", suggestedMonthly: suggested };
   }
 
-  return { state: "below", suggestedMonthly: suggested, deltaMonthly: delta_c };
+  return { state: "below", suggestedMonthly: suggested, deltaMonthly: additionalMonthly };
 }
 
 export function goalProbability(finalDistribution: readonly number[], goal: number): number {
