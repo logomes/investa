@@ -16,13 +16,11 @@ Items deferred from earlier phases — to be brainstormed/planned when their own
 
 GoalCard goal value is now click-to-edit: button → input pre-filled with current `goalTarget`, Enter/blur commits via `setGoalTarget`, Esc cancels, invalid input (≤0 or non-numeric) reverts silently. Persists through Zustand and propagates to "Probabilidade de meta" KPI + progress bar.
 
-### Real recommendation engine
+### Real recommendation engine — ✅ shipped 2026-05-13
 
-**Phase target:** Out of scope for migration; potentially Fase 6+
+GoalCard agora roda um recomendador real. Sugestão de aporte vem de FV closed-form (`web/lib/goal-recommend.ts`), badge "% provável" agora reflete probabilidade real do Monte Carlo `finalDistribution` (antes era `current/goal` mal-rotulado), e "Aplicar sugestão" muta `scenario.portfolio.monthlyContribution` no store. State machine de 4 estados: already-met / already-on-track / below / unreachable. Spec: `specs/2026-05-13-goal-recommender-design.md`.
 
-**Current behavior:** GoalCard hardcodes "Aporte de R$ 800/mês indexado ao IPCA eleva probabilidade para 91%".
-
-**Desired:** compute the aporte that hits a target probability. Backend solver that, given current scenario + target patrimony + target probability, returns the minimum `monthlyContribution` to hit it.
+**Follow-up futuro:** busca binária sobre Monte Carlo pra resolver "aporte que hit P(meta) ≥ X%" — fica deferido até alguém querer o ajuste fino.
 
 ## Ativos
 
