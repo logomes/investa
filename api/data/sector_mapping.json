@@ -1,0 +1,86 @@
+{
+  "_meta": {
+    "source": "Hand-curated from B3 'Setor Econômico' classification (ICB-based).",
+    "last_reviewed": "2026-05-13",
+    "coverage_note": "Covers ~100 most-traded Brazilian tickers. Missing tickers fall back on the frontend to a 4-tier hierarchy: FII→Imobiliário, STOCK_US/REIT_US/BDR→Internacional, ETF→Diversificado, else Outros.",
+    "sectors": [
+      "Bancos", "Seguros", "Financeiro Outros",
+      "Petróleo & Gás", "Mineração & Siderurgia", "Materiais Básicos",
+      "Energia Elétrica", "Saneamento", "Telecomunicações", "Tecnologia",
+      "Saúde", "Varejo & Consumo", "Alimentos & Bebidas",
+      "Bens de Capital", "Construção", "Logística & Transporte", "Educação",
+      "Imobiliário", "Internacional", "Diversificado", "Outros"
+    ]
+  },
+  "ITUB3": "Bancos", "ITUB4": "Bancos", "BBAS3": "Bancos", "BBDC3": "Bancos", "BBDC4": "Bancos",
+  "SANB11": "Bancos", "BPAC11": "Bancos", "BMGB4": "Bancos", "BRSR6": "Bancos", "PINE4": "Bancos",
+  "ABCB4": "Bancos", "BIDI4": "Bancos", "BRBI11": "Bancos",
+
+  "BBSE3": "Seguros", "IRBR3": "Seguros", "PSSA3": "Seguros", "SULA11": "Seguros", "CXSE3": "Seguros",
+
+  "B3SA3": "Financeiro Outros", "CIEL3": "Financeiro Outros", "GETT11": "Financeiro Outros",
+  "WIZS3": "Financeiro Outros", "BMOB3": "Financeiro Outros",
+
+  "PETR3": "Petróleo & Gás", "PETR4": "Petróleo & Gás", "PRIO3": "Petróleo & Gás",
+  "RECV3": "Petróleo & Gás", "RRRP3": "Petróleo & Gás", "VBBR3": "Petróleo & Gás",
+  "UGPA3": "Petróleo & Gás", "CSAN3": "Petróleo & Gás",
+
+  "VALE3": "Mineração & Siderurgia", "CSNA3": "Mineração & Siderurgia",
+  "CMIN3": "Mineração & Siderurgia", "USIM5": "Mineração & Siderurgia",
+  "GGBR4": "Mineração & Siderurgia", "GOAU4": "Mineração & Siderurgia",
+  "BRAP4": "Mineração & Siderurgia",
+
+  "KLBN11": "Materiais Básicos", "SUZB3": "Materiais Básicos",
+  "UNIP6": "Materiais Básicos", "BRKM5": "Materiais Básicos",
+  "DXCO3": "Materiais Básicos",
+
+  "CMIG3": "Energia Elétrica", "CMIG4": "Energia Elétrica",
+  "EQTL3": "Energia Elétrica", "EGIE3": "Energia Elétrica",
+  "CPFE3": "Energia Elétrica", "ELET3": "Energia Elétrica", "ELET6": "Energia Elétrica",
+  "TAEE11": "Energia Elétrica", "TRPL4": "Energia Elétrica", "ALUP11": "Energia Elétrica",
+  "ENGI11": "Energia Elétrica", "AURE3": "Energia Elétrica", "ENEV3": "Energia Elétrica",
+  "NEOE3": "Energia Elétrica", "ISAE3": "Energia Elétrica", "ISAE4": "Energia Elétrica",
+
+  "SAPR3": "Saneamento", "SAPR4": "Saneamento", "SAPR11": "Saneamento",
+  "SBSP3": "Saneamento", "CSMG3": "Saneamento", "AESB3": "Saneamento",
+
+  "VIVT3": "Telecomunicações", "TIMS3": "Telecomunicações", "OIBR3": "Telecomunicações",
+
+  "TOTS3": "Tecnologia", "LWSA3": "Tecnologia", "POSI3": "Tecnologia", "IFCM3": "Tecnologia",
+
+  "RDOR3": "Saúde", "HAPV3": "Saúde", "FLRY3": "Saúde", "QUAL3": "Saúde",
+  "HYPE3": "Saúde", "PARD3": "Saúde", "BIOM3": "Saúde", "DASA3": "Saúde",
+
+  "MGLU3": "Varejo & Consumo", "LREN3": "Varejo & Consumo", "AMER3": "Varejo & Consumo",
+  "VIIA3": "Varejo & Consumo", "PETZ3": "Varejo & Consumo", "ASAI3": "Varejo & Consumo",
+  "PCAR3": "Varejo & Consumo", "BHIA3": "Varejo & Consumo", "NTCO3": "Varejo & Consumo",
+  "GUAR3": "Varejo & Consumo", "SOMA3": "Varejo & Consumo", "VVAR3": "Varejo & Consumo",
+  "ARZZ3": "Varejo & Consumo", "CEAB3": "Varejo & Consumo",
+
+  "ABEV3": "Alimentos & Bebidas", "JBSS3": "Alimentos & Bebidas",
+  "MRFG3": "Alimentos & Bebidas", "BEEF3": "Alimentos & Bebidas",
+  "BRFS3": "Alimentos & Bebidas", "MDIA3": "Alimentos & Bebidas",
+  "CAML3": "Alimentos & Bebidas", "SMTO3": "Alimentos & Bebidas",
+
+  "WEGE3": "Bens de Capital", "EMBR3": "Bens de Capital",
+  "POMO3": "Bens de Capital", "POMO4": "Bens de Capital",
+  "RAPT4": "Bens de Capital", "RAPT11": "Bens de Capital",
+  "KEPL3": "Bens de Capital", "FRAS3": "Bens de Capital", "TUPY3": "Bens de Capital",
+  "MYPK3": "Bens de Capital",
+
+  "MRVE3": "Construção", "CYRE3": "Construção", "EZTC3": "Construção",
+  "DIRR3": "Construção", "JHSF3": "Construção", "LAVV3": "Construção",
+  "PLPL3": "Construção", "TEND3": "Construção", "TRIS3": "Construção",
+
+  "RAIL3": "Logística & Transporte", "CCRO3": "Logística & Transporte",
+  "ECOR3": "Logística & Transporte", "AZUL4": "Logística & Transporte",
+  "GOLL4": "Logística & Transporte",
+  "HBSA3": "Logística & Transporte", "LOGG3": "Logística & Transporte",
+  "TGMA3": "Logística & Transporte", "VAMO3": "Logística & Transporte",
+  "RENT3": "Logística & Transporte", "MOVI3": "Logística & Transporte",
+  "SIMH3": "Logística & Transporte",
+
+  "YDUQ3": "Educação", "COGN3": "Educação", "SEER3": "Educação", "ANIM3": "Educação",
+
+  "IGTI11": "Imobiliário"
+}

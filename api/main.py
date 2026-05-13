@@ -4,7 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from routers import fii_metadata, fixed_income, health, macro, portfolio, quotes, simulation
+from routers import fii_metadata, fixed_income, health, macro, portfolio, quotes, sector_metadata, simulation
 
 
 app = FastAPI(
@@ -63,3 +63,4 @@ app.include_router(simulation.router)
 app.include_router(fixed_income.router)
 app.include_router(quotes.router)
 app.include_router(fii_metadata.router)
+app.include_router(sector_metadata.router)

@@ -58,7 +58,7 @@ describe("AtivosPageContent", () => {
     expect(screen.getByText(/posições/i)).toBeInTheDocument();
     expect(screen.getByText(/por classe/i)).toBeInTheDocument();
     expect(screen.getByText(/por mercado/i)).toBeInTheDocument();
-    expect(screen.getByText("HGCR11")).toBeInTheDocument();
+    expect(screen.getAllByText("HGCR11").length).toBeGreaterThan(0);
   });
 
   it("macro loading → skeleton", () => {

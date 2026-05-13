@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAssetsStore } from "@/lib/ativos-store";
 import { useMacro } from "@/lib/api";
 import { ativosKpis, byAssetClass, byMarket } from "@/lib/ativos-derive";
+import { bySector, sectorConcentration } from "@/lib/sector-derive";
 import { exportCsv, importCsv } from "@/lib/ativos-csv";
 import { fetchQuote, QuoteNotFoundError } from "@/lib/quotes";
 import { ASSET_CLASS_META } from "@/lib/ativos-schema";
@@ -30,6 +31,7 @@ import { AssetDialog } from "./AssetDialog";
 import { KpiRowAtivos } from "./KpiRowAtivos";
 import { ByAssetClassCard } from "./ByAssetClassCard";
 import { ByMarketCard } from "./ByMarketCard";
+import { BySectorCard } from "./BySectorCard";
 import { ScheduledEventsBanner } from "./ScheduledEventsBanner";
 import { MissingPositionsBanner } from "./MissingPositionsBanner";
 import { ContributionPlanner } from "./ContributionPlanner";
@@ -264,6 +266,8 @@ export function AtivosPageContent() {
   const kpis = ativosKpis(positions, macro.data!);
   const groups = byAssetClass(positions, macro.data!);
   const split = byMarket(positions, macro.data!);
+  const sectors = bySector(positions, macro.data!);
+  const concentration = sectorConcentration(sectors);
 
   return (
     <div className="space-y-6">
@@ -333,6 +337,9 @@ export function AtivosPageContent() {
         <ByAssetClassCard groups={groups} />
         <ByMarketCard split={split} macro={macro.data!} />
       </div>
+      {positions.length > 0 && (
+        <BySectorCard groups={sectors} concentration={concentration} />
+      )}
       <ContributionPlanner positions={positions} macro={macro.data!} />
       <AssetDialog
         open={dialog.open}
