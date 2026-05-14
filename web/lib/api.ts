@@ -9,6 +9,11 @@ import type {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+// Optional Cloudflare Worker proxy that caches /api/macro on the edge.
+// When set, useMacro hits this URL instead of `${API_URL}/api/macro`,
+// absorbing Render cold starts. Falls back to API_URL when unset.
+const MACRO_URL = process.env.NEXT_PUBLIC_MACRO_URL ?? `${API_URL}/api/macro`;
+
 export class ApiError extends Error {
   constructor(public status: number, public bodyText: string) {
     super(`API ${status}: ${bodyText}`);
@@ -74,10 +79,19 @@ export function useMonteCarlo() {
   });
 }
 
+async function fetchMacro(): Promise<MacroOut> {
+  const res = await fetch(MACRO_URL);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new ApiError(res.status, text);
+  }
+  return (await res.json()) as MacroOut;
+}
+
 export function useMacro() {
   return useQuery({
     queryKey: ["macro"],
-    queryFn: () => getJson<MacroOut>("/api/macro"),
+    queryFn: () => fetchMacro(),
     staleTime: 60 * 60 * 1000,
     retry: 1,
   });

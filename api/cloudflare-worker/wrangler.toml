@@ -1,0 +1,9 @@
+name = "investa-macro-proxy"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+
+# Free-tier workers.dev subdomain — no custom domain required.
+workers_dev = true
+
+[observability]
+enabled = true
