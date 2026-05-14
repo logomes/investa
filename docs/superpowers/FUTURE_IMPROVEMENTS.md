@@ -34,6 +34,33 @@ GoalCard agora roda um recomendador real. Sugestão de aporte vem de FV closed-f
 
 `/historico` permite capturar manualmente o PL marcado a mercado (RV + RF). RV usa `currentPrice ?? avgPrice`; RF compõe `initialAmount × (1 + effectiveAnnualRate)^years`. Snapshot persiste em store separado (`investa-patrimony-snapshots-v1`) e popula 3 KPIs + line chart SVG + tabela com delete. Replace-by-date evita duplicatas no mesmo dia. Base para TWR / drawdown / curva aporte-vs-valorização futuros.
 
+### Histórico — filtros de período (12m / 24m / 5a / 10a / tudo)
+
+**Phase target:** Future polish em `/historico`
+
+Hoje `/historico` mostra todos os snapshots em ordem cronológica num único line chart. Quando o histórico crescer (várias dezenas de pontos ao longo de anos), faltam controles pra zoom temporal.
+
+**Desired:** botões/segmented-control no topo da página: `12m | 24m | 5a | 10a | tudo` (default: `tudo`). Filtra os snapshots para os últimos N meses/anos antes de gerar:
+- Os 3 KPIs (current, delta vs início do range, retorno % do range)
+- O line chart SVG
+- A tabela (mas com opção de ver fora do filtro)
+
+**Implementation outline:**
+- Local state `useState<"12m" | "24m" | "5a" | "10a" | "all">("all")` em `HistoricoPageContent.tsx`.
+- Helper `filterSnapshotsByRange(snapshots, range, now)` em `web/lib/patrimony-snapshot.ts` (pure, testável).
+- Segmented control reutilizando o padrão de `EvolutionChart` (que já tem `1A | 5A | tudo` via `useState` — vale conferir e reusar componente).
+- KPI "Retorno do período" recalcula `(last/first - 1)` sobre o range filtrado.
+- Edge cases: range com 0 ou 1 snapshot → mostra mensagem "sem dados suficientes para o período"; range sem mudança → KPI mostra 0%.
+
+**Tests:**
+- `patrimony-snapshot.test.ts` — `filterSnapshotsByRange` para cada range + corner cases (range vazio, range com snapshot único, range cruzando o cutoff).
+- `historico-page.test.tsx` — clicar 12m filtra o array exibido e atualiza KPIs.
+
+**Out of scope:**
+- Custom date picker (só presets fixos por enquanto).
+- Persistir o filtro selecionado (sessão-only basta).
+- Drawdown / TWR (tracked em outro item).
+
 ### Dashboard de Proventos — ✅ shipped 2026-05-11
 
 `/proventos` agrega histórico de Rendimento/Dividendo/JCP pagos (extraídos automaticamente da Movimentação) com agendados futuros (Eventos). KPIs: recebido 12m, agendado futuro, DY realizado vs esperado ponderado, próximo pagamento. Bar chart 24m passados + 3m futuros (futuros em opacity baixa). Tabela por ativo com DY realizado vs esperado e gap colorido. Trades duplicados são deduplicados via key `date|ticker|type|netValue`.
