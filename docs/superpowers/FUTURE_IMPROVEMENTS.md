@@ -119,11 +119,9 @@ PortfolioSection now supports add/edit/remove via modal (PortfolioAssetDialog), 
 
 Free tier caps at ~2000 trajectories before timing out. Hobby handles 50000+ comfortably with no cold start. The `nTrajectories` slider in the drawer goes up to 50000 already; just bump localStorage value.
 
-### Cloudflare cache for `/api/macro`
+### Cloudflare cache for `/api/macro` — ✅ shipped 2026-05-13
 
-**Phase target:** Optional polish
-
-Macro is cached for 1h server-side. Cloudflare CDN cache could absorb burst traffic without hitting Render at all.
+Worker em `api/cloudflare-worker/` (`investa-macro-proxy.lucgomes.workers.dev`) proxia `GET /api/macro` com cache de 1h via Cache API. Frontend usa `NEXT_PUBLIC_MACRO_URL` env var no Vercel; ausência cai pro Render direto (rollback livre). CORS espelha allow-list do FastAPI. Validado em prod: `x-worker-cache: HIT` + `cf-cache-status: HIT` + borda GRU. Custo: R$ 0 (free tier 100k req/dia, app usa ~dezenas/dia).
 
 ## Testing
 
