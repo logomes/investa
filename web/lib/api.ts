@@ -33,15 +33,6 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
   return (await res.json()) as T;
 }
 
-async function getJson<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`);
-  if (!res.ok) {
-    const text = await res.text();
-    throw new ApiError(res.status, text);
-  }
-  return (await res.json()) as T;
-}
-
 // Stable JSON for queryKey: sorts keys recursively to avoid spurious refetches.
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
