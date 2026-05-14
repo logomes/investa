@@ -112,7 +112,11 @@ A parallel `e2e` job in `web-ci.yml` runs the full suite on every push/PR with `
 
 ## Mobile
 
-### Responsive layout below 1280px
+### Responsive layout below 1280px — ✅ shipped 2026-05-09
+
+Sidebar vira off-canvas drawer abaixo de xl (commit `6a533c3`); KPI grids reflow 1→2→4 + page grids stackam + SVG charts com viewBox 100% (`c1007a2`); splash "use desktop" removida, tabelas com overflow-x-auto (`83f7bcf`); Playwright e2e tablet+desktop (`edfa7d5`). Tabelas ficaram como scroll horizontal dentro do card em vez de "card stack" (densidade > formato — escolha de design diferente da spec mas válida).
+
+**Original (preservado para histórico):**
 
 **Phase target:** Future
 
