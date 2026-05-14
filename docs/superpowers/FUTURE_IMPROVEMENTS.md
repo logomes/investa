@@ -34,7 +34,12 @@ GoalCard agora roda um recomendador real. Sugestão de aporte vem de FV closed-f
 
 `/historico` permite capturar manualmente o PL marcado a mercado (RV + RF). RV usa `currentPrice ?? avgPrice`; RF compõe `initialAmount × (1 + effectiveAnnualRate)^years`. Snapshot persiste em store separado (`investa-patrimony-snapshots-v1`) e popula 3 KPIs + line chart SVG + tabela com delete. Replace-by-date evita duplicatas no mesmo dia. Base para TWR / drawdown / curva aporte-vs-valorização futuros.
 
-### Histórico — filtros de período (12m / 24m / 5a / 10a / tudo)
+### Histórico — filtros de período (12m / 24m / 5a / 10a / tudo) — ✅ shipped 2026-05-13
+
+`/historico` ganhou segmented control no header do card de gráfico. KPIs 'vs último' + 'Snapshots gravados' viraram 'Variação no período' (R$) + 'Retorno no período' (%) computados sobre o range filtrado. Chart + tabela também respeitam o filtro. Helper puro `filterSnapshotsByRange` em `patrimony-snapshot.ts` (cutoff inclusivo). 7 testes novos.
+
+**Original (preservado para histórico):**
+
 
 **Phase target:** Future polish em `/historico`
 
