@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Camera, History, TrendingUp, Trash2 } from "lucide-react";
+import { Camera, TrendingUp, TrendingDown, Trash2, Percent } from "lucide-react";
 import { useAssetsStore } from "@/lib/ativos-store";
 import { useFixedIncomeStore } from "@/lib/fi-store";
 import { usePatrimonySnapshotStore } from "@/lib/patrimony-snapshot-store";
-import { computeSnapshot } from "@/lib/patrimony-snapshot";
+import {
+  computeSnapshot,
+  filterSnapshotsByRange,
+  type PatrimonyRange,
+} from "@/lib/patrimony-snapshot";
 import { useMacro } from "@/lib/api";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { KpiCard } from "@/components/kpi/KpiCard";
@@ -13,6 +17,7 @@ import { KpiSkeleton } from "@/components/kpi/KpiSkeleton";
 import { ErrorCard } from "@/components/error/ErrorCard";
 import { Button } from "@/components/ui/button";
 import { formatRs, formatPercent } from "@/lib/format";
+import { HistoricoFilter } from "./HistoricoFilter";
 
 const COLOR_BRAND = "#2af0c4";
 const COLOR_INK3 = "#7d9591";
@@ -31,6 +36,7 @@ export function HistoricoPageContent() {
   const removeSnapshot = usePatrimonySnapshotStore((s) => s.removeSnapshot);
   const macro = useMacro();
   const [hydrated, setHydrated] = useState(false);
+  const [range, setRange] = useState<PatrimonyRange>("all");
 
   useEffect(() => {
     useAssetsStore.persist.rehydrate();
@@ -44,13 +50,21 @@ export function HistoricoPageContent() {
     return computeSnapshot(positions, fiPositions, macro.data);
   }, [hydrated, macro.data, positions, fiPositions]);
 
-  const lastSaved = snapshots[snapshots.length - 1];
-  const delta = useMemo(() => {
-    if (!currentSnapshot || !lastSaved) return null;
-    const abs = currentSnapshot.totalBRL - lastSaved.totalBRL;
-    const pct = lastSaved.totalBRL > 0 ? abs / lastSaved.totalBRL : 0;
-    return { abs, pct };
-  }, [currentSnapshot, lastSaved]);
+  const filteredSnapshots = useMemo(
+    () => filterSnapshotsByRange(snapshots, range),
+    [snapshots, range],
+  );
+
+  // Variação e retorno no período filtrado: precisa de pelo menos 2 snapshots
+  // pra existir um delta. Quando o range filtra pra <2, exibimos "—".
+  const periodDelta = useMemo(() => {
+    if (filteredSnapshots.length < 2) return null;
+    const first = filteredSnapshots[0];
+    const last = filteredSnapshots[filteredSnapshots.length - 1];
+    const abs = last.totalBRL - first.totalBRL;
+    const pct = first.totalBRL > 0 ? abs / first.totalBRL : 0;
+    return { abs, pct, firstDate: first.date, lastDate: last.date };
+  }, [filteredSnapshots]);
 
   if (!hydrated || macro.isLoading) {
     return (
@@ -78,25 +92,28 @@ export function HistoricoPageContent() {
           feature
         />
         <KpiCard
-          label="vs último snapshot"
-          value={delta ? `${delta.abs >= 0 ? "+" : ""}${formatRs(delta.abs)}` : "—"}
+          label="Variação no período"
+          value={periodDelta ? `${periodDelta.abs >= 0 ? "+" : ""}${formatRs(periodDelta.abs)}` : "—"}
           sub={
-            delta
-              ? `${formatPercent(delta.pct, 2)} desde ${formatBrDate(lastSaved!.date)}`
-              : "Capture o primeiro snapshot"
+            periodDelta
+              ? `${formatBrDate(periodDelta.firstDate)} → ${formatBrDate(periodDelta.lastDate)}`
+              : filteredSnapshots.length === 1
+                ? "Apenas 1 snapshot no período"
+                : "Sem dados suficientes"
           }
-          icon={TrendingUp}
-          valueColor={delta ? (delta.abs >= 0 ? "green" : "red") : "default"}
+          icon={periodDelta && periodDelta.abs < 0 ? TrendingDown : TrendingUp}
+          valueColor={periodDelta ? (periodDelta.abs >= 0 ? "green" : "red") : "default"}
         />
         <KpiCard
-          label="Snapshots gravados"
-          value={String(snapshots.length)}
+          label="Retorno no período"
+          value={periodDelta ? `${periodDelta.pct >= 0 ? "+" : ""}${formatPercent(periodDelta.pct, 2)}` : "—"}
           sub={
-            snapshots.length === 0
-              ? "Nenhum ainda"
-              : `${formatBrDate(snapshots[0].date)} → ${formatBrDate(lastSaved!.date)}`
+            periodDelta
+              ? `${filteredSnapshots.length} snapshots no recorte`
+              : `${snapshots.length} snapshots totais`
           }
-          icon={History}
+          icon={Percent}
+          valueColor={periodDelta ? (periodDelta.pct >= 0 ? "green" : "red") : "default"}
         />
       </div>
 
@@ -109,17 +126,20 @@ export function HistoricoPageContent() {
                 Capture seu PL marcado a mercado (RV + RF) hoje. Repetir uma vez por mês cria o histórico real, base para gráfico de evolução e TWR futuro.
               </p>
             </div>
-            <Button
-              size="sm"
-              onClick={() => {
-                if (!currentSnapshot) return;
-                addSnapshot(currentSnapshot);
-              }}
-              disabled={empty || !currentSnapshot}
-            >
-              <Camera className="w-3.5 h-3.5 mr-1.5" />
-              Capturar agora
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              {snapshots.length > 0 && <HistoricoFilter value={range} onChange={setRange} />}
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (!currentSnapshot) return;
+                  addSnapshot(currentSnapshot);
+                }}
+                disabled={empty || !currentSnapshot}
+              >
+                <Camera className="w-3.5 h-3.5 mr-1.5" />
+                Capturar agora
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -131,18 +151,22 @@ export function HistoricoPageContent() {
             <p className="text-[12px] text-ink-3 py-8 text-center">
               Nenhum snapshot ainda. Clique em <strong>Capturar agora</strong> para gravar o primeiro.
             </p>
+          ) : filteredSnapshots.length === 0 ? (
+            <p className="text-[12px] text-ink-3 py-8 text-center">
+              Nenhum snapshot no período selecionado. Tente um intervalo maior.
+            </p>
           ) : (
-            <EvolutionChart snapshots={snapshots} />
+            <EvolutionChart snapshots={filteredSnapshots} />
           )}
         </CardContent>
       </Card>
 
-      {snapshots.length > 0 && (
+      {filteredSnapshots.length > 0 && (
         <Card>
           <CardHeader>
             <h3 className="text-[13.5px] font-semibold text-ink">Histórico</h3>
             <p className="text-[11.5px] text-ink-3 mt-1">
-              Snapshots ordenados do mais recente. Capturar duas vezes no mesmo dia sobrescreve.
+              {filteredSnapshots.length} snapshot{filteredSnapshots.length === 1 ? "" : "s"} no período · ordenados do mais recente. Capturar duas vezes no mesmo dia sobrescreve.
             </p>
           </CardHeader>
           <CardContent>
@@ -159,7 +183,7 @@ export function HistoricoPageContent() {
                   </tr>
                 </thead>
                 <tbody>
-                  {snapshots.slice().reverse().map((s) => (
+                  {filteredSnapshots.slice().reverse().map((s) => (
                     <tr key={s.date} className="border-b border-line-soft last:border-b-0">
                       <td className="py-2 pr-2 text-ink tabular">{formatBrDate(s.date)}</td>
                       <td className="text-right py-2 px-2 tabular text-ink font-semibold">{formatRs(s.totalBRL)}</td>

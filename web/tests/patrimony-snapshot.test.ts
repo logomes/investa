@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { computeSnapshot, assetMarketValueBRL } from "@/lib/patrimony-snapshot";
+import {
+  computeSnapshot,
+  assetMarketValueBRL,
+  filterSnapshotsByRange,
+  type PatrimonySnapshot,
+} from "@/lib/patrimony-snapshot";
 import { rfCurrentValue } from "@/lib/fi-derive";
 import type { AssetPosition } from "@/lib/ativos-schema";
 import type { FixedIncomePosition } from "@/lib/fi-schema";
@@ -104,5 +109,72 @@ describe("computeSnapshot", () => {
     expect(s.totalBRL).toBe(0);
     expect(s.positionsCount).toBe(0);
     expect(s.rfCount).toBe(0);
+  });
+});
+
+describe("filterSnapshotsByRange", () => {
+  const NOW = new Date("2026-05-15T12:00:00Z");
+
+  function snap(date: string): PatrimonySnapshot {
+    return { date, totalBRL: 0, rendaVariavel: 0, rendaFixa: 0, positionsCount: 0, rfCount: 0 };
+  }
+
+  const snapshots: PatrimonySnapshot[] = [
+    snap("2015-01-01"),   // > 10 anos atrás
+    snap("2020-05-15"),   // ~6 anos atrás
+    snap("2022-05-15"),   // ~3 anos atrás
+    snap("2024-05-15"),   // ~12 meses atrás (exato no cutoff)
+    snap("2025-05-20"),   // ~12 meses atrás (dentro de 12m)
+    snap("2026-04-15"),   // 1 mês atrás
+    snap("2026-05-10"),   // 5 dias atrás
+  ];
+
+  it("range='all' retorna cópia do array completo", () => {
+    const r = filterSnapshotsByRange(snapshots, "all", NOW);
+    expect(r).toHaveLength(snapshots.length);
+    expect(r).not.toBe(snapshots);
+  });
+
+  it("range='12m' pega só snapshots dos últimos 12 meses (cutoff inclusive)", () => {
+    const r = filterSnapshotsByRange(snapshots, "12m", NOW);
+    // cutoff = 2025-05-15 → 2025-05-20, 2026-04-15, 2026-05-10
+    expect(r.map((s) => s.date)).toEqual(["2025-05-20", "2026-04-15", "2026-05-10"]);
+  });
+
+  it("range='24m' pega só snapshots dos últimos 24 meses", () => {
+    const r = filterSnapshotsByRange(snapshots, "24m", NOW);
+    // cutoff = 2024-05-15 (inclusive) → tudo após 2024-05-15 inclusive
+    expect(r.map((s) => s.date)).toEqual(["2024-05-15", "2025-05-20", "2026-04-15", "2026-05-10"]);
+  });
+
+  it("range='5a' pega snapshots dos últimos 5 anos", () => {
+    const r = filterSnapshotsByRange(snapshots, "5a", NOW);
+    // cutoff = 2021-05-15 → 2022, 2024, 2025, 2026
+    expect(r.map((s) => s.date)).toEqual(["2022-05-15", "2024-05-15", "2025-05-20", "2026-04-15", "2026-05-10"]);
+  });
+
+  it("range='10a' inclui o cutoff exato (2016-05-15) e tudo depois", () => {
+    const r = filterSnapshotsByRange(snapshots, "10a", NOW);
+    // cutoff = 2016-05-15 → 2020 em diante
+    expect(r.map((s) => s.date)).toEqual([
+      "2020-05-15",
+      "2022-05-15",
+      "2024-05-15",
+      "2025-05-20",
+      "2026-04-15",
+      "2026-05-10",
+    ]);
+  });
+
+  it("array vazio retorna vazio", () => {
+    expect(filterSnapshotsByRange([], "12m", NOW)).toEqual([]);
+    expect(filterSnapshotsByRange([], "all", NOW)).toEqual([]);
+  });
+
+  it("não mutate input", () => {
+    const input = [snap("2025-01-01"), snap("2026-01-01")];
+    const before = JSON.stringify(input);
+    filterSnapshotsByRange(input, "12m", NOW);
+    expect(JSON.stringify(input)).toBe(before);
   });
 });
