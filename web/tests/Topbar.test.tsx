@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { Topbar } from "@/components/shell/Topbar";
 
 const mocks = vi.hoisted(() => ({
@@ -27,10 +27,18 @@ describe("Topbar", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Renda Fixa");
   });
 
-  it("renders the search input with ⌘K hint", () => {
+  it("renders the search input with OS-aware shortcut hint (Ctrl K on non-Mac jsdom)", () => {
     render(<Topbar />);
     expect(screen.getByPlaceholderText(/Buscar/i)).toBeInTheDocument();
-    expect(screen.getByText("⌘K")).toBeInTheDocument();
+    expect(screen.getByText("Ctrl K")).toBeInTheDocument();
+  });
+
+  it("Ctrl+K focuses the search input", () => {
+    render(<Topbar />);
+    const input = screen.getByPlaceholderText(/Buscar/i) as HTMLInputElement;
+    expect(document.activeElement).not.toBe(input);
+    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
+    expect(document.activeElement).toBe(input);
   });
 
   it("renders the 'Simular cenário' CTA button", () => {

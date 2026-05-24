@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, Search, Sparkles } from "lucide-react";
 import { NAV_BY_HREF } from "@/lib/nav";
@@ -21,6 +22,35 @@ export function Topbar({ onMenuClick }: Props) {
   const pathname = usePathname();
   const title = deriveTitle(pathname);
   const setDrawerOpen = useScenarioStore((s) => s.setDrawerOpen);
+  const searchRef = useRef<HTMLInputElement>(null);
+  // Default false → SSR and first client render show "Ctrl K". Effect upgrades
+  // to ⌘K on Mac post-hydration without mismatch.
+  const [isMac, setIsMac] = useState(false);
+
+  useEffect(() => {
+    const platform =
+      navigator.platform ||
+      // Chromium-only modern API; fine to skip on Firefox/Safari.
+      (navigator as Navigator & { userAgentData?: { platform?: string } })
+        .userAgentData?.platform ||
+      "";
+    setIsMac(/Mac|iPhone|iPad/i.test(platform));
+  }, []);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "k" && e.key !== "K") return;
+      const mod = isMac ? e.metaKey : e.ctrlKey;
+      if (!mod) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+      searchRef.current?.select();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isMac]);
+
+  const shortcutLabel = isMac ? "⌘K" : "Ctrl K";
 
   return (
     <header className="h-16 sticky top-0 z-10 backdrop-blur-[8px] bg-bg-1/60 border-b border-line-soft flex items-center px-4 sm:px-6 gap-3">
@@ -50,12 +80,13 @@ export function Topbar({ onMenuClick }: Props) {
         <div className="relative w-full max-w-[360px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-3" />
           <input
+            ref={searchRef}
             type="search"
             placeholder="Buscar ativos, parâmetros..."
-            className="w-full bg-bg-2 border border-line rounded-pill text-[14px] text-ink placeholder:text-ink-3 pl-9 pr-12 py-2 focus:outline-none focus:ring-2 focus:ring-brand-bright/40"
+            className="w-full bg-bg-2 border border-line rounded-pill text-[14px] text-ink placeholder:text-ink-3 pl-9 pr-16 py-2 focus:outline-none focus:ring-2 focus:ring-brand-bright/40"
           />
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-medium text-ink-3 bg-bg-3 px-1.5 py-0.5 rounded">
-            ⌘K
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-ink-3 bg-bg-3 px-1.5 py-0.5 rounded">
+            {shortcutLabel}
           </span>
         </div>
       </div>
