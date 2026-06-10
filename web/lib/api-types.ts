@@ -41,8 +41,12 @@ export type PortfolioInput = {
   assets: PortfolioAssetInput[];
 };
 
+export type BenchmarkKind = "cdi" | "selic" | "ipca_plus";
+
 export type BenchmarkInput = {
-  selicRate: number;
+  kind: BenchmarkKind;
+  annualRate: number;
+  ipcaSpread: number;
   taxRate: number;
 };
 

@@ -18,7 +18,7 @@ export function BenchmarkSection() {
             id="bench-selic"
             type="number"
             step="0.0025"
-            {...register("benchmark.selicRate", { valueAsNumber: true })}
+            {...register("benchmark.annualRate", { valueAsNumber: true })}
           />
         </div>
         <div className="space-y-1">

@@ -36,9 +36,28 @@ export const useScenarioStore = create<ScenarioStore>()(
         }),
     }),
     {
-      // v3: bumped from v2 to drop stale FII_PAPEL/FII_TIJOLO labels in
-      // persisted portfolio rows (consolidated into a single "FIIs" entry).
+      // Storage key name is historical — do NOT rename (renaming drops user data).
+      // Schema changes are handled via `version` + `migrate` below.
       name: "investa-scenario-v3",
+      // v4: benchmark reshaped from {selicRate,taxRate} to {kind,annualRate,ipcaSpread,taxRate}.
+      version: 4,
+      migrate: (persisted: unknown, version: number) => {
+        const state = persisted as {
+          scenario?: SimulateInput & {
+            benchmark?: Partial<SimulateInput["benchmark"]> & { selicRate?: number };
+          };
+        };
+        if ((version ?? 0) < 4 && state?.scenario) {
+          const old = state.scenario.benchmark ?? {};
+          state.scenario.benchmark = {
+            kind: "selic",  // pre-v4 benchmark was Tesouro Selic — preserve intent
+            annualRate: old.selicRate ?? DEFAULT_SCENARIO.benchmark.annualRate,
+            ipcaSpread: 0,
+            taxRate: old.taxRate ?? 0.175,
+          };
+        }
+        return state;
+      },
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         scenario: state.scenario,

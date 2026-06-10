@@ -30,7 +30,7 @@ describe("api-types JSON parity with Pydantic", () => {
           capitalGain: 0, taxRate: 0, note: "", volatility: 0.14,
         }],
       },
-      benchmark: { selicRate: 0.1475, taxRate: 0.175 },
+      benchmark: { kind: "cdi", annualRate: 0.1465, ipcaSpread: 0, taxRate: 0.175 },
     };
     expect(JSON.parse(JSON.stringify(fixture))).toEqual(fixture);
   });
