@@ -29,8 +29,12 @@ vi.mock("@/lib/api", () => ({
 // LineChart pulls SVG/canvas — we only care about the labels/legend prop wiring,
 // so render a stub that surfaces xLabels and bands as data-attrs.
 vi.mock("@/components/charts/LineChart", () => ({
-  LineChart: ({ xLabels, bands }: { xLabels: string[]; bands?: unknown[] }) => (
-    <div data-testid="line-chart" data-xlabels={xLabels.join(",")} data-bands={bands ? bands.length : 0} />
+  LineChart: ({ xLabels, bands, series }: { xLabels: string[]; bands?: unknown[]; series: { name: string }[] }) => (
+    <div data-testid="line-chart" data-xlabels={xLabels.join(",")} data-bands={bands ? bands.length : 0}>
+      {series.map((s) => (
+        <span key={s.name} data-testid="series-name">{s.name}</span>
+      ))}
+    </div>
   ),
 }));
 
@@ -57,5 +61,18 @@ describe("EvolutionCard timeline range", () => {
       Array.from({ length: 13 }, (_, i) => `M${i}`).join(","),
     );
     expect(chart.dataset.bands).toBe("0");
+  });
+
+  it("não renderiza Imóvel — benchmark (BM) presente na legenda, realEstate (RE) ausente", () => {
+    render(wrap(<EvolutionCard />));
+    // The card renders a legend from `series` (portfolio + benchmark only).
+    // realEstate is excluded from the series passed to the chart and the legend spans.
+    expect(screen.queryByText(/Imóvel/)).toBeNull();
+    // realEstate fixture label "RE" must not appear anywhere (legend or chart stub)
+    expect(screen.queryAllByText("RE")).toHaveLength(0);
+    // benchmark fixture label "BM" must appear (in legend and/or chart stub)
+    expect(screen.getAllByText("BM").length).toBeGreaterThan(0);
+    // portfolio fixture label "PF" must appear (in legend and/or chart stub)
+    expect(screen.getAllByText("PF").length).toBeGreaterThan(0);
   });
 });
