@@ -191,16 +191,19 @@ class MonteCarloParams:
     target_patrimony: float = 0.0   # 0 desativa cálculo de prob de bater meta
 
 
-# ---------- Reference benchmark (Tesouro Selic líquido) ----------
+# ---------- Reference benchmark (CDI / Selic / IPCA+x, líquido) ----------
 
 @dataclass(slots=True)
 class BenchmarkParams:
     capital: float = 230_000.0
-    selic_rate: float = SELIC_RATE
+    annual_rate: float = SELIC_RATE
     tax_rate: float = 0.175  # IR 17.5% (>2 anos)
+    monthly_contribution: float = 0.0
+    contribution_inflation_indexed: bool = True
+    label: str = "CDI (líquido)"
 
     def net_yield(self) -> float:
-        return self.selic_rate * (1 - self.tax_rate)
+        return self.annual_rate * (1 - self.tax_rate)
 
 
 # ---------- Renda Fixa (fixed-income positions) ----------

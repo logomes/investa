@@ -77,7 +77,7 @@ def _to_portfolio_params(input_pf) -> PortfolioParams:
 
 def _to_benchmark_params(input_bench, capital: float) -> BenchmarkParams:
     return BenchmarkParams(
-        selic_rate=input_bench.selic_rate,
+        annual_rate=input_bench.selic_rate,  # shim: schema renamed in a later task
         tax_rate=input_bench.tax_rate,
         capital=capital,
     )

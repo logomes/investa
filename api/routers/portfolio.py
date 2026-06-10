@@ -34,7 +34,9 @@ def defaults() -> dict:
     """Return the default scenario (RealEstate + Portfolio + Benchmark) for first load."""
     re_defaults = asdict(RealEstateParams())
     pf_defaults = asdict(PortfolioParams())
-    bench_defaults = asdict(BenchmarkParams())
+    bench = BenchmarkParams()
+    # Return in BenchmarkInput schema shape (selic_rate shim until T4 reworks the schema)
+    bench_defaults = {"selic_rate": bench.annual_rate, "tax_rate": bench.tax_rate}
     return {
         "realEstate": _camel_dict(re_defaults),
         "portfolio": _camel_dict(pf_defaults),
