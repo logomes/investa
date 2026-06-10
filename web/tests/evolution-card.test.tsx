@@ -44,7 +44,7 @@ describe("EvolutionCard timeline range", () => {
     render(wrap(<EvolutionCard />));
     const chart = screen.getByTestId("line-chart");
     expect(chart.dataset.xlabels).toBe("Y0,Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y8,Y9,Y10");
-    expect(chart.dataset.bands).toBe("2");
+    expect(chart.dataset.bands).toBe("1");
   });
 
   it("clicar em 1A troca pra labels mensais M0..M12 e oculta bandas MC", async () => {

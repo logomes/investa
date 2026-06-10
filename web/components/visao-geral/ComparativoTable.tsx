@@ -33,7 +33,7 @@ export function ComparativoTable() {
           </tr>
         </thead>
         <tbody className="text-ink">
-          {[d.portfolio, d.realEstate].map((s) => {
+          {[d.portfolio, d.benchmark].map((s) => {
             const final = s.patrimony[finalIdx];
             const yieldFinal = (s.annualIncome[finalIdx] / final) || 0;
             const monthly = s.annualIncome[finalIdx] / 12;
