@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 import type { ScenarioFormValues } from "../schema";
 import { useMacro } from "@/lib/api";
@@ -20,16 +19,17 @@ export function BenchmarkSection() {
   const kind = watch("benchmark.kind");
   const ipcaSpread = watch("benchmark.ipcaSpread");
 
-  // Prefill the nominal rate from live macro data whenever kind/spread change.
-  // The field stays editable — a manual override holds until the next change.
-  useEffect(() => {
-    if (!macro.data) return;
+  // Rate prefill is interaction-driven (kind click / spread edit) — never on mount, so a manually saved rate always survives drawer reopen.
+  const resolveRate = (nextKind: BenchmarkKind, spread: number): number | null => {
+    if (!macro.data) return null;
     const base =
-      kind === "cdi" ? macro.data.cdi :
-      kind === "selic" ? macro.data.selic :
-      macro.data.ipca + (ipcaSpread ?? 0);
-    setValue("benchmark.annualRate", Number(base.toFixed(4)));
-  }, [kind, ipcaSpread, macro.data, setValue]);
+      nextKind === "cdi" ? macro.data.cdi :
+      nextKind === "selic" ? macro.data.selic :
+      macro.data.ipca + spread;
+    return Number(base.toFixed(4));
+  };
+
+  const safeSpread = Number.isFinite(ipcaSpread) ? ipcaSpread : 0;
 
   return (
     <div className="space-y-3">
@@ -41,7 +41,11 @@ export function BenchmarkSection() {
             type="button"
             role="radio"
             aria-checked={kind === opt.value}
-            onClick={() => setValue("benchmark.kind", opt.value, { shouldDirty: true })}
+            onClick={() => {
+              setValue("benchmark.kind", opt.value, { shouldDirty: true });
+              const rate = resolveRate(opt.value, safeSpread);
+              if (rate !== null) setValue("benchmark.annualRate", rate, { shouldDirty: true });
+            }}
             className={`px-3 py-1.5 rounded-pill text-[12px] font-medium border transition-colors ${
               kind === opt.value
                 ? "bg-brand-bright/15 border-brand-bright/50 text-ink"
@@ -60,7 +64,14 @@ export function BenchmarkSection() {
               id="bench-spread"
               type="number"
               step="0.005"
-              {...register("benchmark.ipcaSpread", { valueAsNumber: true })}
+              {...register("benchmark.ipcaSpread", {
+                valueAsNumber: true,
+                onChange: (e) => {
+                  const spread = Number(e.target.valueAsNumber);
+                  const rate = resolveRate("ipca_plus", Number.isFinite(spread) ? spread : 0);
+                  if (rate !== null) setValue("benchmark.annualRate", rate, { shouldDirty: true });
+                },
+              })}
             />
           </div>
         )}
