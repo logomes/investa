@@ -53,3 +53,14 @@ def test_annual_income_matches_yield_on_prior_year_patrimony():
 def test_rejects_non_positive_horizon():
     with pytest.raises(ValueError):
         simulate_benchmark(BenchmarkParams(), horizon_years=0)
+
+
+def test_contributions_compound_from_begin_of_year():
+    # capital 0, 10% net rate: a begin-of-year aporte of 12k must earn the
+    # full year's return — 13_200, not the PMT-end 12_000.
+    params = BenchmarkParams(
+        capital=0.0, annual_rate=0.10, tax_rate=0.0,
+        monthly_contribution=1_000, contribution_inflation_indexed=False,
+    )
+    result = simulate_benchmark(params, horizon_years=1)
+    assert result.patrimony[1] == pytest.approx(13_200)
