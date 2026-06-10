@@ -53,7 +53,7 @@ export const useScenarioStore = create<ScenarioStore>()(
             kind: "selic",  // pre-v4 benchmark was Tesouro Selic — preserve intent
             annualRate: old.selicRate ?? DEFAULT_SCENARIO.benchmark.annualRate,
             ipcaSpread: 0,
-            taxRate: old.taxRate ?? 0.175,
+            taxRate: old.taxRate ?? DEFAULT_SCENARIO.benchmark.taxRate,
           };
         }
         return state;

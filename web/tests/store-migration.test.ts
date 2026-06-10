@@ -48,4 +48,28 @@ describe("store migration v3 → v4", () => {
     expect(s.scenario.portfolio.monthlyContribution).toBe(500);
     expect(s.goalTarget).toBe(500_000);
   });
+
+  it("leaves already-migrated v4 data untouched (kind survives)", async () => {
+    localStorage.setItem(
+      "investa-scenario-v3",
+      JSON.stringify({
+        state: {
+          ...V3_PAYLOAD.state,
+          scenario: {
+            ...V3_PAYLOAD.state.scenario,
+            benchmark: { kind: "ipca_plus", annualRate: 0.105, ipcaSpread: 0.06, taxRate: 0.15 },
+          },
+        },
+        version: 4,
+      }),
+    );
+    await useScenarioStore.persist.rehydrate();
+    const s = useScenarioStore.getState();
+    expect(s.scenario.benchmark).toEqual({
+      kind: "ipca_plus",
+      annualRate: 0.105,
+      ipcaSpread: 0.06,
+      taxRate: 0.15,
+    });
+  });
 });

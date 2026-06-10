@@ -30,7 +30,7 @@ export const DEFAULT_SCENARIO: SimulateInput = {
     ],
   },
   benchmark: {
-    kind: "cdi" as const,
+    kind: "cdi",
     annualRate: 0.1475,  // prefilled live from /api/macro in the drawer
     ipcaSpread: 0,
     taxRate: 0.175,
