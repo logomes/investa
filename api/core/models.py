@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 
 from .config import (
+    AssetClass,
     BenchmarkParams,
     FinancingParams,
     FixedIncomePosition,
@@ -704,6 +705,69 @@ def simulate_portfolio_mc(
         label="Carteira (MC)",
         color="#27AE60",
     )
+
+
+def sensitivity_portfolio(
+    base_params: PortfolioParams,
+    horizon_years: int,
+    ipca: float = 0.0,
+) -> pd.DataFrame:
+    """Tornado-style sensitivity for the portfolio: vary one dimension at a time.
+
+    Deltas are applied uniformly to every asset (clamped to valid ranges) so the
+    rows read as carteira-level scenarios, not per-asset ones.
+    """
+    def final_patrimony(params: PortfolioParams) -> float:
+        result = simulate_portfolio(
+            params, horizon_years, reinvest_income=True, ipca=ipca,
+        )
+        return float(result.patrimony[-1])
+
+    def variant(
+        *,
+        yield_delta: float = 0.0,
+        gain_delta: float = 0.0,
+        contribution_mult: float = 1.0,
+        tax_delta: float = 0.0,
+    ) -> PortfolioParams:
+        assets = [
+            AssetClass(
+                name=a.name,
+                weight=a.weight,
+                expected_yield=a.expected_yield + yield_delta,
+                capital_gain=a.capital_gain + gain_delta,
+                tax_rate=min(max(a.tax_rate + tax_delta, 0.0), 1.0),
+                note=a.note,
+                volatility=a.volatility,
+            )
+            for a in base_params.assets
+        ]
+        return PortfolioParams(
+            capital=base_params.capital,
+            assets=assets,
+            monthly_contribution=base_params.monthly_contribution * contribution_mult,
+            contribution_inflation_indexed=base_params.contribution_inflation_indexed,
+        )
+
+    variations = [
+        ("Yield da carteira (±1,5pp)",
+         variant(yield_delta=-0.015), variant(yield_delta=0.015)),
+        ("Ganho de capital (±1,5pp)",
+         variant(gain_delta=-0.015), variant(gain_delta=0.015)),
+        ("Aporte mensal (±25%)",
+         variant(contribution_mult=0.75), variant(contribution_mult=1.25)),
+        ("IR efetivo (±5pp)",
+         variant(tax_delta=0.05), variant(tax_delta=-0.05)),
+    ]
+
+    return pd.DataFrame([
+        {
+            "Parâmetro": label,
+            "Cenário Pessimista": final_patrimony(pessimistic),
+            "Cenário Otimista": final_patrimony(optimistic),
+        }
+        for label, pessimistic, optimistic in variations
+    ])
 
 
 def simulate_benchmark(
