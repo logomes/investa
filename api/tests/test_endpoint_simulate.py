@@ -41,7 +41,7 @@ def _default_payload() -> dict:
                  "capitalGain": 0.0, "taxRate": 0.10, "note": "", "volatility": 0.05},
             ],
         },
-        "benchmark": {"selicRate": 0.1475, "taxRate": 0.175},
+        "benchmark": {"kind": "cdi", "annualRate": 0.1465, "taxRate": 0.175},
     }
 
 

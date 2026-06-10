@@ -12,7 +12,7 @@ from core.config import (
 )
 from core.models import (
     annual_tax_comparison,
-    sensitivity_real_estate,
+    sensitivity_portfolio,
     simulate_benchmark,
     simulate_portfolio,
     simulate_portfolio_mc,
@@ -20,7 +20,7 @@ from core.models import (
     simulate_real_estate_mc,
 )
 from core.services.macro import get_macro_params
-from schemas.inputs import SimulateInput, SimulateMonteCarloInput
+from schemas.inputs import BenchmarkInput, SimulateInput, SimulateMonteCarloInput
 from schemas.outputs import (
     SensitivityRowOut,
     SimulateMonteCarloOut,
@@ -75,35 +75,33 @@ def _to_portfolio_params(input_pf) -> PortfolioParams:
     )
 
 
-def _to_benchmark_params(input_bench, capital: float) -> BenchmarkParams:
+def _benchmark_label(input_bench: BenchmarkInput) -> str:
+    if input_bench.kind == "cdi":
+        return "CDI (líquido)"
+    if input_bench.kind == "selic":
+        return "Selic (líquido)"
+    return f"IPCA + {input_bench.ipca_spread * 100:.1f}% (líquido)"
+
+
+def _to_benchmark_params(
+    input_bench: BenchmarkInput, capital: float, pf_params: PortfolioParams,
+) -> BenchmarkParams:
     return BenchmarkParams(
-        annual_rate=input_bench.selic_rate,  # shim: schema renamed in a later task
-        tax_rate=input_bench.tax_rate,
         capital=capital,
+        annual_rate=input_bench.annual_rate,
+        tax_rate=input_bench.tax_rate,
+        monthly_contribution=pf_params.monthly_contribution,
+        contribution_inflation_indexed=pf_params.contribution_inflation_indexed,
+        label=_benchmark_label(input_bench),
     )
-
-
-def _build_sensitivity_deltas(re_params: RealEstateParams) -> dict:
-    """Standard ±% sensitivity ranges used by the dashboard."""
-    return {
-        "monthly_rent": (re_params.monthly_rent * 0.8, re_params.monthly_rent * 1.2),
-        "annual_appreciation": (
-            re_params.annual_appreciation - 0.03,
-            re_params.annual_appreciation + 0.03,
-        ),
-        "vacancy_months_per_year": (0.0, 3.0),
-        "management_fee_pct": (0.0, 0.15),
-        "iptu_rate": (0.005, 0.020),
-        "income_tax_bracket": (0.0, 0.275),
-    }
 
 
 @router.post("/api/simulate", response_model=SimulateOut)
 def simulate(payload: SimulateInput) -> SimulateOut:
     """Run all three deterministic simulations + sensitivity + tax comparison."""
-    re_params = _to_real_estate_params(payload.real_estate)
     pf_params = _to_portfolio_params(payload.portfolio)
-    bench_params = _to_benchmark_params(payload.benchmark, payload.capital)
+    re_params = _to_real_estate_params(payload.real_estate)
+    bench_params = _to_benchmark_params(payload.benchmark, payload.capital, pf_params)
     macro = get_macro_params()
 
     re_result = simulate_real_estate(
@@ -118,10 +116,11 @@ def simulate(payload: SimulateInput) -> SimulateOut:
         reinvest_income=payload.reinvest,
         ipca=macro.ipca,
     )
-    bench_result = simulate_benchmark(bench_params, horizon_years=payload.horizon)
+    bench_result = simulate_benchmark(
+        bench_params, horizon_years=payload.horizon, ipca=macro.ipca,
+    )
 
-    deltas = _build_sensitivity_deltas(re_params)
-    sens_rows = sensitivity_real_estate(re_params, payload.horizon, deltas)
+    sens_rows = sensitivity_portfolio(pf_params, payload.horizon, ipca=macro.ipca)
     sensitivity = [
         SensitivityRowOut(
             parameter=row["Parâmetro"],

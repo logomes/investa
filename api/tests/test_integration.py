@@ -41,7 +41,7 @@ def _base_simulate_payload() -> dict:
                  "capitalGain": 0.02, "taxRate": 0.0, "note": "", "volatility": 0.15},
             ],
         },
-        "benchmark": {"selicRate": 0.1475, "taxRate": 0.175},
+        "benchmark": {"kind": "cdi", "annualRate": 0.1465, "taxRate": 0.175},
     }
 
 
