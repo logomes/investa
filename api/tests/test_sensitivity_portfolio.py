@@ -1,6 +1,6 @@
 """Tests for the portfolio tornado sensitivity."""
 from core.config import AssetClass, PortfolioParams
-from core.models import sensitivity_portfolio
+from core.models import sensitivity_portfolio, simulate_portfolio
 
 
 def _params() -> PortfolioParams:
@@ -45,3 +45,21 @@ def test_zero_contribution_makes_aporte_row_flat():
     df = sensitivity_portfolio(params, horizon_years=10)
     row = df[df["Parâmetro"] == "Aporte mensal (±25%)"].iloc[0]
     assert row["Cenário Pessimista"] == row["Cenário Otimista"]
+
+
+def test_tax_clamp_makes_negative_delta_a_noop_at_zero_tax():
+    # All assets at 0% tax: the optimistic −5pp IR delta clamps to 0,
+    # so the IR row's optimistic scenario equals the base final patrimony.
+    params = PortfolioParams(
+        capital=100_000,
+        monthly_contribution=0.0,
+        contribution_inflation_indexed=False,
+        assets=[
+            AssetClass("A", 0.5, 0.10, 0.02, 0.00, volatility=0.10),
+            AssetClass("B", 0.5, 0.08, 0.01, 0.00, volatility=0.20),
+        ],
+    )
+    base = float(simulate_portfolio(params, 10, reinvest_income=True).patrimony[-1])
+    df = sensitivity_portfolio(params, horizon_years=10)
+    row = df[df["Parâmetro"] == "IR efetivo (±5pp)"].iloc[0]
+    assert row["Cenário Otimista"] == base

@@ -6,7 +6,7 @@ analysis for real estate vs portfolio scenarios.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from typing import Iterable
 
@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 
 from .config import (
-    AssetClass,
     BenchmarkParams,
     FinancingParams,
     FixedIncomePosition,
@@ -714,7 +713,7 @@ def sensitivity_portfolio(
 ) -> pd.DataFrame:
     """Tornado-style sensitivity for the portfolio: vary one dimension at a time.
 
-    Deltas are applied uniformly to every asset (clamped to valid ranges) so the
+    Deltas are applied uniformly to every asset (tax clamped to [0, 1]) so the
     rows read as carteira-level scenarios, not per-asset ones.
     """
     def final_patrimony(params: PortfolioParams) -> float:
@@ -731,22 +730,18 @@ def sensitivity_portfolio(
         tax_delta: float = 0.0,
     ) -> PortfolioParams:
         assets = [
-            AssetClass(
-                name=a.name,
-                weight=a.weight,
+            replace(
+                a,
                 expected_yield=a.expected_yield + yield_delta,
                 capital_gain=a.capital_gain + gain_delta,
                 tax_rate=min(max(a.tax_rate + tax_delta, 0.0), 1.0),
-                note=a.note,
-                volatility=a.volatility,
             )
             for a in base_params.assets
         ]
-        return PortfolioParams(
-            capital=base_params.capital,
+        return replace(
+            base_params,
             assets=assets,
             monthly_contribution=base_params.monthly_contribution * contribution_mult,
-            contribution_inflation_indexed=base_params.contribution_inflation_indexed,
         )
 
     variations = [
