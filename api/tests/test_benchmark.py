@@ -2,8 +2,8 @@
 import numpy as np
 import pytest
 
-from core.config import BenchmarkParams
-from core.models import simulate_benchmark
+from core.config import AssetClass, BenchmarkParams, PortfolioParams
+from core.models import annual_tax_comparison, simulate_benchmark
 
 
 def test_no_contribution_compounds_capital_at_net_rate():
@@ -64,3 +64,23 @@ def test_contributions_compound_from_begin_of_year():
     )
     result = simulate_benchmark(params, horizon_years=1)
     assert result.patrimony[1] == pytest.approx(13_200)
+
+
+def test_tax_comparison_rows_are_portfolio_and_benchmark():
+    portfolio = PortfolioParams(
+        capital=100_000,
+        assets=[AssetClass("A", 1.0, 0.10, 0.0, 0.20)],
+    )
+    benchmark = BenchmarkParams(
+        capital=100_000, annual_rate=0.12, tax_rate=0.175, label="CDI (líquido)",
+    )
+    df = annual_tax_comparison(portfolio, benchmark)
+
+    assert list(df["Cenário"]) == ["Carteira Diversificada", "CDI (líquido)"]
+    pf = df.iloc[0]
+    assert pf["Receita Bruta"] == pytest.approx(10_000)
+    assert pf["Imposto Anual"] == pytest.approx(2_000)
+    bench = df.iloc[1]
+    assert bench["Receita Bruta"] == pytest.approx(12_000)
+    assert bench["Imposto Anual"] == pytest.approx(12_000 * 0.175)
+    assert bench["Carga Tributária Efetiva"] == pytest.approx(0.175)

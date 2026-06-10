@@ -898,15 +898,10 @@ def compute_irpf_carne_leao(monthly_income: float) -> float:
 
 
 def annual_tax_comparison(
-    real_estate: RealEstateParams,
     portfolio: PortfolioParams,
+    benchmark: BenchmarkParams,
 ) -> pd.DataFrame:
-    """Compare annual tax burden between scenarios."""
-    re_label = "Imóvel" if real_estate.financing is None else "Imóvel (financiado)"
-    re_tax = real_estate.income_tax_amount()
-    re_gross_income = real_estate.gross_annual_rent()
-
-    # Portfolio tax (computed inside blended yield)
+    """Compare annual tax burden: carteira vs passive benchmark."""
     pf_gross_income = sum(
         portfolio.capital * a.weight * a.expected_yield
         for a in portfolio.assets
@@ -916,19 +911,22 @@ def annual_tax_comparison(
         for a in portfolio.assets
     )
 
+    bench_gross_income = benchmark.capital * benchmark.annual_rate
+    bench_tax = bench_gross_income * benchmark.tax_rate
+
     return pd.DataFrame([
-        {
-            "Cenário": re_label,
-            "Receita Bruta": re_gross_income,
-            "Imposto Anual": re_tax,
-            "Receita Líquida": re_gross_income - re_tax,
-            "Carga Tributária Efetiva": re_tax / re_gross_income if re_gross_income else 0.0,
-        },
         {
             "Cenário": "Carteira Diversificada",
             "Receita Bruta": pf_gross_income,
             "Imposto Anual": pf_tax,
             "Receita Líquida": pf_gross_income - pf_tax,
             "Carga Tributária Efetiva": pf_tax / pf_gross_income if pf_gross_income else 0.0,
+        },
+        {
+            "Cenário": benchmark.label,
+            "Receita Bruta": bench_gross_income,
+            "Imposto Anual": bench_tax,
+            "Receita Líquida": bench_gross_income - bench_tax,
+            "Carga Tributária Efetiva": benchmark.tax_rate if bench_gross_income else 0.0,
         },
     ])

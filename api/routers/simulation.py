@@ -131,7 +131,7 @@ def simulate(payload: SimulateInput) -> SimulateOut:
         for row in sens_rows.to_dict("records")
     ]
 
-    tax_rows = annual_tax_comparison(re_params, pf_params)
+    tax_rows = annual_tax_comparison(pf_params, bench_params)
     tax_comparison = [
         TaxComparisonRowOut(
             scenario=row["Cenário"],
