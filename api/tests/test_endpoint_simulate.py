@@ -73,3 +73,17 @@ def test_simulate_rejects_invalid_horizon():
     client = TestClient(app)
     response = client.post("/api/simulate", json=payload)
     assert response.status_code == 422  # Pydantic validation error
+
+
+def test_simulate_sensitivity_uses_portfolio_tornado():
+    client = TestClient(app)
+    resp = client.post("/api/simulate", json=_default_payload())
+    assert resp.status_code == 200
+    rows = resp.json()["sensitivity"]
+    assert len(rows) == 4
+    assert {r["parameter"] for r in rows} == {
+        "Yield da carteira (±1,5pp)",
+        "Ganho de capital (±1,5pp)",
+        "Aporte mensal (±25%)",
+        "IR efetivo (±5pp)",
+    }
