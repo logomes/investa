@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Target } from "lucide-react";
-import { useSimulate, useMonteCarlo, useMacro } from "@/lib/api";
+import { useSimulate, useMonteCarlo, useMacro, useGoalSolve } from "@/lib/api";
 import { useScenarioStore } from "@/lib/store";
 import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { ErrorCard } from "@/components/error/ErrorCard";
@@ -14,12 +14,23 @@ export function GoalCard() {
   const sim = useSimulate();
   const mc = useMonteCarlo();
   const macro = useMacro();
+  const goalSolve = useGoalSolve();
   const goal = useScenarioStore((s) => s.goalTarget);
   const scenario = useScenarioStore((s) => s.scenario);
   const setScenario = useScenarioStore((s) => s.setScenario);
   const setGoalTarget = useScenarioStore((s) => s.setGoalTarget);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<string>("");
+
+  const handleSolve = () => {
+    goalSolve.mutate({
+      horizon: scenario.horizon,
+      portfolio: scenario.portfolio,
+      goalTarget: goal,
+      confidence: 0.8,
+      nTrajectories: 1500,
+    });
+  };
 
   const commit = () => {
     const parsed = Number(draft);
@@ -66,7 +77,7 @@ export function GoalCard() {
           : "text-accent-coral";
 
   return (
-    <div className="bg-bg-2 border border-line rounded-card p-5 flex flex-col h-[420px]">
+    <div className="bg-bg-2 border border-line rounded-card p-5 flex flex-col h-[480px]">
       <div className="flex items-center gap-2 mb-3">
         <Target className="w-4 h-4 text-brand-bright" />
         <h3 className="text-[13.5px] font-semibold text-ink">Meta patrimonial</h3>
@@ -135,6 +146,53 @@ export function GoalCard() {
             });
           }}
         />
+        <div className="mt-3">
+          {goalSolve.data ? (
+            goalSolve.data.attainable ? (
+              <div className="bg-bg-3 rounded-card p-3 space-y-2">
+                <p className="text-[12px] text-ink-2 leading-relaxed">
+                  Monte Carlo: <span className="text-ink font-semibold">{formatRs(goalSolve.data.requiredMonthlyContribution)}/mês</span>{" "}
+                  para {formatPercent(0.8)} de confiança (P={formatPercent(goalSolve.data.achievedProbability)}).
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const latest = useScenarioStore.getState().scenario;
+                    setScenario({
+                      ...latest,
+                      portfolio: {
+                        ...latest.portfolio,
+                        monthlyContribution: goalSolve.data!.requiredMonthlyContribution,
+                      },
+                    });
+                  }}
+                  className="w-full text-[12px] font-semibold py-1.5 rounded-[10px] text-bg-0 shadow-glow hover:scale-[1.01] transition-transform"
+                  style={{ background: "linear-gradient(135deg, #2af0c4 0%, #00b894 100%)" }}
+                >
+                  Aplicar aporte refinado
+                </button>
+              </div>
+            ) : (
+              <p className="text-[11.5px] text-accent-coral">
+                Meta improvável mesmo com {formatRs(goalSolve.data.requiredMonthlyContribution)}/mês — aumente horizonte ou reduza o alvo.
+              </p>
+            )
+          ) : (
+            <button
+              type="button"
+              onClick={handleSolve}
+              disabled={goalSolve.isPending}
+              className="w-full text-[12px] font-medium py-1.5 rounded-[10px] border border-line text-ink-2 hover:text-ink disabled:opacity-60"
+            >
+              {goalSolve.isPending ? "Calculando (Monte Carlo)… ~10s" : "Refinar com Monte Carlo"}
+            </button>
+          )}
+          {goalSolve.isError && (
+            <p className="text-[11px] text-accent-coral mt-1">
+              Falha ao calcular — <button type="button" className="underline" onClick={handleSolve}>tentar de novo</button>
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
