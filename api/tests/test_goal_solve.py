@@ -1,5 +1,4 @@
 """Tests for the Monte Carlo goal solver."""
-import pytest
 from fastapi.testclient import TestClient
 
 from core.config import AssetClass, PortfolioParams
@@ -47,6 +46,7 @@ def test_finds_contribution_within_tolerance():
     goal = base_final + 100_000.0
     result = solve_goal_contribution(pf, horizon_years=10, goal_target=goal, confidence=0.8)
     assert result["attainable"] is True
+    assert result["achieved_probability"] >= 0.8
     c = result["required_monthly_contribution"]
     assert c > 0
 
@@ -60,6 +60,17 @@ def test_finds_contribution_within_tolerance():
         simulate_portfolio(replace(pf, monthly_contribution=max(c - 100, 0)), 10, reinvest_income=True).patrimony[-1]
     )
     assert short < goal
+
+
+def test_higher_confidence_requires_more_contribution():
+    pf = _deterministic_portfolio()
+    pf.assets[0].volatility = 0.15
+    low = solve_goal_contribution(pf, horizon_years=10, goal_target=400_000, confidence=0.5)
+    high = solve_goal_contribution(pf, horizon_years=10, goal_target=400_000, confidence=0.9)
+    assert high["required_monthly_contribution"] >= low["required_monthly_contribution"]
+    for r, conf in ((low, 0.5), (high, 0.9)):
+        if r["attainable"]:
+            assert r["achieved_probability"] >= conf
 
 
 def test_is_reproducible():

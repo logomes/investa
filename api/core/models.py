@@ -363,7 +363,7 @@ def solve_goal_contribution(
     def probability(monthly: float) -> float:
         params = replace(portfolio, monthly_contribution=monthly)
         result = simulate_portfolio_mc(params, horizon_years, mc, ipca=ipca)
-        return float((result.final_distribution >= goal_target).mean())
+        return result.prob_target(goal_target)
 
     iterations = 0
 
