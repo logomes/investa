@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { SimulateInput, SimulateOut } from "@/lib/api-types";
+import type { SimulateInput, SimulateOut, GoalSolveOut } from "@/lib/api-types";
 
 describe("api-types JSON parity with Pydantic", () => {
   it("SimulateInput accepts a fixture mirroring the API contract", () => {
@@ -43,5 +43,15 @@ describe("api-types JSON parity with Pydantic", () => {
       taxComparison: [],
     };
     expect(fixture.portfolio.years).toHaveLength(3);
+  });
+
+  it("GoalSolveOut shape matches expected response", () => {
+    const fixture: GoalSolveOut = {
+      requiredMonthlyContribution: 1500,
+      achievedProbability: 0.85,
+      attainable: true,
+      iterations: 42,
+    };
+    expect(JSON.parse(JSON.stringify(fixture))).toEqual(fixture);
   });
 });
