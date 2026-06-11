@@ -11,18 +11,18 @@ const fakeSimOut: SimulateOut = {
   sensitivity: [] as never,
   taxComparison: [
     {
-      scenario: "Imóvel",
-      grossIncome: 18_000,
-      annualTax: 1_237.5,
-      netIncome: 16_762.5,
-      effectiveTaxBurden: 0.0688,
+      scenario: "Carteira Diversificada",
+      grossIncome: 10_000,
+      annualTax: 2_000,
+      netIncome: 8_000,
+      effectiveTaxBurden: 0.20,
     },
     {
-      scenario: "Carteira Diversificada",
-      grossIncome: 27_945,
-      annualTax: 414,
-      netIncome: 27_531,
-      effectiveTaxBurden: 0.0148,
+      scenario: "CDI (líquido)",
+      grossIncome: 12_000,
+      annualTax: 2_100,
+      netIncome: 9_900,
+      effectiveTaxBurden: 0.175,
     },
   ],
 };
@@ -45,11 +45,16 @@ describe("TributacaoPageContent", () => {
     mockSimReturn = { data: fakeSimOut, isLoading: false, error: null, refetch: vi.fn() };
   });
 
-  it("renderiza KPIs Imposto Imóvel + Imposto Carteira", () => {
+  it("renderiza KPIs Imposto Carteira + Imposto Benchmark", () => {
     render(wrap(<TributacaoPageContent />));
-    expect(screen.getByText(/imposto imóvel/i)).toBeInTheDocument();
     expect(screen.getByText(/imposto carteira/i)).toBeInTheDocument();
+    expect(screen.getByText(/imposto benchmark/i)).toBeInTheDocument();
     expect(screen.getByText(/diferença/i)).toBeInTheDocument();
+  });
+
+  it("não renderiza nenhuma referência a Imóvel", () => {
+    render(wrap(<TributacaoPageContent />));
+    expect(screen.queryByText(/Imóvel/)).toBeNull();
   });
 
   it("renderiza chart svg com pelo menos 2 grupos (1 por cenário)", () => {
@@ -61,15 +66,15 @@ describe("TributacaoPageContent", () => {
 
   it("renderiza tabela com 2 cenários", () => {
     render(wrap(<TributacaoPageContent />));
-    expect(screen.getAllByText(/Imóvel/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/Carteira Diversificada/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/CDI \(líquido\)/).length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renderiza notas tributárias 2026", () => {
+  it("renderiza notas tributárias 2026 sem Aluguel (PF)", () => {
     render(wrap(<TributacaoPageContent />));
     expect(screen.getByText(/notas tributárias/i)).toBeInTheDocument();
     expect(screen.getByText("FIIs")).toBeInTheDocument();
-    expect(screen.getByText("Aluguel (PF)")).toBeInTheDocument();
+    expect(screen.queryByText("Aluguel (PF)")).toBeNull();
   });
 
   it("loading → renderiza skeleton", () => {

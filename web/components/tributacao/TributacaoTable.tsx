@@ -9,7 +9,7 @@ type Props = { rows: TaxComparisonRowOut[] };
 
 function bulletColor(scenario: string): string {
   if (scenario === "Carteira Diversificada") return SCENARIO_COLORS.portfolio;
-  return SCENARIO_COLORS.realEstate;
+  return SCENARIO_COLORS.benchmark;
 }
 
 export function TributacaoTable({ rows }: Props) {
