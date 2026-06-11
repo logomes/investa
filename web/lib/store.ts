@@ -36,6 +36,7 @@ export const useScenarioStore = create<ScenarioStore>()(
           scenario: DEFAULT_SCENARIO,
           mc: DEFAULT_MC,
           goalTarget: DEFAULT_GOAL,
+          lastRealImportAt: null,
         }),
       setLastRealImportAt: (lastRealImportAt) => set({ lastRealImportAt }),
     }),

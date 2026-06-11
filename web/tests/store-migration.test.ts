@@ -91,6 +91,7 @@ describe("store migration v5: realEstate dropped", () => {
 describe("lastRealImportAt provenance field", () => {
   beforeEach(() => {
     localStorage.clear();
+    useScenarioStore.setState({ lastRealImportAt: null });
   });
 
   it("hydrates lastRealImportAt as null for pre-existing payloads", async () => {
