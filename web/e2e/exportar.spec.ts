@@ -13,7 +13,8 @@ test.describe("Exportar page", () => {
 
     // The table should show the 2 scenario labels; Imóvel must NOT appear
     await expect(page.getByRole("cell", { name: "Carteira Diversificada" }).first()).toBeVisible();
-    await expect(page.getByRole("cell", { name: "Tesouro Selic (líquido)" }).first()).toBeVisible();
+    await expect(page.getByRole("cell", { name: "CDI (líquido)" }).first()).toBeVisible();
+    await expect(page.getByRole("cell", { name: "Imóvel" })).toHaveCount(0);
   });
 
   test("download CSV triggers a file download", async ({ page }) => {

@@ -26,7 +26,7 @@ export const simulateOut = {
     cumulativeIncome: cumulative(portfolioAnnualIncome),
   },
   benchmark: {
-    label: "Tesouro Selic (líquido)",
+    label: "CDI (líquido)",
     color: "#FFC857",
     years,
     patrimony: [230_000, 258_000, 289_000, 324_000, 364_000, 408_000, 458_000, 513_000, 576_000, 646_000, 725_000],

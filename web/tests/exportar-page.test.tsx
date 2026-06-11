@@ -16,7 +16,7 @@ const fakeSimOut: SimulateOut = {
     internalPortfolio: null,
   },
   portfolio: {
-    label: "Carteira diversificada",
+    label: "Carteira Diversificada",
     color: "#27AE60",
     years: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     patrimony: Array.from({ length: 11 }, (_, i) => 230_000 + i * 25_000),
@@ -26,7 +26,7 @@ const fakeSimOut: SimulateOut = {
     internalPortfolio: null,
   },
   benchmark: {
-    label: "Tesouro Selic líquido",
+    label: "CDI (líquido)",
     color: "#5CC8FF",
     years: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     patrimony: Array.from({ length: 11 }, (_, i) => 230_000 + i * 28_000),

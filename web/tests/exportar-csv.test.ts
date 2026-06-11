@@ -19,7 +19,7 @@ const SIM: SimulateOut = {
     internalPortfolio: null,
   },
   portfolio: {
-    label: "Carteira diversificada",
+    label: "Carteira Diversificada",
     color: "#27AE60",
     years: [0, 1, 2],
     patrimony: [230_000, 250_000, 275_000],
@@ -29,7 +29,7 @@ const SIM: SimulateOut = {
     internalPortfolio: null,
   },
   benchmark: {
-    label: "Tesouro Selic líquido",
+    label: "CDI (líquido)",
     color: "#5CC8FF",
     years: [0, 1, 2],
     patrimony: [230_000, 258_000, 289_000],
@@ -52,10 +52,10 @@ describe("exportar-csv — buildLongFormatRows", () => {
     const rows = buildLongFormatRows(SIM);
     const scenarios = rows.map((r) => r.scenario);
     expect(scenarios).not.toContain("Imóvel");
-    expect(rows[0].scenario).toBe("Carteira diversificada");
-    expect(rows[2].scenario).toBe("Carteira diversificada");
-    expect(rows[3].scenario).toBe("Tesouro Selic líquido");
-    expect(rows[5].scenario).toBe("Tesouro Selic líquido");
+    expect(rows[0].scenario).toBe("Carteira Diversificada");
+    expect(rows[2].scenario).toBe("Carteira Diversificada");
+    expect(rows[3].scenario).toBe("CDI (líquido)");
+    expect(rows[5].scenario).toBe("CDI (líquido)");
   });
 
   it("cada row tem ano + 4 colunas numéricas", () => {
