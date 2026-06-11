@@ -12,20 +12,6 @@ def _default_payload() -> dict:
         "capital": 230_000.0,
         "horizon": 10,
         "reinvest": True,
-        "realEstate": {
-            "propertyValue": 230_000.0,
-            "monthlyRent": 1_500.0,
-            "annualAppreciation": 0.055,
-            "iptuRate": 0.010,
-            "vacancyMonthsPerYear": 1.0,
-            "managementFeePct": 0.10,
-            "maintenanceAnnual": 900.0,
-            "insuranceAnnual": 600.0,
-            "incomeTaxBracket": 0.075,
-            "acquisitionCostPct": 0.05,
-            "appreciationVolatility": 0.10,
-            "financing": None,
-        },
         "portfolio": {
             "capital": 230_000.0,
             "monthlyContribution": 0.0,
@@ -52,11 +38,11 @@ def test_simulate_returns_full_output_shape():
     response = client.post("/api/simulate", json=_default_payload())
     assert response.status_code == 200, response.text
     body = response.json()
-    assert "realEstate" in body
     assert "portfolio" in body
     assert "benchmark" in body
     assert "sensitivity" in body
     assert "taxComparison" in body
+    assert "re" + "alEstate" not in body
 
 
 def test_simulate_yearly_arrays_have_horizon_plus_one_points():
@@ -64,9 +50,9 @@ def test_simulate_yearly_arrays_have_horizon_plus_one_points():
     payload["horizon"] = 5
     client = TestClient(app)
     body = client.post("/api/simulate", json=payload).json()
-    assert len(body["realEstate"]["years"]) == 6  # 0..5 inclusive
-    assert len(body["realEstate"]["patrimony"]) == 6
+    assert len(body["portfolio"]["years"]) == 6  # 0..5 inclusive
     assert len(body["portfolio"]["patrimony"]) == 6
+    assert len(body["benchmark"]["patrimony"]) == 6
 
 
 def test_simulate_rejects_invalid_horizon():

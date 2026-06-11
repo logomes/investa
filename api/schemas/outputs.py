@@ -57,7 +57,6 @@ class TaxComparisonRowOut(_CamelModel):
 
 class SimulateOut(_CamelModel):
     """Full deterministic-simulation output."""
-    real_estate: SimulationResultOut
     portfolio: SimulationResultOut
     benchmark: SimulationResultOut
     sensitivity: list[SensitivityRowOut]
@@ -75,7 +74,6 @@ class MonteCarloResultOut(_CamelModel):
 
 
 class SimulateMonteCarloOut(_CamelModel):
-    real_estate: MonteCarloResultOut
     portfolio: MonteCarloResultOut
 
 
@@ -97,7 +95,6 @@ class FixedIncomePortfolioOut(_CamelModel):
 
 
 class PortfolioDefaultsOut(_CamelModel):
-    real_estate: dict
     portfolio: dict
     benchmark: dict
 

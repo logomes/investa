@@ -41,80 +41,6 @@ MACRO_FALLBACK: Final[MacroParams] = MacroParams(
 )
 
 
-# ---------- Financing ----------
-
-@dataclass(slots=True, frozen=True)
-class FinancingParams:
-    """Real-estate financing terms (loan principal, rate, system, insurance)."""
-    term_years: int = 30
-    annual_rate: float = 0.115
-    entry_pct: float = 0.20
-    system: Literal["SAC", "Price"] = "SAC"
-    monthly_insurance_rate: float = 0.0005
-
-    @property
-    def monthly_rate(self) -> float:
-        return (1 + self.annual_rate) ** (1 / 12) - 1
-
-
-# ---------- Real Estate defaults (R$ 230k in São Paulo) ----------
-
-@dataclass(slots=True)
-class RealEstateParams:
-    property_value: float = 230_000.0
-    monthly_rent: float = 1_500.0
-    annual_appreciation: float = 0.055        # IPCA + 1%
-    iptu_rate: float = 0.010                  # 1% of property value
-    vacancy_months_per_year: float = 1.0
-    management_fee_pct: float = 0.10          # 10% of rent to admin
-    maintenance_annual: float = 900.0
-    insurance_annual: float = 600.0
-    income_tax_bracket: float = 0.075         # carnê-leão typical bracket
-    acquisition_cost_pct: float = 0.05        # ITBI + cartório
-    appreciation_volatility: float = 0.10     # σ anual da valorização
-    financing: FinancingParams | None = None
-
-    def gross_annual_rent(self) -> float:
-        return self.monthly_rent * 12
-
-    def annual_iptu(self) -> float:
-        return self.property_value * self.iptu_rate
-
-    def vacancy_loss(self) -> float:
-        return self.monthly_rent * self.vacancy_months_per_year
-
-    def management_fee(self) -> float:
-        return self.gross_annual_rent() * self.management_fee_pct
-
-    def income_tax_amount(self) -> float:
-        # Tax applies on rent received (after vacancy)
-        taxable = self.gross_annual_rent() - self.vacancy_loss()
-        return taxable * self.income_tax_bracket
-
-    def total_costs(self) -> float:
-        return (
-            self.annual_iptu()
-            + self.vacancy_loss()
-            + self.maintenance_annual
-            + self.management_fee()
-            + self.insurance_annual
-            + self.income_tax_amount()
-        )
-
-    def net_annual_income(self) -> float:
-        return self.gross_annual_rent() - self.total_costs()
-
-    def gross_yield(self) -> float:
-        return self.gross_annual_rent() / self.property_value
-
-    def net_yield(self) -> float:
-        return self.net_annual_income() / self.property_value
-
-    def total_return(self) -> float:
-        """Total nominal return = net yield + appreciation."""
-        return self.net_yield() + self.annual_appreciation
-
-
 # ---------- Portfolio defaults ----------
 
 @dataclass(slots=True)
@@ -309,7 +235,6 @@ class FixedIncomePosition:
 # ---------- Visual palette ----------
 
 PALETTE: Final[dict[str, str]] = {
-    "imovel": "#C0392B",
     "carteira": "#27AE60",
     "fii_papel": "#2980B9",
     "fii_tijolo": "#5DADE2",

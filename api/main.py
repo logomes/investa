@@ -9,7 +9,7 @@ from routers import fii_metadata, fixed_income, health, macro, portfolio, quotes
 
 app = FastAPI(
     title="investa API",
-    description="Análise patrimonial — Imóvel vs Carteira",
+    description="Análise patrimonial — Carteira vs Benchmark",
     version="1.0.0",
 )
 

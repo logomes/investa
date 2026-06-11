@@ -6,7 +6,6 @@ from fastapi import APIRouter
 from core.config import (
     BenchmarkParams,
     PortfolioParams,
-    RealEstateParams,
 )
 
 router = APIRouter()
@@ -31,12 +30,10 @@ def _camel_dict(d: dict) -> dict:
 
 @router.get("/api/portfolio/defaults")
 def defaults() -> dict:
-    """Return the default scenario (RealEstate + Portfolio + Benchmark) for first load."""
-    re_defaults = asdict(RealEstateParams())
+    """Return the default scenario (Portfolio + Benchmark) for first load."""
     pf_defaults = asdict(PortfolioParams())
     bench_defaults = asdict(BenchmarkParams())
     return {
-        "realEstate": _camel_dict(re_defaults),
         "portfolio": _camel_dict(pf_defaults),
         "benchmark": _camel_dict(bench_defaults),
     }
