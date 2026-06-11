@@ -64,20 +64,20 @@ describe("ExportarPageContent", () => {
 
   it("renderiza header + botão Baixar CSV", () => {
     render(wrap(<ExportarPageContent />));
-    expect(screen.getByText(/Comparativo Imóvel/i)).toBeInTheDocument();
+    expect(screen.getByText(/Comparativo Carteira/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /baixar csv/i })).toBeInTheDocument();
   });
 
-  it("renderiza tabela com 33 linhas (3 cenários × 11 anos)", () => {
+  it("renderiza tabela com 22 linhas (2 cenários × 11 anos)", () => {
     const { container } = render(wrap(<ExportarPageContent />));
     const tbody = container.querySelector("tbody");
     expect(tbody).toBeTruthy();
-    expect(tbody!.querySelectorAll("tr")).toHaveLength(33);
+    expect(tbody!.querySelectorAll("tr")).toHaveLength(22);
   });
 
   it("caption mostra 'X linhas' com contagem correta", () => {
     render(wrap(<ExportarPageContent />));
-    expect(screen.getByText(/33 linhas/i)).toBeInTheDocument();
+    expect(screen.getByText(/22 linhas/i)).toBeInTheDocument();
   });
 
   it("loading → renderiza skeleton", () => {

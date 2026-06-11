@@ -12,10 +12,12 @@ type Props = {
 };
 
 const SCENARIO_COLORS: Record<string, string> = {
-  "Imóvel": "#FF6B5B",
-  "Imóvel (financiado)": "#FF6B5B",
   "Carteira diversificada": "#46E8A4",
+  "Carteira Diversificada": "#46E8A4",
   "Tesouro Selic líquido": "#5CC8FF",
+  "Tesouro Selic (líquido)": "#5CC8FF",
+  "Benchmark CDI líquido": "#5CC8FF",
+  "Benchmark": "#5CC8FF",
 };
 
 function bulletColor(scenario: string): string {
@@ -42,10 +44,10 @@ export function ExportPreviewCard({ rows, horizonYears }: Props) {
         <div className="flex items-center justify-between gap-4">
           <div>
             <h3 className="text-[13.5px] font-semibold text-ink">
-              Comparativo Imóvel × Carteira × Tesouro
+              Comparativo Carteira × Benchmark
             </h3>
             <p className="text-[11px] text-ink-3 mt-1">
-              Long format · 3 cenários × {horizonYears + 1} anos = {rows.length} linhas
+              Long format · 2 cenários × {horizonYears + 1} anos = {rows.length} linhas
             </p>
           </div>
           <Button onClick={() => downloadCsv(rows, horizonYears)}>

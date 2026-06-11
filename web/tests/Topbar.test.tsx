@@ -10,6 +10,11 @@ vi.mock("next/navigation", () => ({
   usePathname: () => mocks.pathname,
 }));
 
+vi.mock("@/lib/store", () => ({
+  useScenarioStore: <T,>(selector: (s: { scenario: { horizon: number }; setDrawerOpen: (v: boolean) => void }) => T) =>
+    selector({ scenario: { horizon: 10 }, setDrawerOpen: () => {} }),
+}));
+
 describe("Topbar", () => {
   beforeEach(() => {
     mocks.pathname = "/";
@@ -44,5 +49,10 @@ describe("Topbar", () => {
   it("renders the 'Simular cenário' CTA button", () => {
     render(<Topbar />);
     expect(screen.getByRole("button", { name: /Simular cenário/i })).toBeInTheDocument();
+  });
+
+  it("subtitle shows carteira vs benchmark with the scenario horizon", () => {
+    render(<Topbar />);
+    expect(screen.getByText(/Carteira vs Benchmark · 10 anos/)).toBeInTheDocument();
   });
 });

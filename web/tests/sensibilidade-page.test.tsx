@@ -36,8 +36,6 @@ const fakeSimOut: SimulateOut = {
     { parameter: "Ganho de capital (±1,5pp)",  pessimistic: 340_000, optimistic: 450_000 },
     { parameter: "Aporte mensal (±25%)",       pessimistic: 410_000, optimistic: 380_000 },
     { parameter: "IR efetivo (±5pp)",          pessimistic: 400_000, optimistic: 385_000 },
-    { parameter: "Taxa de administração",      pessimistic: 395_000, optimistic: 390_000 },
-    { parameter: "Benchmark (±1pp)",           pessimistic: 393_000, optimistic: 392_500 },
   ],
   taxComparison: [] as never,
 };
@@ -66,11 +64,11 @@ describe("SensibilidadePageContent", () => {
     expect(screen.getAllByText(/520\.000/).length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renderiza tornado svg com 6 linhas (uma por parâmetro)", () => {
+  it("renderiza tornado svg com 4 linhas (uma por parâmetro)", () => {
     const { container } = render(wrap(<SensibilidadePageContent />));
     const svg = container.querySelector("svg[aria-label='Tornado de sensibilidade']");
     expect(svg).toBeTruthy();
-    expect(svg!.querySelectorAll("g").length).toBe(6);
+    expect(svg!.querySelectorAll("g").length).toBe(4);
   });
 
   it("renderiza tabela com labels da carteira", () => {
