@@ -60,6 +60,7 @@ export function useMonteCarlo() {
   const mc = useScenarioStore((s) => s.mc);
   const payload: SimulateMonteCarloInput = {
     horizon: scenario.horizon,
+    expectedInflation: scenario.expectedInflation,
     portfolio: scenario.portfolio,
     mc,
   };
