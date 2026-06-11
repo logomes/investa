@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Target } from "lucide-react";
 import { useSimulate, useMonteCarlo, useMacro, useGoalSolve } from "@/lib/api";
 import { useScenarioStore } from "@/lib/store";
@@ -9,6 +9,9 @@ import { ErrorCard } from "@/components/error/ErrorCard";
 import { formatRs, formatPercent } from "@/lib/format";
 import { totalReturn } from "@/lib/carteira-derive";
 import { recommend, goalProbability } from "@/lib/goal-recommend";
+
+const SOLVE_CONFIDENCE = 0.8;
+const SOLVE_TRAJECTORIES = 1500;
 
 export function GoalCard() {
   const sim = useSimulate();
@@ -22,13 +25,18 @@ export function GoalCard() {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<string>("");
 
+  const { reset: resetGoalSolve } = goalSolve;
+  useEffect(() => {
+    resetGoalSolve();
+  }, [goal, scenario, resetGoalSolve]);
+
   const handleSolve = () => {
     goalSolve.mutate({
       horizon: scenario.horizon,
       portfolio: scenario.portfolio,
       goalTarget: goal,
-      confidence: 0.8,
-      nTrajectories: 1500,
+      confidence: SOLVE_CONFIDENCE,
+      nTrajectories: SOLVE_TRAJECTORIES,
     });
   };
 
@@ -44,7 +52,7 @@ export function GoalCard() {
     setEditing(false);
   };
 
-  if (sim.isLoading) return <ChartSkeleton height={420} />;
+  if (sim.isLoading) return <ChartSkeleton height={480} />;
   if (sim.error) return <ErrorCard onRetry={() => sim.refetch()} />;
 
   const pf = sim.data!.portfolio;
@@ -152,7 +160,7 @@ export function GoalCard() {
               <div className="bg-bg-3 rounded-card p-3 space-y-2">
                 <p className="text-[12px] text-ink-2 leading-relaxed">
                   Monte Carlo: <span className="text-ink font-semibold">{formatRs(goalSolve.data.requiredMonthlyContribution)}/mês</span>{" "}
-                  para {formatPercent(0.8)} de confiança (P={formatPercent(goalSolve.data.achievedProbability)}).
+                  para {formatPercent(SOLVE_CONFIDENCE)} de confiança (P={formatPercent(goalSolve.data.achievedProbability)}).
                 </p>
                 <button
                   type="button"

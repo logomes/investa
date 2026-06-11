@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GoalCard } from "@/components/visao-geral/GoalCard";
@@ -12,6 +12,7 @@ let mcDist: number[] = [];
 
 const goalSolveMock = vi.hoisted(() => ({
   mutate: vi.fn(),
+  reset: vi.fn(),
   isPending: false,
   isError: false,
   data: undefined as
@@ -76,6 +77,7 @@ describe("GoalCard editable target", () => {
     goalSolveMock.isPending = false;
     goalSolveMock.isError = false;
     goalSolveMock.mutate.mockClear();
+    goalSolveMock.reset.mockClear();
   });
 
   it("renders the goal as a button by default (not in edit mode)", () => {
@@ -152,6 +154,7 @@ describe("GoalCard recommendation states", () => {
     goalSolveMock.isPending = false;
     goalSolveMock.isError = false;
     goalSolveMock.mutate.mockClear();
+    goalSolveMock.reset.mockClear();
   });
 
   it("renders 'Meta atingida' when capital >= goal", () => {
@@ -217,6 +220,7 @@ describe("GoalCard Monte Carlo refinement", () => {
     goalSolveMock.isPending = false;
     goalSolveMock.isError = false;
     goalSolveMock.mutate.mockClear();
+    goalSolveMock.reset.mockClear();
   });
 
   it("renders the refine button and fires the mutation with the scenario", () => {
@@ -261,5 +265,25 @@ describe("GoalCard Monte Carlo refinement", () => {
     };
     render(<GoalCard />, { wrapper });
     expect(screen.getByText(/improvável mesmo com R\$\s*50\.000/i)).toBeInTheDocument();
+  });
+
+  it("resets the mutation when the goal changes", () => {
+    goalSolveMock.data = {
+      requiredMonthlyContribution: 2_345,
+      achievedProbability: 0.82,
+      attainable: true,
+      iterations: 9,
+    };
+    // Render with data already set; effect fires on mount with the current goal
+    render(<GoalCard />, { wrapper });
+    expect(goalSolveMock.reset).toHaveBeenCalled();
+
+    goalSolveMock.reset.mockClear();
+
+    // Changing the goal triggers a re-render → effect fires → reset called again
+    act(() => {
+      useScenarioStore.setState({ goalTarget: 999_000 });
+    });
+    expect(goalSolveMock.reset).toHaveBeenCalled();
   });
 });
