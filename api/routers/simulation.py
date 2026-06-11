@@ -14,10 +14,12 @@ from core.models import (
     simulate_benchmark,
     simulate_portfolio,
     simulate_portfolio_mc,
+    solve_goal_contribution,
 )
 from core.services.macro import get_macro_params
-from schemas.inputs import BenchmarkInput, SimulateInput, SimulateMonteCarloInput
+from schemas.inputs import BenchmarkInput, GoalSolveInput, SimulateInput, SimulateMonteCarloInput
 from schemas.outputs import (
+    GoalSolveOut,
     SensitivityRowOut,
     SimulateMonteCarloOut,
     SimulateOut,
@@ -137,3 +139,19 @@ def simulate_monte_carlo(payload: SimulateMonteCarloInput) -> SimulateMonteCarlo
     return SimulateMonteCarloOut(
         portfolio=monte_carlo_result_to_dto(pf_mc),
     )
+
+
+@router.post("/api/goal/solve", response_model=GoalSolveOut)
+def goal_solve(payload: GoalSolveInput) -> GoalSolveOut:
+    """Binary-search the monthly contribution for P(final >= goal) >= confidence."""
+    pf_params = _to_portfolio_params(payload.portfolio)
+    macro = get_macro_params()
+    result = solve_goal_contribution(
+        pf_params,
+        horizon_years=payload.horizon,
+        goal_target=payload.goal_target,
+        confidence=payload.confidence,
+        ipca=macro.ipca,
+        n_trajectories=payload.n_trajectories,
+    )
+    return GoalSolveOut(**result)

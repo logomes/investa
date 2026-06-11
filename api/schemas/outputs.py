@@ -75,6 +75,13 @@ class SimulateMonteCarloOut(_CamelModel):
     portfolio: MonteCarloResultOut
 
 
+class GoalSolveOut(_CamelModel):
+    required_monthly_contribution: float
+    achieved_probability: float
+    attainable: bool
+    iterations: int
+
+
 class FixedIncomeProjectionOut(_CamelModel):
     name: str
     color: str

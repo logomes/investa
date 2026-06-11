@@ -70,6 +70,14 @@ class SimulateMonteCarloInput(_CamelModel):
     mc: MonteCarloInput
 
 
+class GoalSolveInput(_CamelModel):
+    horizon: int = Field(ge=1, le=30)
+    portfolio: PortfolioInput
+    goal_target: float = Field(gt=0)
+    confidence: float = Field(default=0.80, ge=0.5, le=0.99)
+    n_trajectories: int = Field(default=1500, ge=100, le=1500)
+
+
 class FixedIncomePositionInput(_CamelModel):
     name: str = Field(min_length=1)
     initial_amount: float = Field(gt=0)
