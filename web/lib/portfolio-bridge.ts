@@ -41,6 +41,12 @@ function note(labels: string[]): string {
   return labels.length > 2 ? `${shown} +${labels.length - 2}` : shown;
 }
 
+// fi-schema's `rate` is unbounded, so a typo'd prefixado (e.g. 1.5 = 150% a.a.)
+// would produce a row the drawer zod (max 1) and the API (le=1.0) both reject.
+function clampYield(value: number): number {
+  return Math.min(Math.max(value, 0), 1);
+}
+
 export function bridgePortfolio(args: {
   positions: readonly AssetPosition[];
   fiPositions: readonly FixedIncomePosition[];
@@ -111,7 +117,7 @@ export function bridgePortfolio(args: {
     assets.push({
       name: meta.name,
       weight: acc.value / totalBRL,
-      expectedYield: acc.yieldWeighted / acc.value,
+      expectedYield: clampYield(acc.yieldWeighted / acc.value),
       capitalGain: acc.gainWeighted / acc.value,
       taxRate: meta.taxRate,
       note: note(acc.labels),
@@ -126,7 +132,7 @@ export function bridgePortfolio(args: {
     assets.push({
       name: t.label,
       weight: acc.value / totalBRL,
-      expectedYield: acc.yieldWeighted / acc.value,
+      expectedYield: clampYield(acc.yieldWeighted / acc.value),
       capitalGain: 0,
       taxRate: t.defaults.taxRate,
       note: note(acc.labels),

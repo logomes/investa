@@ -189,4 +189,16 @@ describe("bridgePortfolio — edges", () => {
     expect(result.skipped).toEqual(["ZERO11"]);
     expect(result.positionsCount).toBe(1);
   });
+
+  it("clamps an out-of-range RF rate to a valid expectedYield", () => {
+    // fi-schema's rate is unbounded: a typo'd prefixado 150% a.a. must not
+    // produce a row the drawer zod (max 1) and the API (le=1.0) reject.
+    const result = bridgePortfolio({
+      ...BASE_ARGS,
+      positions: [],
+      fiPositions: [rf({ name: "CDB typo", indexer: "prefixado", rate: 1.5 })],
+    })!;
+    const row = result.portfolio.assets.find((a) => a.name === "Renda Fixa CDB/Debênture")!;
+    expect(row.expectedYield).toBe(1);
+  });
 });

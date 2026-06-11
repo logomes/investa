@@ -85,3 +85,25 @@ def test_benchmark_input_defaults():
     assert b.kind == "cdi"
     assert b.ipca_spread == 0.0
     assert b.tax_rate == 0.175
+
+
+def test_portfolio_input_caps_assets_at_12():
+    asset = {"name": "A", "weight": 0.05, "expectedYield": 0.10,
+             "capitalGain": 0.0, "taxRate": 0.0, "note": "", "volatility": 0.15}
+    with pytest.raises(ValidationError, match="assets"):
+        PortfolioInput.model_validate({
+            "capital": 100_000.0,
+            "monthlyContribution": 0.0,
+            "contributionInflationIndexed": True,
+            "assets": [asset] * 13,
+        })
+
+
+def test_portfolio_input_rejects_empty_assets():
+    with pytest.raises(ValidationError, match="assets"):
+        PortfolioInput.model_validate({
+            "capital": 100_000.0,
+            "monthlyContribution": 0.0,
+            "contributionInflationIndexed": True,
+            "assets": [],
+        })

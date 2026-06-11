@@ -40,7 +40,7 @@ class PortfolioInput(_CamelModel):
     capital: float = Field(gt=0)
     monthly_contribution: float = Field(default=0.0, ge=0)
     contribution_inflation_indexed: bool = True
-    assets: list[PortfolioAssetInput]
+    assets: list[PortfolioAssetInput] = Field(min_length=1, max_length=12)
 
 
 class BenchmarkInput(_CamelModel):
