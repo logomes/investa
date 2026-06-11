@@ -6,16 +6,14 @@ import type { RiskStats } from "@/lib/risco-derive";
 import { formatPercent, formatRsK } from "@/lib/format";
 
 type Props = {
-  reStats: RiskStats;
   pfStats: RiskStats;
+  benchmarkFinal: number;
   hasTarget: boolean;
 };
 
-export function KpiRowRisco({ reStats, pfStats, hasTarget }: Props) {
+export function KpiRowRisco({ pfStats, benchmarkFinal, hasTarget }: Props) {
   const probMetaValue = hasTarget ? formatPercent(pfStats.probTarget!, 1) : "—";
-  const probMetaSub = hasTarget
-    ? `Imóvel: ${formatPercent(reStats.probTarget!, 1)}`
-    : "configure meta no Drawer";
+  const probMetaSub = hasTarget ? "trajetórias acima da meta" : "configure meta no Drawer";
   const probMetaColor = hasTarget && pfStats.probTarget! >= 0.7 ? "green" : "default";
 
   return (
@@ -31,19 +29,19 @@ export function KpiRowRisco({ reStats, pfStats, hasTarget }: Props) {
       <KpiCard
         label="Patrimônio mediano (p50)"
         value={formatRsK(pfStats.finalP50)}
-        sub={`Imóvel: ${formatRsK(reStats.finalP50)}`}
+        sub={`Benchmark: ${formatRsK(benchmarkFinal)}`}
         icon={BarChart3}
       />
       <KpiCard
         label="Pior cenário (p10)"
         value={formatRsK(pfStats.finalP10)}
-        sub={`Imóvel: ${formatRsK(reStats.finalP10)}`}
+        sub="10% das trajetórias abaixo"
         icon={TrendingDown}
       />
       <KpiCard
         label="Drawdown médio máx."
         value={formatPercent(pfStats.meanMaxDrawdown, 1)}
-        sub={`Imóvel: ${formatPercent(reStats.meanMaxDrawdown, 1)}`}
+        sub="média dos máximos por trajetória"
         icon={Activity}
         valueColor="red"
       />
