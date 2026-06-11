@@ -149,4 +149,44 @@ describe("bridgePortfolio — edges", () => {
     })!;
     expect(result.portfolio.assets[0].name).toBe("FII (Papel/Tijolo/Agro/FoF)");
   });
+
+  it("combines RV and RF against the same total", () => {
+    const result = bridgePortfolio({
+      ...BASE_ARGS,
+      positions: [rv({ ticker: "HGLG11", assetClass: "FII", quantity: 100, avgPrice: 100 })], // 10k
+      fiPositions: [rf({ name: "CDB Inter", initialAmount: 30_000 })],                         // 30k
+    })!;
+    expect(result.totalBRL).toBeCloseTo(40_000);
+    expect(result.rvBRL).toBeCloseTo(10_000);
+    expect(result.rfBRL).toBeCloseTo(30_000);
+    const fii = result.portfolio.assets.find((a) => a.name === "FII (Papel/Tijolo/Agro/FoF)")!;
+    const rfRow = result.portfolio.assets.find((a) => a.name === "Renda Fixa CDB/Debênture")!;
+    expect(fii.weight).toBeCloseTo(0.25);
+    expect(rfRow.weight).toBeCloseTo(0.75);
+    // sorted by weight desc: RF first
+    expect(result.portfolio.assets[0].name).toBe("Renda Fixa CDB/Debênture");
+  });
+
+  it("returns null when every position is skipped, listing them", () => {
+    // quantity 0 → market value 0 → skipped
+    const result = bridgePortfolio({
+      ...BASE_ARGS,
+      positions: [rv({ ticker: "ZERO11", assetClass: "FII", quantity: 0 })],
+      fiPositions: [],
+    });
+    expect(result).toBeNull();
+  });
+
+  it("collects skipped entries while keeping valid ones", () => {
+    const result = bridgePortfolio({
+      ...BASE_ARGS,
+      positions: [
+        rv({ ticker: "ZERO11", assetClass: "FII", quantity: 0 }),
+        rv({ ticker: "HGLG11", assetClass: "FII" }),
+      ],
+      fiPositions: [],
+    })!;
+    expect(result.skipped).toEqual(["ZERO11"]);
+    expect(result.positionsCount).toBe(1);
+  });
 });
