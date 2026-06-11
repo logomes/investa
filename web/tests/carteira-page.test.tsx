@@ -42,8 +42,8 @@ describe("CarteiraPageContent", () => {
     expect(screen.getByText(/dy blended/i)).toBeInTheDocument();
     expect(screen.getByText(/retorno total/i)).toBeInTheDocument();
     expect(screen.getByText(/carteira blended/i)).toBeInTheDocument();
-    expect(screen.getByText(/imóvel bruto/i)).toBeInTheDocument();
-    expect(screen.getByText(/tesouro selic líquido/i)).toBeInTheDocument();
+    expect(screen.getByText(/carteira total \(yield \+ ganho\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/cdi líquido/i)).toBeInTheDocument();
   });
 
   it("renderiza svg do donut", () => {

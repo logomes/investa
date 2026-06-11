@@ -1,5 +1,4 @@
-import type { PortfolioInput, RealEstateInput, MacroOut } from "./api-types";
-import { grossYield as imovelGrossYield, netYield as imovelNetYield } from "./imovel-derive";
+import type { PortfolioInput, BenchmarkInput, MacroOut } from "./api-types";
 
 // ---------- KPIs blended ----------
 
@@ -59,18 +58,25 @@ export function allocationSegments(pf: PortfolioInput): AllocationSegment[] {
 
 export type YieldRow = { label: string; value: number; color: string };
 
+export function benchmarkNetYield(b: BenchmarkInput): number {
+  return b.annualRate * (1 - b.taxRate);
+}
+
+export function benchmarkLabel(b: BenchmarkInput): string {
+  if (b.kind === "cdi") return "CDI líquido";
+  if (b.kind === "selic") return "Selic líquido";
+  return `IPCA + ${(b.ipcaSpread * 100).toFixed(1)}% líquido`;
+}
+
 export function yieldComparison(args: {
   pf: PortfolioInput;
-  re: RealEstateInput;
-  benchmarkTaxRate: number;
-  macro: MacroOut;
+  benchmark: BenchmarkInput;
 }): YieldRow[] {
-  const { pf, re, benchmarkTaxRate, macro } = args;
+  const { pf, benchmark } = args;
   return [
-    { label: "Carteira blended",      value: blendedYield(pf),                     color: "#46E8A4" },
-    { label: "Imóvel bruto",          value: imovelGrossYield(re),                 color: "#FFC857" },
-    { label: "Imóvel líquido",        value: imovelNetYield(re),                   color: "#FF6B5B" },
-    { label: "Tesouro Selic líquido", value: macro.selic * (1 - benchmarkTaxRate), color: "#5CC8FF" },
+    { label: "Carteira blended",               value: blendedYield(pf),             color: "#46E8A4" },
+    { label: "Carteira total (yield + ganho)", value: totalReturn(pf),              color: "#FFC857" },
+    { label: benchmarkLabel(benchmark),        value: benchmarkNetYield(benchmark), color: "#5CC8FF" },
   ];
 }
 

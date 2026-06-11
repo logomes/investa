@@ -36,8 +36,7 @@ export function CarteiraPageContent() {
       </div>
       <YieldComparisonCard
         pf={scenario.portfolio}
-        re={scenario.realEstate}
-        benchmarkTaxRate={scenario.benchmark.taxRate}
+        benchmark={scenario.benchmark}
         macro={macro.data!}
       />
     </div>

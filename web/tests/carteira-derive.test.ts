@@ -8,13 +8,16 @@ import {
   allocationSegments,
   yieldComparison,
   yieldRefLines,
+  benchmarkNetYield,
+  benchmarkLabel,
   ASSET_COLORS,
 } from "@/lib/carteira-derive";
-import type { PortfolioInput, RealEstateInput, MacroOut } from "@/lib/api-types";
+import type { PortfolioInput, MacroOut, BenchmarkInput } from "@/lib/api-types";
 import { DEFAULT_SCENARIO } from "@/lib/defaults";
 
 const PF: PortfolioInput = DEFAULT_SCENARIO.portfolio;
-const RE: RealEstateInput = DEFAULT_SCENARIO.realEstate;
+
+const CDI_BENCH: BenchmarkInput = { kind: "cdi", annualRate: 0.12, ipcaSpread: 0, taxRate: 0.175 };
 const MACRO: MacroOut = {
   selic: 0.1475,
   cdi: 0.1465,
@@ -118,26 +121,26 @@ describe("carteira-derive — allocationSegments", () => {
   });
 });
 
+describe("benchmarkNetYield / benchmarkLabel", () => {
+  it("applies the tax rate to the nominal rate", () => {
+    expect(benchmarkNetYield(CDI_BENCH)).toBeCloseTo(0.12 * 0.825);
+  });
+
+  it("labels each kind", () => {
+    expect(benchmarkLabel(CDI_BENCH)).toBe("CDI líquido");
+    expect(benchmarkLabel({ ...CDI_BENCH, kind: "selic" })).toBe("Selic líquido");
+    expect(benchmarkLabel({ ...CDI_BENCH, kind: "ipca_plus", ipcaSpread: 0.06 })).toBe("IPCA + 6.0% líquido");
+  });
+});
+
 describe("carteira-derive — yieldComparison", () => {
-  it("retorna 4 entradas em ordem fixa", () => {
-    const rows = yieldComparison({ pf: PF, re: RE, benchmarkTaxRate: 0.175, macro: MACRO });
-    expect(rows).toHaveLength(4);
+  it("returns carteira rows plus the benchmark row, no imóvel", () => {
+    const rows = yieldComparison({ pf: PF, benchmark: CDI_BENCH });
     expect(rows.map((r) => r.label)).toEqual([
       "Carteira blended",
-      "Imóvel bruto",
-      "Imóvel líquido",
-      "Tesouro Selic líquido",
+      "Carteira total (yield + ganho)",
+      "CDI líquido",
     ]);
-  });
-
-  it("Carteira blended bate com blendedYield(pf)", () => {
-    const rows = yieldComparison({ pf: PF, re: RE, benchmarkTaxRate: 0.175, macro: MACRO });
-    expect(rows[0].value).toBeCloseTo(blendedYield(PF), 5);
-  });
-
-  it("Tesouro Selic líquido = selic × (1 - benchmarkTaxRate)", () => {
-    const rows = yieldComparison({ pf: PF, re: RE, benchmarkTaxRate: 0.175, macro: MACRO });
-    expect(rows[3].value).toBeCloseTo(0.1475 * 0.825, 5);
   });
 });
 
