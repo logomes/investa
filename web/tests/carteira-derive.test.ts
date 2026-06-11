@@ -127,9 +127,9 @@ describe("benchmarkNetYield / benchmarkLabel", () => {
   });
 
   it("labels each kind", () => {
-    expect(benchmarkLabel(CDI_BENCH)).toBe("CDI líquido");
-    expect(benchmarkLabel({ ...CDI_BENCH, kind: "selic" })).toBe("Selic líquido");
-    expect(benchmarkLabel({ ...CDI_BENCH, kind: "ipca_plus", ipcaSpread: 0.06 })).toBe("IPCA + 6.0% líquido");
+    expect(benchmarkLabel(CDI_BENCH)).toBe("CDI (líquido)");
+    expect(benchmarkLabel({ ...CDI_BENCH, kind: "selic" })).toBe("Selic (líquido)");
+    expect(benchmarkLabel({ ...CDI_BENCH, kind: "ipca_plus", ipcaSpread: 0.06 })).toBe("IPCA + 6,0% (líquido)");
   });
 });
 
@@ -139,8 +139,15 @@ describe("carteira-derive — yieldComparison", () => {
     expect(rows.map((r) => r.label)).toEqual([
       "Carteira blended",
       "Carteira total (yield + ganho)",
-      "CDI líquido",
+      "CDI (líquido)",
     ]);
+  });
+
+  it("row values wire to the right helpers", () => {
+    const rows = yieldComparison({ pf: PF, benchmark: CDI_BENCH });
+    expect(rows[0].value).toBeCloseTo(blendedYield(PF));
+    expect(rows[1].value).toBeCloseTo(totalReturn(PF));
+    expect(rows[2].value).toBeCloseTo(benchmarkNetYield(CDI_BENCH));
   });
 });
 

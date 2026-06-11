@@ -63,9 +63,9 @@ export function benchmarkNetYield(b: BenchmarkInput): number {
 }
 
 export function benchmarkLabel(b: BenchmarkInput): string {
-  if (b.kind === "cdi") return "CDI líquido";
-  if (b.kind === "selic") return "Selic líquido";
-  return `IPCA + ${(b.ipcaSpread * 100).toFixed(1)}% líquido`;
+  if (b.kind === "cdi") return "CDI (líquido)";
+  if (b.kind === "selic") return "Selic (líquido)";
+  return `IPCA + ${(b.ipcaSpread * 100).toFixed(1).replace(".", ",")}% (líquido)`;
 }
 
 export function yieldComparison(args: {

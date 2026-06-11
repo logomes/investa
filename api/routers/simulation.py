@@ -80,7 +80,8 @@ def _benchmark_label(input_bench: BenchmarkInput) -> str:
         return "CDI (líquido)"
     if input_bench.kind == "selic":
         return "Selic (líquido)"
-    return f"IPCA + {input_bench.ipca_spread * 100:.1f}% (líquido)"
+    spread_pct = f"{input_bench.ipca_spread * 100:.1f}".replace(".", ",")
+    return f"IPCA + {spread_pct}% (líquido)"
 
 
 def _to_benchmark_params(

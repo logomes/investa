@@ -2,6 +2,8 @@
 from fastapi.testclient import TestClient
 
 from main import app
+from routers.simulation import _benchmark_label
+from schemas.inputs import BenchmarkInput
 
 
 def _default_payload() -> dict:
@@ -73,6 +75,17 @@ def test_simulate_rejects_invalid_horizon():
     client = TestClient(app)
     response = client.post("/api/simulate", json=payload)
     assert response.status_code == 422  # Pydantic validation error
+
+
+def test_benchmark_label_canonical_pt_br():
+    cdi = BenchmarkInput(kind="cdi", annual_rate=0.1465, tax_rate=0.175)
+    assert _benchmark_label(cdi) == "CDI (líquido)"
+
+    selic = BenchmarkInput(kind="selic", annual_rate=0.1475, tax_rate=0.175)
+    assert _benchmark_label(selic) == "Selic (líquido)"
+
+    ipca = BenchmarkInput(kind="ipca_plus", annual_rate=0.16, tax_rate=0.175, ipca_spread=0.06)
+    assert _benchmark_label(ipca) == "IPCA + 6,0% (líquido)"
 
 
 def test_simulate_sensitivity_uses_portfolio_tornado():
