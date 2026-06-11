@@ -32,12 +32,12 @@ const fakeSimOut: SimulateOut = {
   } as never,
   benchmark: {} as never,
   sensitivity: [
-    { parameter: "monthly_rent",            pessimistic: 320_000, optimistic: 470_000 },
-    { parameter: "annual_appreciation",     pessimistic: 340_000, optimistic: 450_000 },
-    { parameter: "vacancy_months_per_year", pessimistic: 410_000, optimistic: 380_000 },
-    { parameter: "management_fee_pct",      pessimistic: 400_000, optimistic: 385_000 },
-    { parameter: "iptu_rate",               pessimistic: 395_000, optimistic: 390_000 },
-    { parameter: "income_tax_bracket",      pessimistic: 393_000, optimistic: 392_500 },
+    { parameter: "Yield da carteira (±1,5pp)", pessimistic: 320_000, optimistic: 470_000 },
+    { parameter: "Ganho de capital (±1,5pp)",  pessimistic: 340_000, optimistic: 450_000 },
+    { parameter: "Aporte mensal (±25%)",       pessimistic: 410_000, optimistic: 380_000 },
+    { parameter: "IR efetivo (±5pp)",          pessimistic: 400_000, optimistic: 385_000 },
+    { parameter: "Taxa de administração",      pessimistic: 395_000, optimistic: 390_000 },
+    { parameter: "Benchmark (±1pp)",           pessimistic: 393_000, optimistic: 392_500 },
   ],
   taxComparison: [] as never,
 };
@@ -73,11 +73,11 @@ describe("SensibilidadePageContent", () => {
     expect(svg!.querySelectorAll("g").length).toBe(6);
   });
 
-  it("renderiza tabela com labels traduzidos", () => {
+  it("renderiza tabela com labels da carteira", () => {
     render(wrap(<SensibilidadePageContent />));
-    expect(screen.getAllByText(/Aluguel mensal/).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/IPTU/).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/Faixa IR/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Yield da carteira/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Ganho de capital/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/IR efetivo/).length).toBeGreaterThanOrEqual(1);
   });
 
   it("loading → renderiza skeleton", () => {
