@@ -4,8 +4,8 @@ import { ConstructionCard } from "@/components/placeholder/ConstructionCard";
 
 describe("ConstructionCard", () => {
   it("renders the page title", () => {
-    render(<ConstructionCard pageTitle="Imóvel" fase={5} />);
-    expect(screen.getByText(/Imóvel/i)).toBeInTheDocument();
+    render(<ConstructionCard pageTitle="Ativos" fase={5} />);
+    expect(screen.getByText(/Ativos/i)).toBeInTheDocument();
   });
 
   it("mentions the target fase", () => {
