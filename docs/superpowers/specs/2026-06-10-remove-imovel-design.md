@@ -1,7 +1,7 @@
 # Remove Imóvel — Design
 
 **Date:** 2026-06-10
-**Status:** Approved
+**Status:** Implemented
 **Owner:** lucgomes
 
 ## Problem

@@ -75,7 +75,7 @@ describe("exportar-csv — toCsvBR", () => {
 
   it("usa ';' como separador (5 colunas → 4 separadores por linha)", () => {
     const row: LongRow = {
-      scenario: "Imóvel",
+      scenario: "Cenário X",
       year: 0,
       patrimony: 230_000,
       annualIncome: 0,

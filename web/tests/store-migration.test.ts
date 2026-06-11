@@ -71,6 +71,7 @@ describe("store migration v3 → v4", () => {
       ipcaSpread: 0.06,
       taxRate: 0.15,
     });
+    expect("realEstate" in s.scenario).toBe(false);
   });
 });
 
