@@ -8,12 +8,14 @@ type ScenarioStore = {
   mc: MonteCarloInput;
   goalTarget: number;
   drawerOpen: boolean;
+  lastRealImportAt: string | null;
 
   setScenario: (s: SimulateInput) => void;
   setMc: (mc: MonteCarloInput) => void;
   setGoalTarget: (v: number) => void;
   setDrawerOpen: (open: boolean) => void;
   resetToDefaults: () => void;
+  setLastRealImportAt: (iso: string | null) => void;
 };
 
 export const useScenarioStore = create<ScenarioStore>()(
@@ -23,6 +25,7 @@ export const useScenarioStore = create<ScenarioStore>()(
       mc: DEFAULT_MC,
       goalTarget: DEFAULT_GOAL,
       drawerOpen: false,
+      lastRealImportAt: null,
 
       setScenario: (scenario) => set({ scenario }),
       setMc: (mc) => set({ mc }),
@@ -34,6 +37,7 @@ export const useScenarioStore = create<ScenarioStore>()(
           mc: DEFAULT_MC,
           goalTarget: DEFAULT_GOAL,
         }),
+      setLastRealImportAt: (lastRealImportAt) => set({ lastRealImportAt }),
     }),
     {
       // Storage key name is historical — do NOT rename (renaming drops user data).
@@ -68,6 +72,7 @@ export const useScenarioStore = create<ScenarioStore>()(
         scenario: state.scenario,
         mc: state.mc,
         goalTarget: state.goalTarget,
+        lastRealImportAt: state.lastRealImportAt,
       }),
       skipHydration: true,
     }
