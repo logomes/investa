@@ -9,6 +9,9 @@ type ScenarioStore = {
   goalTarget: number;
   drawerOpen: boolean;
   lastRealImportAt: string | null;
+  // Pending provenance change from the open drawer session: undefined = no
+  // change, string = stamp on submit, null = clear on submit. NOT persisted.
+  pendingRealImportAt: string | null | undefined;
 
   setScenario: (s: SimulateInput) => void;
   setMc: (mc: MonteCarloInput) => void;
@@ -16,6 +19,7 @@ type ScenarioStore = {
   setDrawerOpen: (open: boolean) => void;
   resetToDefaults: () => void;
   setLastRealImportAt: (iso: string | null) => void;
+  setPendingRealImportAt: (v: string | null | undefined) => void;
 };
 
 export const useScenarioStore = create<ScenarioStore>()(
@@ -26,6 +30,7 @@ export const useScenarioStore = create<ScenarioStore>()(
       goalTarget: DEFAULT_GOAL,
       drawerOpen: false,
       lastRealImportAt: null,
+      pendingRealImportAt: undefined,
 
       setScenario: (scenario) => set({ scenario }),
       setMc: (mc) => set({ mc }),
@@ -39,6 +44,7 @@ export const useScenarioStore = create<ScenarioStore>()(
           lastRealImportAt: null,
         }),
       setLastRealImportAt: (lastRealImportAt) => set({ lastRealImportAt }),
+      setPendingRealImportAt: (pendingRealImportAt) => set({ pendingRealImportAt }),
     }),
     {
       // Storage key name is historical — do NOT rename (renaming drops user data).

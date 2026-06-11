@@ -25,17 +25,24 @@ export function ScenarioDrawer() {
     defaultValues: { ...scenario, mc },
   });
 
-  // Re-seed defaults whenever the drawer reopens (in case localStorage changed externally)
+  // Re-seed defaults whenever the drawer reopens (in case localStorage changed externally).
+  // Also discard any pending stamp from a previous cancelled session.
   useEffect(() => {
     if (drawerOpen) {
       form.reset({ ...scenario, mc });
     }
+    useScenarioStore.getState().setPendingRealImportAt(undefined);
   }, [drawerOpen, scenario, mc, form]);
 
   const onSubmit = form.handleSubmit((data) => {
     const { mc: mcOnly, ...scenarioOnly } = data;
     setScenario(scenarioOnly);
     setMc(mcOnly);
+    const pending = useScenarioStore.getState().pendingRealImportAt;
+    if (pending !== undefined) {
+      useScenarioStore.getState().setLastRealImportAt(pending);
+    }
+    useScenarioStore.getState().setPendingRealImportAt(undefined);
     setDrawerOpen(false);
   });
 

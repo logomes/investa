@@ -33,7 +33,8 @@ export function PortfolioSection() {
   const realPositions = useAssetsStore((s) => s.positions);
   const fiPositions = useFixedIncomeStore((s) => s.positions);
   const lastRealImportAt = useScenarioStore((s) => s.lastRealImportAt);
-  const setLastRealImportAt = useScenarioStore((s) => s.setLastRealImportAt);
+  const pendingRealImportAt = useScenarioStore((s) => s.pendingRealImportAt);
+  const setPendingRealImportAt = useScenarioStore((s) => s.setPendingRealImportAt);
   const [preview, setPreview] = useState<BridgeResult | null>(null);
 
   const canImport =
@@ -57,7 +58,7 @@ export function PortfolioSection() {
     replace(preview.portfolio.assets);
     setValue("portfolio.capital", preview.portfolio.capital, { shouldDirty: true });
     setValue("capital", preview.portfolio.capital, { shouldDirty: true });
-    setLastRealImportAt(new Date().toISOString());
+    setPendingRealImportAt(new Date().toISOString());
     setPreview(null);
   };
 
@@ -91,7 +92,7 @@ export function PortfolioSection() {
   const handleReset = () => {
     if (confirm("Restaurar 5 ativos padrão? Mudanças serão perdidas.")) {
       replace(DEFAULT_SCENARIO.portfolio.assets);
-      setLastRealImportAt(null);
+      setPendingRealImportAt(null);
     }
   };
 
@@ -203,14 +204,17 @@ export function PortfolioSection() {
             </div>
           </div>
         )}
-        {lastRealImportAt && (
-          <p className="text-[10px] text-ink-4">
-            Importado da carteira real em{" "}
-            {new Intl.DateTimeFormat("pt-BR", {
-              day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
-            }).format(new Date(lastRealImportAt))}
-          </p>
-        )}
+        {(() => {
+          const effectiveImportAt = pendingRealImportAt !== undefined ? pendingRealImportAt : lastRealImportAt;
+          return effectiveImportAt ? (
+            <p className="text-[10px] text-ink-4">
+              Importado da carteira real em{" "}
+              {new Intl.DateTimeFormat("pt-BR", {
+                day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+              }).format(new Date(effectiveImportAt))}
+            </p>
+          ) : null;
+        })()}
 
         <div className="space-y-1">
           {fields.map((field, idx) => {
