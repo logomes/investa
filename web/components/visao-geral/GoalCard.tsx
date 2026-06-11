@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Target } from "lucide-react";
-import { useSimulate, useMonteCarlo, useMacro, useGoalSolve } from "@/lib/api";
+import { useSimulate, useMonteCarlo, useGoalSolve } from "@/lib/api";
 import { useScenarioStore } from "@/lib/store";
 import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { ErrorCard } from "@/components/error/ErrorCard";
@@ -16,7 +16,6 @@ const SOLVE_TRAJECTORIES = 1500;
 export function GoalCard() {
   const sim = useSimulate();
   const mc = useMonteCarlo();
-  const macro = useMacro();
   const goalSolve = useGoalSolve();
   const goal = useScenarioStore((s) => s.goalTarget);
   const scenario = useScenarioStore((s) => s.scenario);
@@ -37,6 +36,7 @@ export function GoalCard() {
       goalTarget: goal,
       confidence: SOLVE_CONFIDENCE,
       nTrajectories: SOLVE_TRAJECTORIES,
+      expectedInflation: scenario.expectedInflation,
     });
   };
 
@@ -68,7 +68,7 @@ export function GoalCard() {
     contributionInflationIndexed: scenario.portfolio.contributionInflationIndexed,
     totalReturnAnnualNet: totalReturn(scenario.portfolio),
     projectedFinalPatrimony: current,
-    expectedInflation: macro.data?.ipca ?? 0.04,
+    expectedInflation: scenario.expectedInflation,
   });
 
   const mcDist = mc.data?.portfolio.finalDistribution ?? [];

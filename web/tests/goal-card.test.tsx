@@ -227,7 +227,7 @@ describe("GoalCard Monte Carlo refinement", () => {
     render(<GoalCard />, { wrapper });
     fireEvent.click(screen.getByRole("button", { name: /Refinar com Monte Carlo/i }));
     expect(goalSolveMock.mutate).toHaveBeenCalledWith(
-      expect.objectContaining({ confidence: 0.8, horizon: expect.any(Number), nTrajectories: 1500 }),
+      expect.objectContaining({ confidence: 0.8, horizon: expect.any(Number), nTrajectories: 1500, expectedInflation: expect.any(Number) }),
     );
   });
 
