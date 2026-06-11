@@ -62,12 +62,14 @@ class SimulateInput(_CamelModel):
     reinvest: bool = True
     portfolio: PortfolioInput
     benchmark: BenchmarkInput
+    expected_inflation: float | None = Field(default=None, ge=0, le=0.5)
 
 
 class SimulateMonteCarloInput(_CamelModel):
     horizon: int = Field(ge=1, le=30)
     portfolio: PortfolioInput
     mc: MonteCarloInput
+    expected_inflation: float | None = Field(default=None, ge=0, le=0.5)
 
 
 class GoalSolveInput(_CamelModel):
@@ -76,6 +78,7 @@ class GoalSolveInput(_CamelModel):
     goal_target: float = Field(gt=0)
     confidence: float = Field(default=0.80, ge=0.5, le=0.99)
     n_trajectories: int = Field(default=1500, ge=100, le=1500)
+    expected_inflation: float | None = Field(default=None, ge=0, le=0.5)
 
 
 class FixedIncomePositionInput(_CamelModel):
