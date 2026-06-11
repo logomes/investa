@@ -26,6 +26,10 @@ describe("splitTaxRows", () => {
   it("returns nulls when rows are missing", () => {
     expect(splitTaxRows([])).toEqual({ portfolio: null, benchmark: null });
   });
+
+  it("returns null benchmark when only the portfolio row exists", () => {
+    expect(splitTaxRows([PF_ROW])).toEqual({ portfolio: PF_ROW, benchmark: null });
+  });
 });
 
 describe("taxDelta", () => {
@@ -34,6 +38,12 @@ describe("taxDelta", () => {
     expect(d.taxDiffAbs).toBeCloseTo(-100);
     expect(d.burdenDiffPp).toBeCloseTo(0.025);
     expect(d.portfolioPaysMore).toBe(false);
+  });
+
+  it("flags portfolioPaysMore when the carteira tax is higher", () => {
+    const d = taxDelta({ ...PF_ROW, annualTax: 3_000 }, BENCH_ROW);
+    expect(d.taxDiffAbs).toBeCloseTo(900);
+    expect(d.portfolioPaysMore).toBe(true);
   });
 });
 

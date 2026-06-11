@@ -6,6 +6,7 @@ export function splitTaxRows(rows: TaxComparisonRowOut[]): {
   portfolio: TaxComparisonRowOut | null;
   benchmark: TaxComparisonRowOut | null;
 } {
+  // API contract: exactly 2 rows — portfolio + one benchmark.
   return {
     portfolio: rows.find((r) => r.scenario === PORTFOLIO_SCENARIO) ?? null,
     benchmark: rows.find((r) => r.scenario !== PORTFOLIO_SCENARIO) ?? null,

@@ -25,14 +25,12 @@ export function KpiRowTributacao({ portfolio, benchmark }: Props) {
         label="Imposto Carteira"
         value={formatRs(portfolio.annualTax)}
         icon={Wallet}
-        valueColor="green"
         sub="anual"
       />
       <KpiCard
         label="Imposto Benchmark"
         value={formatRs(benchmark.annualTax)}
         icon={Receipt}
-        valueColor="red"
         sub="anual"
       />
       <KpiCard
