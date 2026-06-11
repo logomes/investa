@@ -1,7 +1,7 @@
 # Portfolio Bridge (carteira real → cenário) + Goal Solver — Design
 
 **Date:** 2026-06-11
-**Status:** In review
+**Status:** Implemented
 **Owner:** lucgomes
 
 ## Context: the innovation roadmap this opens

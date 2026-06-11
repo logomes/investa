@@ -20,7 +20,9 @@ GoalCard goal value is now click-to-edit: button → input pre-filled with curre
 
 GoalCard agora roda um recomendador real. Sugestão de aporte vem de FV closed-form (`web/lib/goal-recommend.ts`), badge "% provável" agora reflete probabilidade real do Monte Carlo `finalDistribution` (antes era `current/goal` mal-rotulado), e "Aplicar sugestão" muta `scenario.portfolio.monthlyContribution` no store. State machine de 4 estados: already-met / already-on-track / below / unreachable. Spec: `specs/2026-05-13-goal-recommender-design.md`.
 
-**Follow-up futuro:** busca binária sobre Monte Carlo pra resolver "aporte que hit P(meta) ≥ X%" — fica deferido até alguém querer o ajuste fino.
+**Follow-up futuro:** ~~busca binária sobre Monte Carlo pra resolver "aporte que hit P(meta) ≥ X%" — fica deferido até alguém querer o ajuste fino.~~
+
+✅ shipped 2026-06-11 — `POST /api/goal/solve` (busca binária com seed fixa, 1500 trajetórias/iteração), GoalCard 'Refinar com Monte Carlo'.
 
 ## Ativos
 
@@ -73,6 +75,10 @@ Hoje `/historico` mostra todos os snapshots em ordem cronológica num único lin
 ### Auto-fetch current quote (`currentPrice` + `asOf`) on add/edit — ✅ shipped 2026-05-09
 
 **Shipped scope:** `GET /api/quotes?ticker=&market=` with provider chain (BR: BRAPI → Yahoo `.SA`; US: Yahoo → Stooq), 60s server cache, 3s per-provider timeout, no API keys. Frontend `AssetDialog` fetches on ticker blur. `AssetsTable` shows a "Preço atual" column with currentPrice converted to BRL (US assets use `macro.usdBrl`), native USD as subtext, relative `asOf`, and per-row refresh button.
+
+### Ponte carteira real → cenário — ✅ shipped 2026-06-11
+
+Botão "Usar carteira real" no ScenarioDrawer agrega posições RV e RF por classe com médias ponderadas pelo valor de mercado (FII, Ação BR dividendo/crescimento, ETF, US stocks, REIT, BDR; RF dividida em Tesouro/isento vs CDB/debenture). Stamp de procedência (`lastRealImportAt`) commitado no store apenas ao aplicar o cenário (pending-commit pattern). Spec: `specs/2026-06-11-portfolio-bridge-design.md`.
 
 ## Open Finance
 
