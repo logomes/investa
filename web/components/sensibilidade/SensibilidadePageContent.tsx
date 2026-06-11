@@ -26,7 +26,7 @@ export function SensibilidadePageContent() {
   }
 
   const data = sim.data!;
-  const base = data.realEstate.patrimony[data.realEstate.patrimony.length - 1];
+  const base = data.portfolio.patrimony[data.portfolio.patrimony.length - 1];
   const rows = sortByImpact(enrichRows(data.sensitivity, base));
 
   return (

@@ -20,7 +20,16 @@ const fakeSimOut: SimulateOut = {
     debtBalance: null,
     internalPortfolio: null,
   } as never,
-  portfolio: {} as never,
+  portfolio: {
+    label: "Carteira",
+    color: "#1A73E8",
+    years: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    patrimony: [100_000, 130_000, 160_000, 195_000, 230_000, 270_000, 315_000, 365_000, 420_000, 470_000, 520_000],
+    annualIncome: Array(11).fill(8_000) as number[],
+    cumulativeIncome: Array(11).fill(0) as number[],
+    debtBalance: null,
+    internalPortfolio: null,
+  } as never,
   benchmark: {} as never,
   sensitivity: [
     { parameter: "monthly_rent",            pessimistic: 320_000, optimistic: 470_000 },
@@ -53,8 +62,8 @@ describe("SensibilidadePageContent", () => {
 
   it("renderiza KPI banner com base patrimony", () => {
     render(wrap(<SensibilidadePageContent />));
-    expect(screen.getByText(/patrimônio imóvel/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/393\.000/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/patrimônio carteira/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/520\.000/).length).toBeGreaterThanOrEqual(1);
   });
 
   it("renderiza tornado svg com 6 linhas (uma por parâmetro)", () => {
