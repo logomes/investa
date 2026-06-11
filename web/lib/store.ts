@@ -40,11 +40,13 @@ export const useScenarioStore = create<ScenarioStore>()(
       // Schema changes are handled via `version` + `migrate` below.
       name: "investa-scenario-v3",
       // v4: benchmark reshaped from {selicRate,taxRate} to {kind,annualRate,ipcaSpread,taxRate}.
-      version: 4,
+      // v5: realEstate dropped from the persisted scenario (imóvel removed from the product).
+      version: 5,
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as {
           scenario?: SimulateInput & {
             benchmark?: Partial<SimulateInput["benchmark"]> & { selicRate?: number };
+            realEstate?: unknown;
           };
         };
         if ((version ?? 0) < 4 && state?.scenario) {
@@ -55,6 +57,9 @@ export const useScenarioStore = create<ScenarioStore>()(
             ipcaSpread: 0,
             taxRate: old.taxRate ?? DEFAULT_SCENARIO.benchmark.taxRate,
           };
+        }
+        if ((version ?? 0) < 5 && state?.scenario) {
+          delete state.scenario.realEstate;
         }
         return state;
       },

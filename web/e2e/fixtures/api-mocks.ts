@@ -3,20 +3,10 @@ import type { Page } from "@playwright/test";
 const years = Array.from({ length: 11 }, (_, i) => i);
 const portfolioPatrimony = [230_000, 252_000, 277_000, 304_000, 334_000, 367_000, 403_000, 443_000, 487_000, 535_000, 588_000];
 const portfolioAnnualIncome = [0, 21_000, 23_000, 26_000, 29_000, 32_000, 36_000, 40_000, 45_000, 50_000, 56_000];
-const realEstatePatrimony = [230_000, 245_000, 261_000, 278_000, 296_000, 315_000, 335_000, 357_000, 380_000, 405_000, 431_000];
-const realEstateAnnualIncome = [9_000, 10_000, 10_500, 11_000, 11_500, 12_000, 12_500, 13_000, 13_500, 14_000, 14_500];
 
 const cumulative = (arr: number[]) => arr.map((_, i) => arr.slice(0, i + 1).reduce((a, b) => a + b, 0));
 
 export const simulateOut = {
-  realEstate: {
-    label: "Imóvel",
-    color: "#FF6B5B",
-    years,
-    patrimony: realEstatePatrimony,
-    annualIncome: realEstateAnnualIncome,
-    cumulativeIncome: cumulative(realEstateAnnualIncome),
-  },
   portfolio: {
     label: "Carteira Diversificada",
     color: "#5CC8FF",
@@ -40,15 +30,6 @@ export const simulateOut = {
 const finalDistribution = Array.from({ length: 100 }, (_, i) => 400_000 + i * 4_000);
 
 export const mcOut = {
-  realEstate: {
-    label: "Imóvel",
-    color: "#FF6B5B",
-    p10: realEstatePatrimony.map((v) => v * 0.85),
-    p50: realEstatePatrimony,
-    p90: realEstatePatrimony.map((v) => v * 1.15),
-    finalDistribution: finalDistribution.map((v) => v * 0.7),
-    maxDrawdowns: Array.from({ length: 100 }, () => -0.04),
-  },
   portfolio: {
     label: "Carteira Diversificada",
     color: "#5CC8FF",

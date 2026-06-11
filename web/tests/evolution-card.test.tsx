@@ -9,7 +9,6 @@ const years = Array.from({ length: 11 }, (_, i) => i);
 const portfolioPatrimony = [230_000, 252_000, 277_000, 304_000, 334_000, 367_000, 403_000, 443_000, 487_000, 535_000, 588_000];
 
 const fakeSim: SimulateOut = {
-  realEstate: { label: "RE", color: "#f00", years, patrimony: portfolioPatrimony.map((v) => v * 0.7), annualIncome: years.map(() => 0), cumulativeIncome: years.map(() => 0) },
   portfolio: { label: "PF", color: "#0f0", years, patrimony: portfolioPatrimony, annualIncome: years.map(() => 0), cumulativeIncome: years.map(() => 0) },
   benchmark: { label: "BM", color: "#00f", years, patrimony: portfolioPatrimony.map((v) => v * 1.1), annualIncome: years.map(() => 0), cumulativeIncome: years.map(() => 0) },
   sensitivity: [],
@@ -17,7 +16,6 @@ const fakeSim: SimulateOut = {
 };
 
 const fakeMc: SimulateMonteCarloOut = {
-  realEstate: { label: "RE", color: "#f00", p10: portfolioPatrimony.map((v) => v * 0.6), p50: portfolioPatrimony.map((v) => v * 0.7), p90: portfolioPatrimony.map((v) => v * 0.8), finalDistribution: [], maxDrawdowns: [] },
   portfolio: { label: "PF", color: "#0f0", p10: portfolioPatrimony.map((v) => v * 0.85), p50: portfolioPatrimony, p90: portfolioPatrimony.map((v) => v * 1.15), finalDistribution: Array.from({ length: 1000 }, (_, i) => i), maxDrawdowns: [] },
 };
 
@@ -63,13 +61,10 @@ describe("EvolutionCard timeline range", () => {
     expect(chart.dataset.bands).toBe("0");
   });
 
-  it("não renderiza Imóvel — benchmark (BM) presente na legenda, realEstate (RE) ausente", () => {
+  it("não renderiza Imóvel — benchmark (BM) presente na legenda", () => {
     render(wrap(<EvolutionCard />));
     // The card renders a legend from `series` (portfolio + benchmark only).
-    // realEstate is excluded from the series passed to the chart and the legend spans.
     expect(screen.queryByText(/Imóvel/)).toBeNull();
-    // realEstate fixture label "RE" must not appear anywhere (legend or chart stub)
-    expect(screen.queryAllByText("RE")).toHaveLength(0);
     // benchmark fixture label "BM" must appear (in legend and/or chart stub)
     expect(screen.getAllByText("BM").length).toBeGreaterThan(0);
     // portfolio fixture label "PF" must appear (in legend and/or chart stub)

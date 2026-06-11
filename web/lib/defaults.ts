@@ -1,23 +1,9 @@
-import type { SimulateInput, MonteCarloInput, FinancingInput } from "./api-types";
+import type { SimulateInput, MonteCarloInput } from "./api-types";
 
 export const DEFAULT_SCENARIO: SimulateInput = {
   capital: 230_000,
   horizon: 10,
   reinvest: true,
-  realEstate: {
-    propertyValue: 230_000,
-    monthlyRent: 1_500,
-    annualAppreciation: 0.055,
-    iptuRate: 0.010,
-    vacancyMonthsPerYear: 1.0,
-    managementFeePct: 0.10,
-    maintenanceAnnual: 900,
-    insuranceAnnual: 600,
-    incomeTaxBracket: 0.075,
-    acquisitionCostPct: 0.05,
-    appreciationVolatility: 0.10,
-    financing: null,
-  },
   portfolio: {
     capital: 230_000,
     monthlyContribution: 0,
@@ -47,11 +33,3 @@ export const DEFAULT_MC: MonteCarloInput = {
 };
 
 export const DEFAULT_GOAL = 600_000;
-
-export const DEFAULT_FINANCING: FinancingInput = {
-  termYears: 30,
-  annualRate: 0.115,
-  entryPct: 0.20,
-  system: "SAC",
-  monthlyInsuranceRate: 0.0005,
-};

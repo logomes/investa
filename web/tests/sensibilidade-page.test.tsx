@@ -10,16 +10,6 @@ vi.mock("@/lib/store", () => ({
 }));
 
 const fakeSimOut: SimulateOut = {
-  realEstate: {
-    label: "Imóvel",
-    color: "#C0392B",
-    years: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    patrimony: [230_000, 250_000, 270_000, 290_000, 310_000, 330_000, 350_000, 365_000, 378_000, 386_000, 393_000],
-    annualIncome: Array(11).fill(10_000) as number[],
-    cumulativeIncome: Array(11).fill(0) as number[],
-    debtBalance: null,
-    internalPortfolio: null,
-  } as never,
   portfolio: {
     label: "Carteira",
     color: "#1A73E8",

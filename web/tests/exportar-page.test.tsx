@@ -5,16 +5,6 @@ import { ExportarPageContent } from "@/components/exportar/ExportarPageContent";
 import type { SimulateOut } from "@/lib/api-types";
 
 const fakeSimOut: SimulateOut = {
-  realEstate: {
-    label: "Imóvel",
-    color: "#C0392B",
-    years: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    patrimony: Array.from({ length: 11 }, (_, i) => 230_000 + i * 30_000),
-    annualIncome: Array.from({ length: 11 }, (_, i) => i * 1_000),
-    cumulativeIncome: Array.from({ length: 11 }, (_, i) => i * i * 500),
-    debtBalance: null,
-    internalPortfolio: null,
-  },
   portfolio: {
     label: "Carteira Diversificada",
     color: "#27AE60",

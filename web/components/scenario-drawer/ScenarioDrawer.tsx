@@ -8,8 +8,6 @@ import { Button } from "@/components/ui/button";
 import { useScenarioStore } from "@/lib/store";
 import { scenarioFormSchema, type ScenarioFormValues } from "./schema";
 import { CapitalSection } from "./sections/CapitalSection";
-import { RealEstateSection } from "./sections/RealEstateSection";
-import { FinancingSection } from "./sections/FinancingSection";
 import { PortfolioSection } from "./sections/PortfolioSection";
 import { BenchmarkSection } from "./sections/BenchmarkSection";
 import { MonteCarloSection } from "./sections/MonteCarloSection";
@@ -50,8 +48,6 @@ export function ScenarioDrawer() {
         <FormProvider {...form}>
           <form onSubmit={onSubmit} className="space-y-6 px-5 pb-4">
             <CapitalSection />
-            <RealEstateSection />
-            <FinancingSection />
             <PortfolioSection />
             <BenchmarkSection />
             <MonteCarloSection />

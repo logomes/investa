@@ -8,16 +8,6 @@ import {
 import type { SimulateOut } from "@/lib/api-types";
 
 const SIM: SimulateOut = {
-  realEstate: {
-    label: "Imóvel",
-    color: "#C0392B",
-    years: [0, 1, 2],
-    patrimony: [230_000, 260_000, 290_000],
-    annualIncome: [0, 9_000, 9_500],
-    cumulativeIncome: [0, 9_000, 18_500],
-    debtBalance: null,
-    internalPortfolio: null,
-  },
   portfolio: {
     label: "Carteira Diversificada",
     color: "#27AE60",

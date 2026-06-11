@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { Sidebar } from "@/components/shell/Sidebar";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/imovel",
+  usePathname: () => "/carteira",
 }));
 
 vi.mock("next/link", () => ({
@@ -13,10 +13,10 @@ vi.mock("next/link", () => ({
 }));
 
 describe("Sidebar", () => {
-  it("renders all 8 nav items", () => {
+  it("renders nav items (no Imóvel)", () => {
     render(<Sidebar />);
     expect(screen.getByText("Visão Geral")).toBeInTheDocument();
-    expect(screen.getByText("Imóvel")).toBeInTheDocument();
+    expect(screen.queryByText("Imóvel")).not.toBeInTheDocument();
     expect(screen.getByText("Carteira")).toBeInTheDocument();
     expect(screen.getByText("Sensibilidade")).toBeInTheDocument();
     expect(screen.getByText("Tributação")).toBeInTheDocument();
@@ -27,7 +27,7 @@ describe("Sidebar", () => {
 
   it("marks the current pathname as active (aria-current=page)", () => {
     render(<Sidebar />);
-    const activeLink = screen.getByText("Imóvel").closest("a");
+    const activeLink = screen.getByText("Carteira").closest("a");
     expect(activeLink).toHaveAttribute("aria-current", "page");
   });
 

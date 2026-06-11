@@ -73,3 +73,16 @@ describe("store migration v3 → v4", () => {
     });
   });
 });
+
+describe("store migration v5: realEstate dropped", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("v5 drops realEstate from the persisted scenario", async () => {
+    localStorage.setItem("investa-scenario-v3", JSON.stringify(V3_PAYLOAD));
+    await useScenarioStore.persist.rehydrate();
+    const s = useScenarioStore.getState();
+    expect("realEstate" in s.scenario).toBe(false);
+  });
+});

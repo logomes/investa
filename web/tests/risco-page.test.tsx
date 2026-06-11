@@ -5,15 +5,6 @@ import { RiscoPageContent } from "@/components/risco/RiscoPageContent";
 import type { SimulateMonteCarloOut, SimulateOut } from "@/lib/api-types";
 
 const fakeMcOut: SimulateMonteCarloOut = {
-  realEstate: {
-    label: "Imóvel",
-    color: "#C0392B",
-    p10: [230_000, 240_000, 250_000],
-    p50: [230_000, 260_000, 290_000],
-    p90: [230_000, 280_000, 330_000],
-    finalDistribution: Array.from({ length: 100 }, (_, i) => 200_000 + i * 1_500),
-    maxDrawdowns: Array.from({ length: 100 }, () => 0.18),
-  },
   portfolio: {
     label: "Carteira",
     color: "#27AE60",
@@ -26,7 +17,6 @@ const fakeMcOut: SimulateMonteCarloOut = {
 };
 
 const fakeSimOut: SimulateOut = {
-  realEstate: { years: [0, 1, 2] } as never,
   portfolio: { years: [0, 1, 2] } as never,
   benchmark: {
     label: "CDI",

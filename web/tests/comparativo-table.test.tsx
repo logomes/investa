@@ -8,7 +8,6 @@ const years = Array.from({ length: 11 }, (_, i) => i);
 const portfolioPatrimony = [230_000, 252_000, 277_000, 304_000, 334_000, 367_000, 403_000, 443_000, 487_000, 535_000, 588_000];
 
 const fakeSim: SimulateOut = {
-  realEstate: { label: "RE", color: "#f00", years, patrimony: portfolioPatrimony.map((v) => v * 0.7), annualIncome: years.map(() => 0), cumulativeIncome: years.map(() => 0) },
   portfolio: { label: "PF", color: "#0f0", years, patrimony: portfolioPatrimony, annualIncome: years.map((y) => y * 5_000), cumulativeIncome: years.map(() => 0) },
   benchmark: { label: "BM", color: "#00f", years, patrimony: portfolioPatrimony.map((v) => v * 1.1), annualIncome: years.map((y) => y * 4_500), cumulativeIncome: years.map(() => 0) },
   sensitivity: [],
@@ -32,10 +31,8 @@ describe("ComparativoTable", () => {
     expect(screen.getByText("BM")).toBeInTheDocument();
   });
 
-  it("não renderiza Imóvel — realEstate (RE) ausente da tabela", () => {
+  it("não renderiza Imóvel", () => {
     render(wrap(<ComparativoTable />));
     expect(screen.queryByText(/Imóvel/)).toBeNull();
-    // realEstate fixture label "RE" must not appear as a row badge
-    expect(screen.queryByText("RE")).toBeNull();
   });
 });

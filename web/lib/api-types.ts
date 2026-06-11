@@ -1,29 +1,6 @@
 // Mirror of api/schemas/inputs.py and api/schemas/outputs.py.
 // camelCase field names match the Pydantic alias_generator output.
 
-export type FinancingInput = {
-  termYears: number;
-  annualRate: number;
-  entryPct: number;
-  system: "SAC" | "Price";
-  monthlyInsuranceRate: number;
-};
-
-export type RealEstateInput = {
-  propertyValue: number;
-  monthlyRent: number;
-  annualAppreciation: number;
-  iptuRate: number;
-  vacancyMonthsPerYear: number;
-  managementFeePct: number;
-  maintenanceAnnual: number;
-  insuranceAnnual: number;
-  incomeTaxBracket: number;
-  acquisitionCostPct: number;
-  appreciationVolatility: number;
-  financing: FinancingInput | null;
-};
-
 export type PortfolioAssetInput = {
   name: string;
   weight: number;
@@ -60,14 +37,12 @@ export type SimulateInput = {
   capital: number;
   horizon: number;
   reinvest: boolean;
-  realEstate: RealEstateInput;
   portfolio: PortfolioInput;
   benchmark: BenchmarkInput;
 };
 
 export type SimulateMonteCarloInput = {
   horizon: number;
-  realEstate: RealEstateInput;
   portfolio: PortfolioInput;
   mc: MonteCarloInput;
 };
@@ -100,7 +75,6 @@ export type TaxComparisonRowOut = {
 };
 
 export type SimulateOut = {
-  realEstate: SimulationResultOut;
   portfolio: SimulationResultOut;
   benchmark: SimulationResultOut;
   sensitivity: SensitivityRowOut[];
@@ -118,7 +92,6 @@ export type MonteCarloResultOut = {
 };
 
 export type SimulateMonteCarloOut = {
-  realEstate: MonteCarloResultOut;
   portfolio: MonteCarloResultOut;
 };
 

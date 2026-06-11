@@ -5,7 +5,6 @@ import { TributacaoPageContent } from "@/components/tributacao/TributacaoPageCon
 import type { SimulateOut } from "@/lib/api-types";
 
 const fakeSimOut: SimulateOut = {
-  realEstate: {} as never,
   portfolio: {} as never,
   benchmark: {} as never,
   sensitivity: [] as never,
