@@ -42,7 +42,7 @@ def test_simulate_returns_full_output_shape():
     assert "benchmark" in body
     assert "sensitivity" in body
     assert "taxComparison" in body
-    assert "re" + "alEstate" not in body
+    assert "realEstate" not in body
 
 
 def test_simulate_yearly_arrays_have_horizon_plus_one_points():

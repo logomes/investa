@@ -15,8 +15,6 @@ const SIM: SimulateOut = {
     patrimony: [230_000, 250_000, 275_000],
     annualIncome: [0, 14_794, 15_500],
     cumulativeIncome: [0, 14_794, 30_294],
-    debtBalance: null,
-    internalPortfolio: null,
   },
   benchmark: {
     label: "CDI (líquido)",
@@ -25,8 +23,6 @@ const SIM: SimulateOut = {
     patrimony: [230_000, 258_000, 289_000],
     annualIncome: [0, 28_000, 31_000],
     cumulativeIncome: [0, 28_000, 59_000],
-    debtBalance: null,
-    internalPortfolio: null,
   },
   sensitivity: [],
   taxComparison: [],

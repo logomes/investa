@@ -12,8 +12,6 @@ const fakeSimOut: SimulateOut = {
     patrimony: Array.from({ length: 11 }, (_, i) => 230_000 + i * 25_000),
     annualIncome: Array.from({ length: 11 }, (_, i) => i * 1_500),
     cumulativeIncome: Array.from({ length: 11 }, (_, i) => i * i * 750),
-    debtBalance: null,
-    internalPortfolio: null,
   },
   benchmark: {
     label: "CDI (líquido)",
@@ -22,8 +20,6 @@ const fakeSimOut: SimulateOut = {
     patrimony: Array.from({ length: 11 }, (_, i) => 230_000 + i * 28_000),
     annualIncome: Array.from({ length: 11 }, (_, i) => i * 2_800),
     cumulativeIncome: Array.from({ length: 11 }, (_, i) => i * i * 1_400),
-    debtBalance: null,
-    internalPortfolio: null,
   },
   sensitivity: [],
   taxComparison: [],

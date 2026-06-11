@@ -11,7 +11,7 @@ def test_defaults_includes_portfolio_and_benchmark():
     body = response.json()
     assert "portfolio" in body
     assert "benchmark" in body
-    assert "re" + "alEstate" not in body
+    assert "realEstate" not in body
 
 
 def test_defaults_portfolio_assets_sum_to_one():

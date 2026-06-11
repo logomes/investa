@@ -56,8 +56,6 @@ export type SimulationResultOut = {
   patrimony: number[];
   annualIncome: number[];
   cumulativeIncome: number[];
-  debtBalance?: number[] | null;
-  internalPortfolio?: number[] | null;
 };
 
 export type SensitivityRowOut = {

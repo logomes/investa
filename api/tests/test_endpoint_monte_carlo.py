@@ -25,7 +25,7 @@ def test_monte_carlo_returns_portfolio_result():
     assert response.status_code == 200, response.text
     body = response.json()
     assert "portfolio" in body
-    assert "re" + "alEstate" not in body
+    assert "realEstate" not in body
 
 
 def test_monte_carlo_portfolio_has_percentile_arrays():

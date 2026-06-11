@@ -17,9 +17,7 @@ const fakeSimOut: SimulateOut = {
     patrimony: [100_000, 130_000, 160_000, 195_000, 230_000, 270_000, 315_000, 365_000, 420_000, 470_000, 520_000],
     annualIncome: Array(11).fill(8_000) as number[],
     cumulativeIncome: Array(11).fill(0) as number[],
-    debtBalance: null,
-    internalPortfolio: null,
-  } as never,
+  },
   benchmark: {} as never,
   sensitivity: [
     { parameter: "Yield da carteira (±1,5pp)", pessimistic: 320_000, optimistic: 470_000 },

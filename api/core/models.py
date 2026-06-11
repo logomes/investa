@@ -1,8 +1,4 @@
-"""Financial simulation engine for scenario comparison.
-
-Computes patrimony evolution, monthly income progression, and sensitivity
-analysis for real estate vs portfolio scenarios.
-"""
+"""Financial simulation engine: diversified portfolio, passive benchmark (CDI/Selic/IPCA+x), Monte Carlo, sensitivity and tax comparison."""
 
 from __future__ import annotations
 
@@ -30,8 +26,6 @@ class SimulationResult:
     cumulative_income: np.ndarray    # Total income accumulated
     label: str
     color: str
-    debt_balance: np.ndarray | None = None    # outstanding loan balance at end of each year (financed only)
-    internal_portfolio: np.ndarray | None = None  # internal portfolio buffer evolution (financed only)
 
 
 @dataclass(slots=True, frozen=True)

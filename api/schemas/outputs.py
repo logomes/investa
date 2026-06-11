@@ -30,15 +30,13 @@ class MacroOut(_CamelModel):
 
 
 class SimulationResultOut(_CamelModel):
-    """Yearly arrays for a single scenario (RE / Portfolio / Benchmark)."""
+    """Yearly arrays for a single scenario (Portfolio / Benchmark)."""
     label: str
     color: str
     years: list[float]
     patrimony: list[float]
     annual_income: list[float]
     cumulative_income: list[float]
-    debt_balance: list[float] | None = None
-    internal_portfolio: list[float] | None = None
 
 
 class SensitivityRowOut(_CamelModel):
