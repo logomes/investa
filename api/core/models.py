@@ -373,10 +373,15 @@ def simulate_portfolio_mc(
 ) -> MonteCarloResult:
     """Monte Carlo simulation of the diversified portfolio.
 
-    Each year, each asset's net return is drawn from N(mean, volatility^2)
-    independently. Portfolio return = weighted sum across assets. Aporte
-    mensal is deterministic (PMT-begin: added at the start of the year,
-    compounded with that year's return).
+    Draws GROSS total returns for each asset from N(gross_return, volatility²)
+    independently, then routes them through the tax-aware core
+    (_simulate_taxed_classes) so trajectories are net-of-redemption — identical
+    semantics to the deterministic path when sigma=0. Contributions follow the
+    same PMT-begin convention as simulate_portfolio.
+
+    Draws are clamped at −0.99 after sampling: a drawn total return ≤ −100%
+    would sign-flip rf-tranche growth-factor ratios, producing nonsensical
+    negative balances; −99% caps the loss at near-total.
     """
     if horizon_years <= 0:
         raise ValueError("horizon_years must be positive")
@@ -385,31 +390,15 @@ def simulate_portfolio_mc(
     N, T = mc_params.n_trajectories, horizon_years
     K = len(params.assets)
 
-    weights = np.array([a.weight for a in params.assets])
-    means = np.array([
-        a.expected_yield * (1 - a.tax_rate) + a.capital_gain
-        for a in params.assets
-    ])
+    means = np.array([a.gross_return for a in params.assets])
     sigmas = np.array([a.volatility for a in params.assets])
-
-    # Per-trajectory per-year per-asset draws: shape (N, T, K)
     draws = _draw_normal_returns(rng, mean=means, sigma=sigmas, shape=(N, T, K))
-    # Portfolio return = weighted sum across assets: shape (N, T)
-    portfolio_returns = (draws * weights).sum(axis=2)
+    # Floor: a drawn total return <= -100% would sign-flip growth factors
+    # (rf tranche ratios); -99% caps the loss at near-total.
+    draws = np.maximum(draws, -0.99)
 
-    monthly = params.monthly_contribution
-    indexed = params.contribution_inflation_indexed
-    annual_base = 12.0 * monthly
-
-    trajectories = np.zeros((N, T + 1))
-    trajectories[:, 0] = params.capital
-    for t in range(T):
-        if monthly > 0:
-            aporte_t = annual_base * ((1 + ipca) ** t if indexed else 1.0)
-        else:
-            aporte_t = 0.0
-        # PMT-begin: add aporte first, then compound with year's return
-        trajectories[:, t + 1] = (trajectories[:, t] + aporte_t) * (1 + portfolio_returns[:, t])
+    out = _simulate_taxed_classes(params, T, draws, ipca, reinvest_income=True)
+    trajectories = out.net
 
     return MonteCarloResult(
         trajectories=trajectories,

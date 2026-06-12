@@ -2,8 +2,8 @@
 import numpy as np
 import pytest
 
-from core.config import AssetClass, PortfolioParams, regressive_rate
-from core.models import simulate_portfolio, _simulate_taxed_classes
+from core.config import AssetClass, MonteCarloParams, PortfolioParams, regressive_rate
+from core.models import simulate_portfolio, simulate_portfolio_mc, _simulate_taxed_classes
 
 
 def _single(profile: str, *, y=0.0, g=0.0, tax_rate=0.0, monthly=0.0) -> PortfolioParams:
@@ -116,3 +116,35 @@ def test_come_cotas_no_drag_on_negative_year():
     paid = out.tax_paid_cumulative[0]
     assert paid[2] == paid[1]                          # flat across the loss year
     assert paid[3] > paid[2]
+
+
+# ---------- MC tests that exercise the tax-aware core ----------
+
+def test_mc_sigma_zero_matches_deterministic():
+    pf = _single("rf_regressiva", g=0.12, monthly=1_000)
+    det = simulate_portfolio(pf, 5)
+    mc = simulate_portfolio_mc(pf, 5, MonteCarloParams(n_trajectories=100, seed=1))
+    np.testing.assert_allclose(mc.trajectories[0], det.patrimony, rtol=1e-9)
+
+
+def test_mc_is_seed_stable():
+    pf = _single("come_cotas", g=0.10)
+    pf.assets[0].volatility = 0.2
+    a = simulate_portfolio_mc(pf, 5, MonteCarloParams(n_trajectories=200, seed=42))
+    b = simulate_portfolio_mc(pf, 5, MonteCarloParams(n_trajectories=200, seed=42))
+    np.testing.assert_array_equal(a.final_distribution, b.final_distribution)
+
+
+def test_mc_trajectories_are_net_of_redemption():
+    pf = _single("rf_regressiva", g=0.12)
+    pf.assets[0].volatility = 0.1
+    mc = simulate_portfolio_mc(pf, 5, MonteCarloParams(n_trajectories=500, seed=7))
+    det = simulate_portfolio(pf, 5)
+    assert mc.percentiles["p50"][-1] == pytest.approx(det.patrimony[-1], rel=0.05)
+
+
+def test_mc_draw_floor_prevents_sign_flip():
+    pf = _single("rf_regressiva", g=0.0)
+    pf.assets[0].volatility = 3.0   # absurd vol to force draws below -1
+    mc = simulate_portfolio_mc(pf, 3, MonteCarloParams(n_trajectories=500, seed=3))
+    assert (mc.trajectories >= 0).all()   # values never go negative via sign-flip
