@@ -158,9 +158,6 @@ class BenchmarkParams:
     contribution_inflation_indexed: bool = True
     label: str = "CDI (líquido)"
 
-    def net_yield(self) -> float:
-        return self.annual_rate * (1 - self.tax_rate)
-
 
 # ---------- Renda Fixa (fixed-income positions) ----------
 

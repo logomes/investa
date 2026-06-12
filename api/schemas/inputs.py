@@ -51,7 +51,7 @@ class BenchmarkInput(_CamelModel):
     kind: Literal["cdi", "selic", "ipca_plus"] = "cdi"
     annual_rate: float = Field(ge=0, le=1.0)
     ipca_spread: float = Field(default=0.0, ge=0, le=0.5)
-    tax_rate: float = Field(default=0.175, ge=0, le=1.0)
+    tax_rate: float = Field(default=0.175, ge=0, le=1.0)  # compat: accepted and ignored — benchmark simulates rf_regressiva (regressive at exit)
 
 
 class MonteCarloInput(_CamelModel):
