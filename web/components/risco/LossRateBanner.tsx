@@ -3,10 +3,12 @@
 import { AlertTriangle } from "lucide-react";
 import type { LossRateInfo } from "@/lib/risco-derive";
 import { formatRs, formatPercent } from "@/lib/format";
+import { useScenarioStore } from "@/lib/store";
 
 type Props = { info: LossRateInfo; capitalInitial: number };
 
 export function LossRateBanner({ info, capitalInitial }: Props) {
+  const isReal = useScenarioStore((s) => s.displayMode) === "real";
   if (!info.show) return null;
   const flaggedText = info.flagged
     .map((f) => `${f.label} ${formatPercent(f.rate, 1)}`)
@@ -16,7 +18,7 @@ export function LossRateBanner({ info, capitalInitial }: Props) {
     <div className="flex items-start gap-2 bg-accent-amber/10 border border-accent-amber/40 rounded-card p-3">
       <AlertTriangle className="w-4 h-4 text-accent-amber flex-shrink-0 mt-0.5" />
       <p className="text-xs text-ink">
-        Trajetórias com perda nominal abaixo de {formatRs(capitalInitial)} ao final do horizonte:{" "}
+        Trajetórias com {isReal ? "perda de poder de compra" : "perda nominal"} abaixo de {formatRs(capitalInitial)} ao final do horizonte:{" "}
         <span className="font-semibold">{flaggedText}</span>. Considere reduzir alocação em ativos
         de alta σ ou ajustar o horizonte.
       </p>
