@@ -4,9 +4,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SensibilidadePageContent } from "@/components/sensibilidade/SensibilidadePageContent";
 import type { SimulateOut } from "@/lib/api-types";
 
+type MockScenario = { horizon: number; expectedInflation: number };
+type MockStore = { scenario: MockScenario; displayMode: "nominal" | "real" };
+
+let mockStoreState: MockStore = {
+  scenario: { horizon: 10, expectedInflation: 0.055 },
+  displayMode: "nominal",
+};
+
 vi.mock("@/lib/store", () => ({
-  useScenarioStore: <T,>(selector: (s: { scenario: { horizon: number } }) => T) =>
-    selector({ scenario: { horizon: 10 } }),
+  useScenarioStore: <T,>(selector: (s: MockStore) => T) => selector(mockStoreState),
 }));
 
 const fakeSimOut: SimulateOut = {
@@ -44,6 +51,7 @@ const wrap = (ui: React.ReactElement) => {
 describe("SensibilidadePageContent", () => {
   beforeEach(() => {
     mockSimReturn = { data: fakeSimOut, isLoading: false, error: null, refetch: vi.fn() };
+    mockStoreState = { scenario: { horizon: 10, expectedInflation: 0.055 }, displayMode: "nominal" };
   });
 
   it("renderiza KPI banner com base patrimony", () => {
@@ -76,5 +84,39 @@ describe("SensibilidadePageContent", () => {
     mockSimReturn = { data: undefined, isLoading: false, error: new Error("boom"), refetch: vi.fn() };
     render(wrap(<SensibilidadePageContent />));
     expect(screen.getByText(/falha/i)).toBeInTheDocument();
+  });
+});
+
+describe("SensibilidadePageContent – real mode (R$ de hoje)", () => {
+  // horizon = 10, IPCA = 0.10 → factor = (1.10)^10 ≈ 2.593742
+  // base = 520_000 → deflated ≈ 200_483 → formatRs → "R$ 200.483"
+  // pessimistic of "Yield da carteira" = 320_000 → deflated ≈ 123_374
+  beforeEach(() => {
+    mockSimReturn = { data: fakeSimOut, isLoading: false, error: null, refetch: vi.fn() };
+    mockStoreState = {
+      scenario: { horizon: 10, expectedInflation: 0.10 },
+      displayMode: "real",
+    };
+  });
+
+  it("base KPI shows deflated patrimony in real mode", () => {
+    render(wrap(<SensibilidadePageContent />));
+    // base = 520_000 deflated by (1.10)^10 ≈ 200_483
+    // formatRs(200_483) in pt-BR → "R$ 200.483"
+    expect(screen.getAllByText(/200\.483/).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("tornado row shows deflated pessimistic value in real mode", () => {
+    render(wrap(<SensibilidadePageContent />));
+    // "Yield da carteira" pessimistic = 320_000 deflated by (1.10)^10 ≈ 123_374
+    // Should appear somewhere in the tornado/table
+    expect(screen.getByText(/123\.37[0-9]/)).toBeInTheDocument();
+  });
+
+  it("'R$ de hoje' badge or label appears in real mode", () => {
+    render(wrap(<SensibilidadePageContent />));
+    // DisplayModeBadge or "R$ de hoje" string
+    const badges = screen.getAllByText(/R\$ de hoje/i);
+    expect(badges.length).toBeGreaterThanOrEqual(1);
   });
 });

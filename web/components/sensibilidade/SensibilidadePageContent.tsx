@@ -2,6 +2,7 @@
 
 import { useSimulate } from "@/lib/api";
 import { useScenarioStore } from "@/lib/store";
+import { useDeflation } from "@/lib/use-deflation";
 import { ErrorCard } from "@/components/error/ErrorCard";
 import { KpiSkeleton } from "@/components/kpi/KpiSkeleton";
 import { enrichRows, sortByImpact } from "@/lib/sensibilidade-derive";
@@ -12,6 +13,7 @@ import { SensibilidadeTable } from "./SensibilidadeTable";
 export function SensibilidadePageContent() {
   const horizon = useScenarioStore((s) => s.scenario.horizon);
   const sim = useSimulate();
+  const { at } = useDeflation();
 
   if (sim.isLoading) {
     return (
@@ -26,8 +28,17 @@ export function SensibilidadePageContent() {
   }
 
   const data = sim.data!;
-  const base = data.portfolio.patrimony[data.portfolio.patrimony.length - 1];
-  const rows = sortByImpact(enrichRows(data.sensitivity, base));
+  const base = at(data.portfolio.patrimony[data.portfolio.patrimony.length - 1], horizon);
+  const rows = sortByImpact(
+    enrichRows(
+      data.sensitivity.map((r) => ({
+        ...r,
+        pessimistic: at(r.pessimistic, horizon),
+        optimistic: at(r.optimistic, horizon),
+      })),
+      base,
+    ),
+  );
 
   return (
     <div className="space-y-6">
