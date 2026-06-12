@@ -178,4 +178,10 @@ describe("RiscoPageContent – real mode (R$ de hoje)", () => {
     const badges = screen.getAllByText("R$ de hoje");
     expect(badges.length).toBeGreaterThanOrEqual(1);
   });
+
+  it("p50 sub contains 'R$ de hoje' marker in real mode", () => {
+    render(wrap(<RiscoPageContent />));
+    const benchmarkLabel = screen.getByText(/Benchmark:.*R\$ de hoje/);
+    expect(benchmarkLabel).toBeInTheDocument();
+  });
 });

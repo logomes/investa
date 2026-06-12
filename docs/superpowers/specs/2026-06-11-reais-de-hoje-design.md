@@ -77,7 +77,7 @@ merge covers old payloads (same pattern as `lastRealImportAt`); no version bump 
 field (v6 bump comes from §1 regardless).
 
 **Topbar**: compact segmented toggle `R$ de hoje | Nominal` (two pill buttons,
-`TimelineFilter` idiom) right of the subtitle block; hidden below `md` (pages still
+`TimelineFilter` idiom) right of the subtitle block; hidden below `lg` (pages still
 respect the persisted mode).
 
 **`web/lib/deflate.ts`** (new, pure):
@@ -123,8 +123,8 @@ The goal is compared **in the active mode's space**:
 ## 4. Decomposition
 
 - **KPI** (Visão Geral, real mode only): "Patrimônio projetado" sub becomes
-  "nominal {R$ Y} · inflação consome {R$ Y−X}"; delta chip shows real CAGR with
-  "(nominal {x}%)" alongside.
+  "nominal R$ Y · inflação consome R$ Z"; delta chip shows real CAGR only (the nominal
+  context lives in the sub line above).
 - **Chart** (EvolutionCard, real mode only): portfolio REAL curve rendered solid; a
   translucent band fills between the real and nominal portfolio curves, legend
   "Inflação (perda de poder de compra)". Reuses the existing LineChart `bands` mechanism
@@ -147,7 +147,7 @@ The goal is compared **in the active mode's space**:
   modes; badge presence.
 - API: `expected_inflation` honored (simulate with 0 vs 0.10 changes indexed
   contributions), `None` falls back to macro; goal/solve same.
-- e2e: toggle in Topbar flips EvolutionCard values; drawer field edits inflation.
+- e2e: toggle in Topbar flips EvolutionCard values; unit: drawer field edits inflation (capital-section-inflation.test.tsx).
 
 ## Risks
 
