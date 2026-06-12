@@ -49,7 +49,7 @@ TaxProfile = Literal[
 ]
 
 # Exit tax on accumulated GAIN at redemption, by profile.
-EXIT_GAIN_RATE: Final[dict[str, float]] = {
+EXIT_GAIN_RATE: Final[dict[TaxProfile, float]] = {
     "fii": 0.20,
     "acoes_br": 0.15,
     "dividendos_exterior": 0.15,
@@ -63,8 +63,10 @@ def regressive_rate(holding_years: int) -> float:
     """Annual-resolution regressive IR bracket.
 
     Begin-of-year tranches redeemed at year-end hold >= 1 year, so only the
-    17,5% (1 year) and 15% (>= 2 years) brackets are reachable.
+    17.5% (1 year) and 15% (>= 2 years) brackets are reachable.
     """
+    if holding_years < 1:
+        raise ValueError("tranches hold >= 1 year at annual resolution")
     return 0.15 if holding_years >= 2 else 0.175
 
 
@@ -79,7 +81,7 @@ class AssetClass:
     tax_rate: float = 0.0
     note: str = ""
     volatility: float = 0.15   # σ anual do retorno total (yield + capital gain)
-    tax_profile: str = "tributado_anual"   # TaxProfile; tax_rate only used by this fallback
+    tax_profile: TaxProfile = "tributado_anual"  # engine ignores tax_rate except when tax_profile == "tributado_anual"
 
     @property
     def gross_return(self) -> float:
