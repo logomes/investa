@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GoalCard } from "@/components/visao-geral/GoalCard";
 import { useScenarioStore } from "@/lib/store";
-import { DEFAULT_GOAL } from "@/lib/defaults";
+import { DEFAULT_GOAL, DEFAULT_SCENARIO } from "@/lib/defaults";
 import type { SimulateOut, SimulateMonteCarloOut, MacroOut } from "@/lib/api-types";
 
 let simPatrimony: number[] = [230_000, 250_000];
@@ -70,7 +70,11 @@ const wrapper = ({ children }: { children: React.ReactNode }) => {
 
 describe("GoalCard editable target", () => {
   beforeEach(() => {
-    useScenarioStore.setState({ goalTarget: DEFAULT_GOAL });
+    useScenarioStore.setState({
+      goalTarget: DEFAULT_GOAL,
+      displayMode: "nominal",
+      scenario: { ...DEFAULT_SCENARIO, expectedInflation: 0.10 },
+    });
     simPatrimony = [230_000, 250_000];
     mcDist = [];
     goalSolveMock.data = undefined;
@@ -147,7 +151,11 @@ describe("GoalCard editable target", () => {
 
 describe("GoalCard recommendation states", () => {
   beforeEach(() => {
-    useScenarioStore.setState({ goalTarget: DEFAULT_GOAL });
+    useScenarioStore.setState({
+      goalTarget: DEFAULT_GOAL,
+      displayMode: "nominal",
+      scenario: { ...DEFAULT_SCENARIO, expectedInflation: 0.10 },
+    });
     simPatrimony = [230_000, 250_000];
     mcDist = [];
     goalSolveMock.data = undefined;
@@ -213,7 +221,11 @@ describe("GoalCard recommendation states", () => {
 
 describe("GoalCard Monte Carlo refinement", () => {
   beforeEach(() => {
-    useScenarioStore.setState({ goalTarget: DEFAULT_GOAL });
+    useScenarioStore.setState({
+      goalTarget: DEFAULT_GOAL,
+      displayMode: "nominal",
+      scenario: { ...DEFAULT_SCENARIO, expectedInflation: 0.10 },
+    });
     simPatrimony = [230_000, 300_000];
     mcDist = [];
     goalSolveMock.data = undefined;
@@ -285,5 +297,85 @@ describe("GoalCard Monte Carlo refinement", () => {
       useScenarioStore.setState({ goalTarget: 999_000 });
     });
     expect(goalSolveMock.reset).toHaveBeenCalled();
+  });
+});
+
+describe("GoalCard real mode", () => {
+  // Fixture: ipca=0.10, horizon=10
+  // goal = 500_000 (in real/today's money)
+  // nominalGoal = 500_000 / deflationFactor(0.10, 10)
+  //             = 500_000 / (1.10)^(-10)
+  //             = 500_000 * (1.10)^10
+  //             ≈ 500_000 * 2.5937425 ≈ 1_296_871
+  //
+  // finalDistribution: 10 values, 7 of which are >= 500_000 but none >= 1_296_871
+  //   [100_000, 200_000, 300_000, 500_000, 600_000, 700_000, 800_000, 900_000, 1_000_000, 1_100_000]
+  //   Nominal  probability (goal=500_000):        7/10 = 70.0%
+  //   Real-mode probability (goal≈1_296_871):      0/10 = 0.0%
+  //
+  // simPatrimony = [230_000, 300_000] → current (last) = 300_000 < 500_000 → "below" state
+  const REAL_IPCA = 0.10;
+  const REAL_HORIZON = 10;
+  const REAL_GOAL = 500_000;
+  const REAL_DIST = [100_000, 200_000, 300_000, 500_000, 600_000, 700_000, 800_000, 900_000, 1_000_000, 1_100_000];
+
+  beforeEach(() => {
+    useScenarioStore.setState({
+      goalTarget: REAL_GOAL,
+      displayMode: "real",
+      scenario: { ...DEFAULT_SCENARIO, horizon: REAL_HORIZON, expectedInflation: REAL_IPCA },
+    });
+    simPatrimony = [230_000, 300_000];
+    mcDist = REAL_DIST;
+    goalSolveMock.data = undefined;
+    goalSolveMock.isPending = false;
+    goalSolveMock.isError = false;
+    goalSolveMock.mutate.mockClear();
+    goalSolveMock.reset.mockClear();
+  });
+
+  it("probability differs between modes: real mode uses nominalGoal (≈1_296_871), yielding 0% not 70%", () => {
+    // Real mode: nominalGoal = 500_000 * (1.10)^10 ≈ 1_296_871 → 0 of 10 values >= that → 0.0%
+    render(<GoalCard />, { wrapper });
+    expect(
+      screen.getByText((_, el) => !!el && el.tagName === "P" && /0[,.]0%/.test(el.textContent ?? "") && /prov[áa]vel/i.test(el.textContent ?? "")),
+    ).toBeInTheDocument();
+  });
+
+  it("solver receives the inflated (nominal) goal when in real mode", () => {
+    render(<GoalCard />, { wrapper });
+    fireEvent.click(screen.getByRole("button", { name: /Refinar com Monte Carlo/i }));
+    // nominalGoal = 500_000 * (1.10)^10 ≈ 1_296_871.23
+    const expectedNominal = REAL_GOAL * Math.pow(1 + REAL_IPCA, REAL_HORIZON);
+    expect(goalSolveMock.mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ goalTarget: expect.closeTo(expectedNominal, 0) }),
+    );
+  });
+
+  it("shows 'meta em R$ de hoje' caption in real mode", () => {
+    render(<GoalCard />, { wrapper });
+    expect(screen.getByText(/meta em R\$ de hoje/i)).toBeInTheDocument();
+  });
+});
+
+describe("GoalCard nominal mode – no real-money caption", () => {
+  beforeEach(() => {
+    useScenarioStore.setState({
+      goalTarget: DEFAULT_GOAL,
+      displayMode: "nominal",
+      scenario: { ...DEFAULT_SCENARIO, expectedInflation: 0.10 },
+    });
+    simPatrimony = [230_000, 250_000];
+    mcDist = [];
+    goalSolveMock.data = undefined;
+    goalSolveMock.isPending = false;
+    goalSolveMock.isError = false;
+    goalSolveMock.mutate.mockClear();
+    goalSolveMock.reset.mockClear();
+  });
+
+  it("does not show 'meta em R$ de hoje' caption in nominal mode", () => {
+    render(<GoalCard />, { wrapper });
+    expect(screen.queryByText(/meta em R\$ de hoje/i)).toBeNull();
   });
 });

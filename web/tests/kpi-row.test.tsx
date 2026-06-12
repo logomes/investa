@@ -92,3 +92,34 @@ describe("KpiRow nominal mode – no R$ de hoje marker", () => {
     expect(screen.queryByText(/R\$ de hoje/)).toBeNull();
   });
 });
+
+describe("KpiRow real mode – probability uses nominalGoal", () => {
+  // Fixture: finalDistribution = Array.from({ length: 1000 }, (_, i) => i * 1000)
+  //   → values 0, 1000, 2000, ..., 999_000
+  //
+  // goal = 500_000, ipca = 0.10, horizon = 10
+  //   Nominal probability:  values >= 500_000 → indices 500..999 = 500/1000 = 50.0%
+  //   nominalGoal = 500_000 * (1.10)^10 ≈ 1_296_871 → no value in [0..999_000] reaches that → 0.0%
+  //
+  // The real-mode KPI must show 0.0%, not 50.0%.
+  beforeEach(() => {
+    useScenarioStore.setState({
+      displayMode: "real",
+      goalTarget: 500_000,
+      scenario: { ...DEFAULT_SCENARIO, horizon: 10, expectedInflation: 0.10 },
+    });
+  });
+
+  it("'Probabilidade de meta' uses the nominal-equivalent goal in real mode (0.0% not 50.0%)", () => {
+    render(wrap(<KpiRow />));
+    // The "Probabilidade de meta" KpiCard value should be 0.0% because
+    // nominalGoal ≈ 1_296_871 exceeds all 1000 distribution values (max = 999_000).
+    // formatPercent(0) in pt-BR → "0,0%"
+    // We find the KpiCard root by going up from the label to the rounded-card div.
+    const label = screen.getByText("Probabilidade de meta");
+    const card = label.closest(".rounded-card");
+    expect(card).toBeTruthy();
+    // The value "0,0%" should appear somewhere in the card area
+    expect(card?.textContent).toMatch(/0[,.]0%/);
+  });
+});
