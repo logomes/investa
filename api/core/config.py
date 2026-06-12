@@ -153,7 +153,7 @@ class MonteCarloParams:
 class BenchmarkParams:
     capital: float = 230_000.0
     annual_rate: float = SELIC_RATE
-    tax_rate: float = 0.175  # IR 17.5% (>2 anos)
+    tax_rate: float = 0.175  # legacy flat rate; benchmark simulation uses rf_regressiva (Task 5 removes the last reader)
     monthly_contribution: float = 0.0
     contribution_inflation_indexed: bool = True
     label: str = "CDI (líquido)"

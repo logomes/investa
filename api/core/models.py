@@ -538,46 +538,41 @@ def simulate_benchmark(
     horizon_years: int,
     ipca: float = 0.0,
 ) -> SimulationResult:
-    """Passive benchmark (CDI / Selic / IPCA+x) with reinvestment and aportes.
+    """Passive benchmark as a deferred-RF position (regressiva per tranche).
 
-    Receives the same begin-of-year contribution flow as `simulate_portfolio`,
-    so "carteira vs benchmark" compares identical cash flows.
+    A CDI/Selic/IPCA+ holding accrues gross and pays regressive IR only at
+    redemption — the tax-aware core's rf_regressiva profile, single class.
+    `annual_income` reports the year-over-year NET growth (nothing is
+    distributed by an accruing position); the year-0 entry anchors the display
+    at the first year's expected net yield.
     """
     if horizon_years <= 0:
         raise ValueError("horizon_years must be positive")
 
+    synthetic = PortfolioParams(
+        capital=params.capital,
+        monthly_contribution=params.monthly_contribution,
+        contribution_inflation_indexed=params.contribution_inflation_indexed,
+        assets=[AssetClass("benchmark", 1.0, 0.0, params.annual_rate,
+                           volatility=0.0, tax_profile="rf_regressiva")],
+    )
+    returns = np.tile(np.array([params.annual_rate]), (1, horizon_years, 1))
+    out = _simulate_taxed_classes(synthetic, horizon_years, returns, ipca, reinvest_income=True)
+
     years = np.arange(0, horizon_years + 1)
-    rate = params.net_yield()
-    patrimony = params.capital * (1 + rate) ** years
-
-    annual_base = 12.0 * params.monthly_contribution
-    if annual_base > 0:
-        indexed = params.contribution_inflation_indexed
-        contribution_pv = np.zeros_like(patrimony, dtype=float)
-        for y in range(1, horizon_years + 1):
-            total = 0.0
-            for t in range(y):
-                aporte_t = annual_base * ((1 + ipca) ** t if indexed else 1.0)
-                total += aporte_t * (1 + rate) ** (y - t)
-            contribution_pv[y] = total
-        patrimony = patrimony + contribution_pv
-
-    annual_income = np.array([
-        patrimony[max(y - 1, 0)] * rate
-        for y in years
-    ])
-    cumulative_income = np.cumsum(annual_income)
+    annual_income = np.diff(out.net[0], prepend=out.net[0][0])
+    annual_income[0] = out.net[0][0] * params.annual_rate * (1 - 0.15)
 
     return SimulationResult(
         years=years,
-        patrimony=patrimony,
+        patrimony=out.net[0],
         annual_income=annual_income,
-        cumulative_income=cumulative_income,
+        cumulative_income=np.cumsum(annual_income),
         label=params.label,
         color="#F39C12",
-        gross_patrimony=patrimony.copy(),
-        tax_paid_cumulative=np.zeros_like(patrimony),
-        exit_tax=np.zeros_like(patrimony),
+        gross_patrimony=out.gross[0],
+        tax_paid_cumulative=out.tax_paid_cumulative[0],
+        exit_tax=out.exit_tax[0],
     )
 
 
