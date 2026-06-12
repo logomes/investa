@@ -1,7 +1,7 @@
 # Reais de Hoje (projeção deflacionada pelo IPCA) — Design
 
 **Date:** 2026-06-11
-**Status:** In review
+**Status:** Implemented
 **Owner:** lucgomes
 
 ## Context

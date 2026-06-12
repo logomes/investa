@@ -3,6 +3,7 @@ import {
   buildLongFormatRows,
   toCsvBR,
   csvFilename,
+  deflateRows,
   type LongRow,
 } from "@/lib/exportar-csv";
 import type { SimulateOut } from "@/lib/api-types";
@@ -123,8 +124,29 @@ describe("exportar-csv — toCsvBR", () => {
 
 describe("exportar-csv — csvFilename", () => {
   it("formato 'simulacao_investa_{N}anos.csv'", () => {
-    expect(csvFilename(10)).toBe("simulacao_investa_10anos.csv");
-    expect(csvFilename(1)).toBe("simulacao_investa_1anos.csv");
-    expect(csvFilename(30)).toBe("simulacao_investa_30anos.csv");
+    expect(csvFilename(10, "nominal")).toBe("simulacao_investa_10anos.csv");
+    expect(csvFilename(1, "nominal")).toBe("simulacao_investa_1anos.csv");
+    expect(csvFilename(30, "nominal")).toBe("simulacao_investa_30anos.csv");
+  });
+});
+
+describe("deflateRows", () => {
+  it("deflates each row by its year", () => {
+    const rows: LongRow[] = [
+      { scenario: "Carteira Diversificada", year: 0, patrimony: 100, annualIncome: 10, cumulativeIncome: 10 },
+      { scenario: "Carteira Diversificada", year: 2, patrimony: 121, annualIncome: 12.1, cumulativeIncome: 24.2 },
+    ];
+    const real = deflateRows(rows, 0.10);
+    expect(real[0].patrimony).toBeCloseTo(100);
+    expect(real[1].patrimony).toBeCloseTo(100);
+    expect(real[1].annualIncome).toBeCloseTo(10);
+    expect(real[1].cumulativeIncome).toBeCloseTo(20);
+  });
+});
+
+describe("csvFilename com modo", () => {
+  it("sufixa reais-de-hoje no modo real", () => {
+    expect(csvFilename(10, "real")).toBe("simulacao_investa_10anos_reais-de-hoje.csv");
+    expect(csvFilename(10, "nominal")).toBe("simulacao_investa_10anos.csv");
   });
 });
