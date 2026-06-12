@@ -23,6 +23,8 @@ export function Topbar({ onMenuClick }: Props) {
   const title = deriveTitle(pathname);
   const setDrawerOpen = useScenarioStore((s) => s.setDrawerOpen);
   const horizon = useScenarioStore((s) => s.scenario.horizon);
+  const displayMode = useScenarioStore((s) => s.displayMode);
+  const setDisplayMode = useScenarioStore((s) => s.setDisplayMode);
   const searchRef = useRef<HTMLInputElement>(null);
   // Default false → SSR and first client render show "Ctrl K". Effect upgrades
   // to ⌘K on Mac post-hydration without mismatch.
@@ -74,6 +76,21 @@ export function Topbar({ onMenuClick }: Props) {
         <p className="text-[12.5px] text-ink-3 leading-tight truncate">
           Análise · Carteira vs Benchmark · {horizon} anos
         </p>
+      </div>
+
+      <div className="hidden md:flex items-center gap-1 bg-bg-2 border border-line rounded-pill p-0.5">
+        {([["real", "R$ de hoje"], ["nominal", "Nominal"]] as const).map(([mode, label]) => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => setDisplayMode(mode)}
+            className={`px-2.5 py-1 rounded-pill text-[11px] font-medium transition-colors ${
+              displayMode === mode ? "bg-bg-3 text-ink" : "text-ink-3 hover:text-ink"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Search — hidden on small to give the title room; visible from md up */}
