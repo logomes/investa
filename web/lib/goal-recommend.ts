@@ -54,10 +54,15 @@ export function recommend(i: RecommendInputs): Recommendation {
     : i.totalReturnAnnualNet;
   const monthlyRate = Math.pow(1 + annualRate, 1 / 12) - 1;
 
+  // indexed stream's nominal FV = real-rate annuity FV × (1+ipca)^h —
+  // without this the suggestion overestimates by that factor
+  const nominalizer = i.contributionInflationIndexed
+    ? Math.pow(1 + i.expectedInflation, i.horizonYears)
+    : 1;
   const additionalMonthly =
-    Math.abs(monthlyRate) < 1e-9
+    (Math.abs(monthlyRate) < 1e-9
       ? gap / monthlyPeriods
-      : (gap * monthlyRate) / (Math.pow(1 + monthlyRate, monthlyPeriods) - 1);
+      : (gap * monthlyRate) / (Math.pow(1 + monthlyRate, monthlyPeriods) - 1)) / nominalizer;
 
   const suggested = i.currentMonthlyContribution + additionalMonthly;
 
