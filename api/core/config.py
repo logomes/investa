@@ -41,6 +41,33 @@ MACRO_FALLBACK: Final[MacroParams] = MacroParams(
 )
 
 
+# ---------- Tax profiles (tributação forward) ----------
+
+TaxProfile = Literal[
+    "isento", "fii", "acoes_br", "rf_regressiva",
+    "come_cotas", "dividendos_exterior", "tributado_anual",
+]
+
+# Exit tax on accumulated GAIN at redemption, by profile.
+EXIT_GAIN_RATE: Final[dict[str, float]] = {
+    "fii": 0.20,
+    "acoes_br": 0.15,
+    "dividendos_exterior": 0.15,
+}
+
+WHT_DIVIDENDOS_EXTERIOR: Final[float] = 0.30
+COME_COTAS_RATE: Final[float] = 0.15
+
+
+def regressive_rate(holding_years: int) -> float:
+    """Annual-resolution regressive IR bracket.
+
+    Begin-of-year tranches redeemed at year-end hold >= 1 year, so only the
+    17,5% (1 year) and 15% (>= 2 years) brackets are reachable.
+    """
+    return 0.15 if holding_years >= 2 else 0.175
+
+
 # ---------- Portfolio defaults ----------
 
 @dataclass(slots=True)
@@ -52,6 +79,7 @@ class AssetClass:
     tax_rate: float = 0.0
     note: str = ""
     volatility: float = 0.15   # σ anual do retorno total (yield + capital gain)
+    tax_profile: str = "tributado_anual"   # TaxProfile; tax_rate only used by this fallback
 
     @property
     def gross_return(self) -> float:
@@ -68,19 +96,19 @@ class PortfolioParams:
     assets: list[AssetClass] = field(default_factory=lambda: [
         AssetClass("FIIs de Papel",         0.25, 0.130, 0.00, 0.00,
                    "HGCR11, KNCR11, RBRR11 — isento PF",
-                   volatility=0.14),
+                   volatility=0.14, tax_profile="fii"),
         AssetClass("FIIs de Tijolo",        0.25, 0.090, 0.02, 0.00,
                    "HGLG11, XPML11, KNRI11 — isento PF",
-                   volatility=0.16),
+                   volatility=0.16, tax_profile="fii"),
         AssetClass("Ações BR Dividendos",   0.20, 0.090, 0.03, 0.00,
                    "ITSA4, BBAS3, TAEE11, EGIE3",
-                   volatility=0.27),
+                   volatility=0.27, tax_profile="acoes_br"),
         AssetClass("Dividend Aristocrats US", 0.15, 0.040, 0.06, 0.30,
                    "JNJ, ABBV, O, MSFT (via Avenue)",
-                   volatility=0.18),
+                   volatility=0.18, tax_profile="dividendos_exterior"),
         AssetClass("Tesouro IPCA+ / LCI",   0.15, 0.115, 0.00, 0.10,
                    "NTN-B 2035, LCI 100% CDI",
-                   volatility=0.05),
+                   volatility=0.05, tax_profile="rf_regressiva"),
     ])
     monthly_contribution: float = 0.0           # R$/month, in today's value
     contribution_inflation_indexed: bool = True

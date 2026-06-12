@@ -34,6 +34,10 @@ class PortfolioAssetInput(_CamelModel):
     tax_rate: float = Field(default=0.0, ge=0, le=1.0)
     note: str = ""
     volatility: float = Field(default=0.15, ge=0, le=1.0)
+    tax_profile: Literal[
+        "isento", "fii", "acoes_br", "rf_regressiva",
+        "come_cotas", "dividendos_exterior", "tributado_anual",
+    ] = "tributado_anual"
 
 
 class PortfolioInput(_CamelModel):

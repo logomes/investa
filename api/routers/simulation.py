@@ -38,7 +38,7 @@ def _to_portfolio_params(input_pf) -> PortfolioParams:
             AssetClass(
                 name=a.name, weight=a.weight, expected_yield=a.expected_yield,
                 capital_gain=a.capital_gain, tax_rate=a.tax_rate, note=a.note,
-                volatility=a.volatility,
+                volatility=a.volatility, tax_profile=a.tax_profile,
             )
             for a in input_pf.assets
         ],
