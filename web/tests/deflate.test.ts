@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { deflationFactor, deflateAt, deflateSeries } from "@/lib/deflate";
+import { deflationFactor, deflateAt, deflateSeries, inflateToNominal } from "@/lib/deflate";
 
 describe("deflate", () => {
   it("factor is (1+ipca)^-years", () => {
@@ -21,5 +21,14 @@ describe("deflate", () => {
 
   it("deflateAt matches the series convention", () => {
     expect(deflateAt(1_000, 0.10, 2)).toBeCloseTo(826.4462, 3);
+  });
+
+  it("inflateToNominal(1000, 0.10, 2) ≈ 1210", () => {
+    expect(inflateToNominal(1_000, 0.10, 2)).toBeCloseTo(1_210, 3);
+  });
+
+  it("deflateAt(inflateToNominal(x, i, y), i, y) ≈ x (round-trip)", () => {
+    const x = 500;
+    expect(deflateAt(inflateToNominal(x, 0.10, 5), 0.10, 5)).toBeCloseTo(x, 10);
   });
 });

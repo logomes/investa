@@ -9,7 +9,6 @@ import { ErrorCard } from "@/components/error/ErrorCard";
 import { formatRs, formatPercent } from "@/lib/format";
 import { totalReturn } from "@/lib/carteira-derive";
 import { recommend, goalProbability } from "@/lib/goal-recommend";
-import { deflationFactor } from "@/lib/deflate";
 import { useDeflation } from "@/lib/use-deflation";
 
 const SOLVE_CONFIDENCE = 0.8;
@@ -26,12 +25,8 @@ export function GoalCard() {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<string>("");
 
-  const { isReal, ipca, at } = useDeflation();
-  // Goal is in active-mode money. Convert to nominal space for all engine inputs.
-  // In real mode: nominalGoal = goal / deflationFactor(ipca, horizon)
-  //             = goal * (1 + ipca)^horizon
-  // In nominal mode: nominalGoal = goal (identity)
-  const nominalGoal = isReal ? goal / deflationFactor(ipca, scenario.horizon) : goal;
+  const { isReal, at, toNominal } = useDeflation();
+  const nominalGoal = toNominal(goal, scenario.horizon);
 
   const { reset: resetGoalSolve } = goalSolve;
   useEffect(() => {

@@ -4,7 +4,6 @@ import { TrendingUp, Wallet, Target, AlertTriangle } from "lucide-react";
 import { useSimulate, useMonteCarlo } from "@/lib/api";
 import { useScenarioStore } from "@/lib/store";
 import { useDeflation } from "@/lib/use-deflation";
-import { deflationFactor } from "@/lib/deflate";
 import { KpiCard } from "@/components/kpi/KpiCard";
 import { KpiSkeleton } from "@/components/kpi/KpiSkeleton";
 import { ErrorCard } from "@/components/error/ErrorCard";
@@ -15,7 +14,7 @@ export function KpiRow() {
   const mc = useMonteCarlo();
   const goal = useScenarioStore((s) => s.goalTarget);
   const horizon = useScenarioStore((s) => s.scenario.horizon);
-  const { isReal, ipca, at } = useDeflation();
+  const { isReal, at, toNominal } = useDeflation();
 
   if (sim.isLoading || mc.isLoading) {
     return (
@@ -42,9 +41,7 @@ export function KpiRow() {
   const monthlyDelta = monthlyIncomeFinal - monthlyIncomeInitial;
 
   const pfMc = mc.data!.portfolio;
-  // Goal is in active-mode money; convert to nominal space before comparing
-  // against the engine's nominal finalDistribution.
-  const nominalGoal = isReal ? goal / deflationFactor(ipca, horizon) : goal;
+  const nominalGoal = toNominal(goal, horizon);
   const probGoal = pfMc.finalDistribution.filter((v) => v >= nominalGoal).length / pfMc.finalDistribution.length;
   const drawdownAvg = pfMc.maxDrawdowns.reduce((a, b) => a + b, 0) / pfMc.maxDrawdowns.length;
 

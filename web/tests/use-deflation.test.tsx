@@ -26,4 +26,17 @@ describe("useDeflation", () => {
     expect(result.current.at(1_210, 2)).toBe(1_210);
     expect(result.current.series([100, 110])).toEqual([100, 110]);
   });
+
+  it("toNominal inflates in real mode: 1000 over 2 years ≈ 1210", () => {
+    const { result } = renderHook(() => useDeflation());
+    expect(result.current.isReal).toBe(true);
+    expect(result.current.toNominal(1_000, 2)).toBeCloseTo(1_210, 3);
+  });
+
+  it("toNominal is the identity in nominal mode", () => {
+    act(() => useScenarioStore.setState({ displayMode: "nominal" }));
+    const { result } = renderHook(() => useDeflation());
+    expect(result.current.isReal).toBe(false);
+    expect(result.current.toNominal(1_000, 2)).toBe(1_000);
+  });
 });

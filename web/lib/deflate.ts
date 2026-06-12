@@ -16,3 +16,8 @@ export function deflateAt(value: number, ipca: number, years: number): number {
 export function deflateSeries(values: readonly number[], ipca: number): number[] {
   return values.map((v, year) => deflateAt(v, ipca, year));
 }
+
+/** Inverse of deflateAt: today's-money value → its nominal equivalent at year N. */
+export function inflateToNominal(value: number, ipca: number, years: number): number {
+  return value / deflationFactor(ipca, years);
+}
