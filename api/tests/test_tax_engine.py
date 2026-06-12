@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 from core.config import AssetClass, PortfolioParams, regressive_rate
-from core.models import simulate_portfolio
+from core.models import simulate_portfolio, _simulate_taxed_classes
 
 
 def _single(profile: str, *, y=0.0, g=0.0, tax_rate=0.0, monthly=0.0) -> PortfolioParams:
@@ -91,3 +91,28 @@ def test_reinvest_false_keeps_accrual_but_not_distributions():
     # value grows only by the gain component; income flows out
     np.testing.assert_allclose(r.patrimony, 100_000 * 1.02 ** np.arange(6), rtol=1e-9)
     assert r.annual_income[1] == pytest.approx(100_000 * 0.08)
+
+
+def test_multi_class_buy_and_hold_drifts_weights():
+    pf = PortfolioParams(
+        capital=100_000, monthly_contribution=0.0,
+        contribution_inflation_indexed=False,
+        assets=[
+            AssetClass("HI", 0.5, 0.0, 0.15, volatility=0.0, tax_profile="isento"),
+            AssetClass("LO", 0.5, 0.0, 0.03, volatility=0.0, tax_profile="isento"),
+        ],
+    )
+    r = simulate_portfolio(pf, 10)
+    hi = 50_000 * 1.15 ** 10
+    lo = 50_000 * 1.03 ** 10
+    assert r.patrimony[10] == pytest.approx(hi + lo)   # per-class, no rebalance
+    assert hi / (hi + lo) > 0.7                        # weights drifted
+
+
+def test_come_cotas_no_drag_on_negative_year():
+    pf = _single("come_cotas")
+    returns = np.array([[[0.10], [-0.20], [0.10]]])    # (1, 3, 1)
+    out = _simulate_taxed_classes(pf, 3, returns, ipca=0.0, reinvest_income=True)
+    paid = out.tax_paid_cumulative[0]
+    assert paid[2] == paid[1]                          # flat across the loss year
+    assert paid[3] > paid[2]

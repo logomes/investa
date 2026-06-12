@@ -178,6 +178,16 @@ def _compute_max_drawdowns(trajectories: np.ndarray) -> np.ndarray:
     return drawdowns.max(axis=1)
 
 
+@dataclass(slots=True, frozen=True)
+class ClassTaxSummary:
+    name: str
+    profile: str
+    tax_paid: float
+    exit_tax: float
+    net: float
+    gross: float
+
+
 @dataclass(slots=True)
 class TaxedSimOutput:
     """Arrays shaped (N, horizon+1); N=1 for the deterministic path."""
@@ -186,7 +196,16 @@ class TaxedSimOutput:
     tax_paid_cumulative: np.ndarray
     exit_tax: np.ndarray
     income: np.ndarray                    # distributed yield (net of WHT/anual tax)
-    per_class_final: list[dict]           # [{name, profile, tax_paid, exit_tax, net, gross}] — mean over N
+    per_class_final: list[ClassTaxSummary]  # mean over N
+
+
+def _dist_tax_rate(a: AssetClass) -> float:
+    """Annual tax rate applied to a class's DISTRIBUTED yield."""
+    if a.tax_profile == "dividendos_exterior":
+        return WHT_DIVIDENDOS_EXTERIOR
+    if a.tax_profile == "tributado_anual":
+        return a.tax_rate
+    return 0.0
 
 
 def _simulate_taxed_classes(
@@ -232,9 +251,7 @@ def _simulate_taxed_classes(
     gross_out[:, 0] = value.sum(axis=0)
     net_out[:, 0] = gross_out[:, 0]
     income_out[:, 0] = sum(
-        params.capital * a.weight * a.expected_yield *
-        (1 - (WHT_DIVIDENDOS_EXTERIOR if a.tax_profile == "dividendos_exterior"
-              else a.tax_rate if a.tax_profile == "tributado_anual" else 0.0))
+        params.capital * a.weight * a.expected_yield * (1 - _dist_tax_rate(a))
         for a in assets
     )
 
@@ -278,12 +295,9 @@ def _simulate_taxed_classes(
             y_rate = a.expected_yield
             g = r - y_rate
             dist_gross = value[k] * y_rate
-            if profile == "dividendos_exterior":
-                charged = WHT_DIVIDENDOS_EXTERIOR * dist_gross
-                dist = dist_gross - charged
-                tax_paid[k] += charged
-            elif profile == "tributado_anual":
-                charged = a.tax_rate * dist_gross
+            rate = _dist_tax_rate(a)
+            if rate > 0.0:
+                charged = rate * dist_gross
                 dist = dist_gross - charged
                 tax_paid[k] += charged
             else:                                   # isento, fii, acoes_br
@@ -306,14 +320,14 @@ def _simulate_taxed_classes(
     for k, a in enumerate(assets):
         cls_exit = float(np.mean(_class_exit(k, a, T)))
         cls_gross = float(np.mean(value[k]))
-        per_class_final.append({
-            "name": a.name,
-            "profile": a.tax_profile,
-            "tax_paid": float(np.mean(tax_paid[k])),
-            "exit_tax": cls_exit,
-            "gross": cls_gross,
-            "net": cls_gross - cls_exit,
-        })
+        per_class_final.append(ClassTaxSummary(
+            name=a.name,
+            profile=a.tax_profile,
+            tax_paid=float(np.mean(tax_paid[k])),
+            exit_tax=cls_exit,
+            gross=cls_gross,
+            net=cls_gross - cls_exit,
+        ))
 
     return TaxedSimOutput(
         net=net_out, gross=gross_out, tax_paid_cumulative=tax_paid_out,
