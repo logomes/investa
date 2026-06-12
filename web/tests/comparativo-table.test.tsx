@@ -64,4 +64,16 @@ describe("ComparativoTable real mode", () => {
     render(wrap(<ComparativoTable />));
     expect(screen.getByText("R$ de hoje")).toBeInTheDocument();
   });
+
+  it("yield cell is mode-invariant: shows same value as nominal mode", () => {
+    render(wrap(<ComparativoTable />));
+    // yieldFinal = annualIncome[finalIdx] / patrimony[finalIdx] (always nominal ratio)
+    // annualIncome[10] = 10 * 5_000 = 50_000; patrimony[10] = 588_000
+    const finalIdx = fakeSim.portfolio.years.length - 1;
+    const yieldFinal = fakeSim.portfolio.annualIncome[finalIdx] / fakeSim.portfolio.patrimony[finalIdx];
+    // formatPercent(yieldFinal, 1): pct = yieldFinal*100, toFixed(1).replace('.', ',') + '%'
+    const pct = yieldFinal * 100;
+    const expected = `${Math.abs(pct).toFixed(1).replace(".", ",")}%`;
+    expect(screen.getByText(expected)).toBeInTheDocument();
+  });
 });

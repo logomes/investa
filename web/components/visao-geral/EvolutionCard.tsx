@@ -101,7 +101,7 @@ export function EvolutionCard() {
             {s.name}
           </span>
         ))}
-        {isReal && (
+        {isReal && !isMonthly && (
           <span className="flex items-center gap-1.5 text-[11.5px] text-ink-2">
             <span className="w-2 h-2 rounded-full" style={{ background: "rgba(255, 200, 87, 0.6)" }} />
             Inflação (perda de poder de compra)
