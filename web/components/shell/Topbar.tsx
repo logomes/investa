@@ -78,13 +78,14 @@ export function Topbar({ onMenuClick }: Props) {
         </p>
       </div>
 
-      <div className="hidden md:flex items-center gap-1 bg-bg-2 border border-line rounded-pill p-0.5">
+      <div aria-label="Modo de exibição" className="hidden lg:flex shrink-0 items-center gap-1 bg-bg-2 border border-line rounded-pill p-0.5">
         {([["real", "R$ de hoje"], ["nominal", "Nominal"]] as const).map(([mode, label]) => (
           <button
             key={mode}
             type="button"
+            aria-pressed={displayMode === mode}
             onClick={() => setDisplayMode(mode)}
-            className={`px-2.5 py-1 rounded-pill text-[11px] font-medium transition-colors ${
+            className={`px-2.5 py-1 rounded-pill text-[11px] font-medium whitespace-nowrap transition-colors ${
               displayMode === mode ? "bg-bg-3 text-ink" : "text-ink-3 hover:text-ink"
             }`}
           >

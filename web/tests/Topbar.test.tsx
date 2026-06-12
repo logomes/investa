@@ -33,8 +33,6 @@ vi.mock("@/lib/store", () => {
       },
     });
 
-  selector.getState = () => ({ displayMode: mocks.displayMode });
-
   return { useScenarioStore: selector };
 });
 

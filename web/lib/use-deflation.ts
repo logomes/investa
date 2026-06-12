@@ -3,7 +3,10 @@
 import { useScenarioStore } from "./store";
 import { deflateAt, deflateSeries } from "./deflate";
 
-/** Display-mode-aware deflation: identity in nominal mode. */
+/**
+ * Display-mode-aware deflation: identity in nominal mode.
+ * Returned function identities are not render-stable; call during render, don't list them in hook deps.
+ */
 export function useDeflation() {
   const displayMode = useScenarioStore((s) => s.displayMode);
   const ipca = useScenarioStore((s) => s.scenario.expectedInflation);
