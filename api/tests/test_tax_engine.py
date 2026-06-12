@@ -147,4 +147,4 @@ def test_mc_draw_floor_prevents_sign_flip():
     pf = _single("rf_regressiva", g=0.0)
     pf.assets[0].volatility = 3.0   # absurd vol to force draws below -1
     mc = simulate_portfolio_mc(pf, 3, MonteCarloParams(n_trajectories=500, seed=3))
-    assert (mc.trajectories >= 0).all()   # values never go negative via sign-flip
+    assert (mc.trajectories > 0).all()   # strictly positive: -0.99 floor caps at near-total loss; -1.0 would zero forever

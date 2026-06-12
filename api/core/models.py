@@ -22,6 +22,10 @@ from .config import (
     regressive_rate,
 )
 
+# Floor for Monte Carlo draws to prevent sign-flip in growth factors
+# A drawn total return <= -100% would sign-flip rf-tranche growth-factor ratios
+MC_RETURN_FLOOR = -0.99
+
 
 @dataclass(slots=True)
 class SimulationResult:
@@ -223,6 +227,8 @@ def _simulate_taxed_classes(
     reinvested into the same class (raising its cost basis) when
     reinvest_income is True. Come-cotas drags 15% of positive returns with no
     loss carryforward; exit tax assumes full redemption at each year-end.
+
+    Precondition: all returns must be > -1 (callers clamp; see MC_RETURN_FLOOR).
     """
     N, T, K = returns.shape
     assets = params.assets
@@ -379,9 +385,9 @@ def simulate_portfolio_mc(
     semantics to the deterministic path when sigma=0. Contributions follow the
     same PMT-begin convention as simulate_portfolio.
 
-    Draws are clamped at −0.99 after sampling: a drawn total return ≤ −100%
-    would sign-flip rf-tranche growth-factor ratios, producing nonsensical
-    negative balances; −99% caps the loss at near-total.
+    Draws are clamped at MC_RETURN_FLOOR after sampling to prevent sign-flip
+    of rf-tranche growth-factor ratios, which would produce nonsensical negative
+    balances; near-total loss is the floor.
     """
     if horizon_years <= 0:
         raise ValueError("horizon_years must be positive")
@@ -393,9 +399,7 @@ def simulate_portfolio_mc(
     means = np.array([a.gross_return for a in params.assets])
     sigmas = np.array([a.volatility for a in params.assets])
     draws = _draw_normal_returns(rng, mean=means, sigma=sigmas, shape=(N, T, K))
-    # Floor: a drawn total return <= -100% would sign-flip growth factors
-    # (rf tranche ratios); -99% caps the loss at near-total.
-    draws = np.maximum(draws, -0.99)
+    draws = np.maximum(draws, MC_RETURN_FLOOR)
 
     out = _simulate_taxed_classes(params, T, draws, ipca, reinvest_income=True)
     trajectories = out.net
