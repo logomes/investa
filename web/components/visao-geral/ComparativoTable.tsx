@@ -2,13 +2,16 @@
 
 import { useSimulate } from "@/lib/api";
 import { useScenarioStore } from "@/lib/store";
+import { useDeflation } from "@/lib/use-deflation";
 import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
+import { DisplayModeBadge } from "@/components/shell/DisplayModeBadge";
 import { ErrorCard } from "@/components/error/ErrorCard";
 import { formatRsK, formatRs, formatPercent } from "@/lib/format";
 
 export function ComparativoTable() {
   const sim = useSimulate();
   const horizon = useScenarioStore((s) => s.scenario.horizon);
+  const { at } = useDeflation();
 
   if (sim.isLoading) return <ChartSkeleton height={220} />;
   if (sim.error) return <ErrorCard onRetry={() => sim.refetch()} />;
@@ -19,7 +22,10 @@ export function ComparativoTable() {
   return (
     <div className="bg-bg-2 border border-line rounded-card p-5">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[13.5px] font-semibold text-ink">Comparativo final · ano {horizon}</h3>
+        <h3 className="text-[13.5px] font-semibold text-ink flex items-center gap-2">
+          Comparativo final · ano {horizon}
+          <DisplayModeBadge />
+        </h3>
         <span className="text-[11px] text-ink-3">cenário base</span>
       </div>
       <div className="overflow-x-auto -mx-2 sm:mx-0">
@@ -34,9 +40,9 @@ export function ComparativoTable() {
         </thead>
         <tbody className="text-ink">
           {[d.portfolio, d.benchmark].map((s) => {
-            const final = s.patrimony[finalIdx];
-            const yieldFinal = (s.annualIncome[finalIdx] / final) || 0;
-            const monthly = s.annualIncome[finalIdx] / 12;
+            const final = at(s.patrimony[finalIdx], finalIdx);
+            const yieldFinal = (s.annualIncome[finalIdx] / s.patrimony[finalIdx]) || 0;
+            const monthly = at(s.annualIncome[finalIdx], finalIdx) / 12;
             return (
               <tr key={s.label} className="border-t border-line-soft">
                 <td className="py-2.5">

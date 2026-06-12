@@ -3,6 +3,7 @@
 import { TrendingUp, Wallet, Target, AlertTriangle } from "lucide-react";
 import { useSimulate, useMonteCarlo } from "@/lib/api";
 import { useScenarioStore } from "@/lib/store";
+import { useDeflation } from "@/lib/use-deflation";
 import { KpiCard } from "@/components/kpi/KpiCard";
 import { KpiSkeleton } from "@/components/kpi/KpiSkeleton";
 import { ErrorCard } from "@/components/error/ErrorCard";
@@ -13,6 +14,7 @@ export function KpiRow() {
   const mc = useMonteCarlo();
   const goal = useScenarioStore((s) => s.goalTarget);
   const horizon = useScenarioStore((s) => s.scenario.horizon);
+  const { isReal, at } = useDeflation();
 
   if (sim.isLoading || mc.isLoading) {
     return (
@@ -29,10 +31,12 @@ export function KpiRow() {
   }
 
   const pf = sim.data!.portfolio;
-  const pfFinal = pf.patrimony[pf.patrimony.length - 1];
+  const lastIdx = pf.patrimony.length - 1;
+  const pfFinalNominal = pf.patrimony[lastIdx];
+  const pfFinal = at(pfFinalNominal, lastIdx);
   const pfInitial = pf.patrimony[0];
   const cagr = Math.pow(pfFinal / pfInitial, 1 / horizon) - 1;
-  const monthlyIncomeFinal = pf.annualIncome[pf.annualIncome.length - 1] / 12;
+  const monthlyIncomeFinal = at(pf.annualIncome[lastIdx], lastIdx) / 12;
   const monthlyIncomeInitial = pf.annualIncome[1] / 12;
   const monthlyDelta = monthlyIncomeFinal - monthlyIncomeInitial;
 
@@ -46,7 +50,9 @@ export function KpiRow() {
         label={`Patrimônio projetado · ${horizon}a`}
         value={formatRsK(pfFinal)}
         delta={{ value: formatSignedDelta(cagr, "percent"), dir: cagr >= 0 ? "up" : "down" }}
-        sub="Cenário Carteira (mediana)"
+        sub={isReal
+          ? `nominal ${formatRsK(pfFinalNominal)} · inflação consome ${formatRsK(pfFinalNominal - pfFinal)}`
+          : "Cenário Carteira (mediana)"}
         icon={TrendingUp}
         feature
       />
