@@ -119,13 +119,13 @@ describe("store v6: expectedInflation + displayMode", () => {
     expect(useScenarioStore.getState().scenario.expectedInflation).toBe(0.045);
   });
 
-  it("keeps an existing expectedInflation untouched", async () => {
+  it("keeps an existing expectedInflation untouched when the v6 branch runs", async () => {
     const payload = {
       state: {
         ...V3_PAYLOAD.state,
         scenario: { ...V3_PAYLOAD.state.scenario, expectedInflation: 0.07 },
       },
-      version: 6,
+      version: 5,
     };
     localStorage.setItem("investa-scenario-v3", JSON.stringify(payload));
     await useScenarioStore.persist.rehydrate();
