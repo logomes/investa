@@ -60,7 +60,7 @@ export function KpiRow() {
         label="Renda mensal estimada"
         value={formatRs(monthlyIncomeFinal)}
         delta={{ value: formatSignedDelta(monthlyDelta, "currency") + " vs hoje", dir: monthlyDelta >= 0 ? "up" : "down" }}
-        sub={`Ano ${horizon}`}
+        sub={isReal ? `Ano ${horizon} · R$ de hoje` : `Ano ${horizon}`}
         icon={Wallet}
       />
       <KpiCard

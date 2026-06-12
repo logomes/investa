@@ -75,4 +75,20 @@ describe("KpiRow real mode", () => {
     // sub should mention nominal value and how much inflation consumes
     expect(screen.getByText(/nominal.*inflação consome/i)).toBeInTheDocument();
   });
+
+  it("'Renda mensal estimada' sub shows 'R$ de hoje' in real mode", () => {
+    render(wrap(<KpiRow />));
+    expect(screen.getByText(/R\$ de hoje/)).toBeInTheDocument();
+  });
+});
+
+describe("KpiRow nominal mode – no R$ de hoje marker", () => {
+  beforeEach(() => {
+    useScenarioStore.setState({ displayMode: "nominal" });
+  });
+
+  it("does not show 'R$ de hoje' in nominal mode", () => {
+    render(wrap(<KpiRow />));
+    expect(screen.queryByText(/R\$ de hoje/)).toBeNull();
+  });
 });
