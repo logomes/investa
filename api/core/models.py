@@ -10,22 +10,30 @@ import numpy as np
 import pandas as pd
 
 from .config import (
+    COME_COTAS_RATE,
+    EXIT_GAIN_RATE,
+    WHT_DIVIDENDOS_EXTERIOR,
+    AssetClass,
     BenchmarkParams,
     FixedIncomePosition,
     MacroParams,
     MonteCarloParams,
     PortfolioParams,
+    regressive_rate,
 )
 
 
 @dataclass(slots=True)
 class SimulationResult:
     years: np.ndarray
-    patrimony: np.ndarray            # Patrimony at end of each year
+    patrimony: np.ndarray            # Patrimony at end of each year (net of redemption)
     annual_income: np.ndarray        # Income generated in that year
     cumulative_income: np.ndarray    # Total income accumulated
     label: str
     color: str
+    gross_patrimony: np.ndarray      # market value (latent exit tax inside)
+    tax_paid_cumulative: np.ndarray  # path taxes paid (WHT + come-cotas + anual)
+    exit_tax: np.ndarray             # tax due if fully redeemed at end of year y
 
 
 @dataclass(slots=True, frozen=True)
@@ -170,61 +178,176 @@ def _compute_max_drawdowns(trajectories: np.ndarray) -> np.ndarray:
     return drawdowns.max(axis=1)
 
 
+@dataclass(slots=True)
+class TaxedSimOutput:
+    """Arrays shaped (N, horizon+1); N=1 for the deterministic path."""
+    net: np.ndarray
+    gross: np.ndarray
+    tax_paid_cumulative: np.ndarray
+    exit_tax: np.ndarray
+    income: np.ndarray                    # distributed yield (net of WHT/anual tax)
+    per_class_final: list[dict]           # [{name, profile, tax_paid, exit_tax, net, gross}] — mean over N
+
+
+def _simulate_taxed_classes(
+    params: PortfolioParams,
+    horizon_years: int,
+    returns: np.ndarray,        # gross TOTAL return draws, shape (N, T, K)
+    ipca: float,
+    reinvest_income: bool,
+) -> TaxedSimOutput:
+    """Per-class, tax-aware accumulation (buy-and-hold; no rebalancing).
+
+    Conventions: contributions enter begin-of-year split by weight (PMT-begin);
+    each class's drawn return splits into a deterministic yield share
+    (expected_yield) and the remainder as accrued gain; distributed yields are
+    reinvested into the same class (raising its cost basis) when
+    reinvest_income is True. Come-cotas drags 15% of positive returns with no
+    loss carryforward; exit tax assumes full redemption at each year-end.
+    """
+    N, T, K = returns.shape
+    assets = params.assets
+    annual_base = 12.0 * params.monthly_contribution
+    indexed = params.contribution_inflation_indexed
+
+    value = np.zeros((K, N))
+    basis = np.zeros((K, N))
+    growth = np.ones((K, N, T + 1))            # cumulative gross factors (rf tranches)
+    tranches: list[list[tuple[int, float]]] = [[] for _ in range(K)]
+    tax_paid = np.zeros((K, N))
+
+    for k, a in enumerate(assets):
+        p0 = params.capital * a.weight
+        value[k] += p0
+        basis[k] += p0
+        if a.tax_profile == "rf_regressiva":
+            tranches[k].append((0, p0))
+
+    gross_out = np.zeros((N, T + 1))
+    net_out = np.zeros((N, T + 1))
+    tax_paid_out = np.zeros((N, T + 1))
+    exit_out = np.zeros((N, T + 1))
+    income_out = np.zeros((N, T + 1))
+
+    gross_out[:, 0] = value.sum(axis=0)
+    net_out[:, 0] = gross_out[:, 0]
+    income_out[:, 0] = sum(
+        params.capital * a.weight * a.expected_yield *
+        (1 - (WHT_DIVIDENDOS_EXTERIOR if a.tax_profile == "dividendos_exterior"
+              else a.tax_rate if a.tax_profile == "tributado_anual" else 0.0))
+        for a in assets
+    )
+
+    def _class_exit(k: int, a: AssetClass, year: int) -> np.ndarray:
+        if a.tax_profile in EXIT_GAIN_RATE:
+            return EXIT_GAIN_RATE[a.tax_profile] * np.maximum(value[k] - basis[k], 0.0)
+        if a.tax_profile == "rf_regressiva":
+            total = np.zeros(N)
+            for entry, p in tranches[k]:
+                v_tr = p * growth[k, :, year] / growth[k, :, entry]
+                total += regressive_rate(year - entry) * np.maximum(v_tr - p, 0.0)
+            return total
+        return np.zeros(N)
+
+    for t in range(T):
+        aporte_t = annual_base * ((1 + ipca) ** t if indexed else 1.0) if annual_base > 0 else 0.0
+        for k, a in enumerate(assets):
+            ap = aporte_t * a.weight
+            if ap > 0:
+                value[k] += ap
+                basis[k] += ap
+                if a.tax_profile == "rf_regressiva":
+                    tranches[k].append((t, ap))
+
+            r = returns[:, t, k]
+            profile = a.tax_profile
+
+            if profile == "rf_regressiva":
+                value[k] *= (1 + r)
+                growth[k, :, t + 1] = growth[k, :, t] * (1 + r)
+                continue
+            growth[k, :, t + 1] = growth[k, :, t]   # keep factors aligned for non-rf too
+
+            if profile == "come_cotas":
+                ret = value[k] * r
+                drag = COME_COTAS_RATE * np.maximum(ret, 0.0)
+                value[k] = value[k] + ret - drag
+                tax_paid[k] += drag
+                continue
+
+            y_rate = a.expected_yield
+            g = r - y_rate
+            dist_gross = value[k] * y_rate
+            if profile == "dividendos_exterior":
+                charged = WHT_DIVIDENDOS_EXTERIOR * dist_gross
+                dist = dist_gross - charged
+                tax_paid[k] += charged
+            elif profile == "tributado_anual":
+                charged = a.tax_rate * dist_gross
+                dist = dist_gross - charged
+                tax_paid[k] += charged
+            else:                                   # isento, fii, acoes_br
+                dist = dist_gross
+            value[k] *= (1 + g)
+            income_out[:, t + 1] += dist
+            if reinvest_income:
+                value[k] += dist
+                basis[k] += dist
+
+        gross_out[:, t + 1] = value.sum(axis=0)
+        tax_paid_out[:, t + 1] = tax_paid.sum(axis=0)
+        exit_y = np.zeros(N)
+        for k, a in enumerate(assets):
+            exit_y += _class_exit(k, a, t + 1)
+        exit_out[:, t + 1] = exit_y
+        net_out[:, t + 1] = gross_out[:, t + 1] - exit_y
+
+    per_class_final = []
+    for k, a in enumerate(assets):
+        cls_exit = float(np.mean(_class_exit(k, a, T)))
+        cls_gross = float(np.mean(value[k]))
+        per_class_final.append({
+            "name": a.name,
+            "profile": a.tax_profile,
+            "tax_paid": float(np.mean(tax_paid[k])),
+            "exit_tax": cls_exit,
+            "gross": cls_gross,
+            "net": cls_gross - cls_exit,
+        })
+
+    return TaxedSimOutput(
+        net=net_out, gross=gross_out, tax_paid_cumulative=tax_paid_out,
+        exit_tax=exit_out, income=income_out, per_class_final=per_class_final,
+    )
+
+
 def simulate_portfolio(
     params: PortfolioParams,
     horizon_years: int,
     reinvest_income: bool = True,
     ipca: float = 0.0,
 ) -> SimulationResult:
-    """Simulate a diversified portfolio with full reinvestment and optional aporte.
-
-    `ipca` is only used when `params.contribution_inflation_indexed` is True.
-    Contributions enter at the beginning of each year (PMT begin) and compound
-    at the same rate as `reinvest_income` mode.
-    """
+    """Tax-aware portfolio simulation (deterministic = the σ=0, N=1 MC path)."""
     if horizon_years <= 0:
         raise ValueError("horizon_years must be positive")
 
+    gross_means = np.array([a.gross_return for a in params.assets])
+    returns = np.tile(gross_means, (1, horizon_years, 1))
+
+    out = _simulate_taxed_classes(params, horizon_years, returns, ipca, reinvest_income)
+
     years = np.arange(0, horizon_years + 1)
-    rate = params.total_return() if reinvest_income else params.blended_capital_gain()
-    yield_only = params.blended_yield()
-
-    # Vectorized base patrimony (no contributions)
-    patrimony = params.capital * (1 + rate) ** years
-
-    # Add contributions (begin-of-year), compounded at `rate` until end-of-year y
-    monthly = params.monthly_contribution
-    indexed = params.contribution_inflation_indexed
-    if monthly > 0:
-        annual_base = 12.0 * monthly
-        contribution_pv = np.zeros_like(patrimony, dtype=float)
-        for y in range(1, horizon_years + 1):
-            total = 0.0
-            for t in range(y):
-                aporte_t = annual_base * ((1 + ipca) ** t if indexed else 1.0)
-                total += aporte_t * (1 + rate) ** (y - t)
-            contribution_pv[y] = total
-        patrimony = patrimony + contribution_pv
-
-    # Annual income generated (yield on patrimony at start of year)
-    if reinvest_income:
-        annual_income = np.array([
-            patrimony[max(y - 1, 0)] * yield_only
-            for y in years
-        ])
-    else:
-        # Without reinvest, income is on principal + accumulated contributions
-        annual_income = patrimony * yield_only
-
-    cumulative_income = np.cumsum(annual_income)
-
+    annual_income = out.income[0]
     return SimulationResult(
         years=years,
-        patrimony=patrimony,
+        patrimony=out.net[0],
         annual_income=annual_income,
-        cumulative_income=cumulative_income,
+        cumulative_income=np.cumsum(annual_income),
         label="Carteira Diversificada",
         color="#27AE60",
+        gross_patrimony=out.gross[0],
+        tax_paid_cumulative=out.tax_paid_cumulative[0],
+        exit_tax=out.exit_tax[0],
     )
 
 
@@ -445,6 +568,9 @@ def simulate_benchmark(
         cumulative_income=cumulative_income,
         label=params.label,
         color="#F39C12",
+        gross_patrimony=patrimony.copy(),
+        tax_paid_cumulative=np.zeros_like(patrimony),
+        exit_tax=np.zeros_like(patrimony),
     )
 
 
