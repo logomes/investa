@@ -542,9 +542,9 @@ def simulate_benchmark(
 
     A CDI/Selic/IPCA+ holding accrues gross and pays regressive IR only at
     redemption — the tax-aware core's rf_regressiva profile, single class.
-    `annual_income` reports the year-over-year NET growth (nothing is
-    distributed by an accruing position); the year-0 entry anchors the display
-    at the first year's expected net yield.
+    `annual_income` reports year-over-year net growth EXCLUDING contributions;
+    year-0 anchors at the first year's net yield (17.5% bracket). Net-of-redemption
+    diffs include one-time bumps when tranches cross into the 15% bracket.
     """
     if horizon_years <= 0:
         raise ValueError("horizon_years must be positive")
@@ -553,7 +553,7 @@ def simulate_benchmark(
         capital=params.capital,
         monthly_contribution=params.monthly_contribution,
         contribution_inflation_indexed=params.contribution_inflation_indexed,
-        assets=[AssetClass("benchmark", 1.0, 0.0, params.annual_rate,
+        assets=[AssetClass("benchmark", 1.0, expected_yield=0.0, capital_gain=params.annual_rate,
                            volatility=0.0, tax_profile="rf_regressiva")],
     )
     returns = np.tile(np.array([params.annual_rate]), (1, horizon_years, 1))
@@ -561,7 +561,12 @@ def simulate_benchmark(
 
     years = np.arange(0, horizon_years + 1)
     annual_income = np.diff(out.net[0], prepend=out.net[0][0])
-    annual_income[0] = out.net[0][0] * params.annual_rate * (1 - 0.15)
+    annual_base = 12.0 * params.monthly_contribution
+    if annual_base > 0:
+        t = np.arange(horizon_years)
+        factors = (1 + ipca) ** t if params.contribution_inflation_indexed else np.ones_like(t, dtype=float)
+        annual_income[1:] -= annual_base * factors   # contributions are not income
+    annual_income[0] = out.net[0][0] * params.annual_rate * (1 - regressive_rate(1))
 
     return SimulationResult(
         years=years,

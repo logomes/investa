@@ -50,6 +50,24 @@ def test_rejects_non_positive_horizon():
         simulate_benchmark(BenchmarkParams(), horizon_years=0)
 
 
+def test_benchmark_annual_income_excludes_contributions():
+    params = BenchmarkParams(capital=100_000, annual_rate=0.10,
+                             monthly_contribution=2_000, contribution_inflation_indexed=False)
+    r = simulate_benchmark(params, horizon_years=3)
+    # year-1 income: net growth minus the 24k aporte — strictly less than the aporte itself
+    assert r.annual_income[1] < 24_000 * 0.5
+    # and roughly the net yield on capital (+ the aporte's first-year growth share)
+    assert r.annual_income[1] > 0
+
+
+def test_benchmark_year0_income_anchor_matches_year1_bracket():
+    params = BenchmarkParams(capital=100_000, annual_rate=0.10)
+    r = simulate_benchmark(params, horizon_years=5)
+    assert r.annual_income[0] == pytest.approx(100_000 * 0.10 * (1 - 0.175))
+    # no dip: year-1 income equals the anchor for a lump sum
+    assert r.annual_income[1] == pytest.approx(r.annual_income[0], rel=1e-9)
+
+
 def test_tax_comparison_rows_are_portfolio_and_benchmark():
     portfolio = PortfolioParams(
         capital=100_000,
