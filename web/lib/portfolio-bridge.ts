@@ -27,6 +27,8 @@ const RV_CLASS_TO_TYPE: Record<Exclude<AssetClass, "BDR">, PortfolioAssetTypeId>
 };
 
 // /ativos classes → tax profile (BDR included; it has no catalog entry).
+// The 7 non-BDR rows mirror PORTFOLIO_TYPE_BY_ID[RV_CLASS_TO_TYPE[cls]].defaults.taxProfile;
+// keep this in sync with the catalog if a class is ever reclassified.
 const RV_CLASS_TO_PROFILE: Record<AssetClass, TaxProfile> = {
   FII: "fii",
   ACAO_BR_DIVIDENDO: "acoes_br",

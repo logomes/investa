@@ -89,7 +89,9 @@ export const useScenarioStore = create<ScenarioStore>()(
           }
         }
         // v7: stamp taxProfile on each asset by matching its name against the
-        // catalog labels (unknown name → tributado_anual).
+        // catalog labels. A renamed asset won't match and falls back to
+        // tributado_anual — the most-taxed (fail-safe) profile, user-correctable
+        // via the dialog's "Perfil tributário" select.
         if ((version ?? 0) < 7 && state?.scenario?.portfolio?.assets) {
           for (const a of state.scenario.portfolio.assets) {
             if (a.taxProfile === undefined) {
