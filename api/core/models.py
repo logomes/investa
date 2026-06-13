@@ -421,8 +421,9 @@ def sensitivity_portfolio(
 ) -> pd.DataFrame:
     """Tornado-style sensitivity for the portfolio: vary one dimension at a time.
 
-    Deltas are applied uniformly to every asset (tax clamped to [0, 1]) so the
-    rows read as carteira-level scenarios, not per-asset ones.
+    Deltas are applied uniformly to every asset so the rows read as
+    carteira-level scenarios, not per-asset ones. The horizonte row
+    re-simulates at h±2 (clamped to [1, 30]) instead of varying a parameter.
     """
     def final_patrimony(params: PortfolioParams) -> float:
         result = simulate_portfolio(

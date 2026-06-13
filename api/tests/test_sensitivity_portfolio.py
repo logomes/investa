@@ -55,7 +55,7 @@ def test_horizonte_row_optimistic_geq_pessimistic():
 
 
 def test_horizonte_row_clamps_to_valid_range():
-    # horizon=2 → pessimistic clips to max(0, 2-2)=1 yr; no crash.
+    # horizon=2 → pessimistic clips to max(2-2, 1)=1 yr; no crash.
     df = sensitivity_portfolio(_params(), horizon_years=2)
     row = df[df["Parâmetro"] == "Horizonte (−2a / +2a)"].iloc[0]
     assert row["Cenário Pessimista"] > 0

@@ -143,6 +143,52 @@ def test_mc_trajectories_are_net_of_redemption():
     assert mc.percentiles["p50"][-1] == pytest.approx(det.patrimony[-1], rel=0.05)
 
 
+def test_tax_projection_rows_sum_to_portfolio_and_include_benchmark():
+    from core.config import BenchmarkParams
+    from core.models import tax_projection
+
+    pf = PortfolioParams(
+        capital=100_000, monthly_contribution=500.0,
+        contribution_inflation_indexed=False,
+        assets=[
+            AssetClass("FII", 0.5, expected_yield=0.10, capital_gain=0.01, volatility=0.0, tax_profile="fii"),
+            AssetClass("CDB", 0.5, expected_yield=0.0, capital_gain=0.12, volatility=0.0, tax_profile="rf_regressiva"),
+        ],
+    )
+    bench = BenchmarkParams(capital=100_000, annual_rate=0.10)
+    proj = tax_projection(pf, bench, horizon_years=6, ipca=0.0)
+
+    assert len(proj["rows"]) == 3                      # 2 classes + benchmark
+    pf_rows = proj["rows"][:2]
+    assert sum(r["net_final"] for r in pf_rows) == pytest.approx(
+        float(simulate_portfolio(pf, 6).patrimony[-1])
+    )
+    for r in proj["rows"]:
+        assert r["net_final"] == pytest.approx(r["gross_final"] - r["exit_tax"])
+
+
+def test_all_taxed_final_equals_net_when_already_all_rf():
+    from core.config import BenchmarkParams
+    from core.models import tax_projection
+
+    pf = _single("rf_regressiva", g=0.12, monthly=1_000)
+    bench = BenchmarkParams(capital=100_000, annual_rate=0.10)
+    proj = tax_projection(pf, bench, horizon_years=5, ipca=0.0)
+    assert proj["all_taxed_final"] == pytest.approx(
+        float(simulate_portfolio(pf, 5).patrimony[-1])
+    )
+
+
+def test_all_taxed_final_below_net_for_exempt_portfolio():
+    from core.config import BenchmarkParams
+    from core.models import tax_projection
+
+    pf = _single("isento", y=0.10)
+    bench = BenchmarkParams(capital=100_000, annual_rate=0.10)
+    proj = tax_projection(pf, bench, horizon_years=10, ipca=0.0)
+    assert proj["all_taxed_final"] < float(simulate_portfolio(pf, 10).patrimony[-1])
+
+
 def test_mc_draw_floor_prevents_sign_flip():
     pf = _single("rf_regressiva", g=0.0)
     pf.assets[0].volatility = 3.0   # absurd vol to force draws below -1
