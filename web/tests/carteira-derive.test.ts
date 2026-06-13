@@ -52,7 +52,7 @@ describe("carteira-derive — KPIs blended", () => {
     const pf: PortfolioInput = {
       ...PF,
       assets: [
-        { name: "A", weight: 1.0, expectedYield: 0.10, capitalGain: 0, taxRate: 1.0, note: "", volatility: 0.1 },
+        { name: "A", weight: 1.0, expectedYield: 0.10, capitalGain: 0, taxRate: 1.0, note: "", volatility: 0.1, taxProfile: "tributado_anual" },
       ],
     };
     expect(blendedYield(pf)).toBe(0);

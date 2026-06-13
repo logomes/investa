@@ -1,6 +1,6 @@
 import type { AssetPosition, AssetClass } from "./ativos-schema";
 import type { FixedIncomePosition } from "./fi-schema";
-import type { MacroOut, PortfolioInput, PortfolioAssetInput } from "./api-types";
+import type { MacroOut, PortfolioInput, PortfolioAssetInput, TaxProfile } from "./api-types";
 import { assetMarketValueBRL } from "./patrimony-snapshot";
 import { rfCurrentValue, effectiveAnnualRate } from "./fi-derive";
 import { PORTFOLIO_TYPE_BY_ID, type PortfolioAssetTypeId } from "./portfolio-asset-types";
@@ -26,9 +26,23 @@ const RV_CLASS_TO_TYPE: Record<Exclude<AssetClass, "BDR">, PortfolioAssetTypeId>
   ETF_US: "ETF_US",
 };
 
+// /ativos classes → tax profile (BDR included; it has no catalog entry).
+const RV_CLASS_TO_PROFILE: Record<AssetClass, TaxProfile> = {
+  FII: "fii",
+  ACAO_BR_DIVIDENDO: "acoes_br",
+  ACAO_BR_CRESCIMENTO: "acoes_br",
+  ETF_BR: "acoes_br",
+  STOCK_US: "dividendos_exterior",
+  REIT_US: "dividendos_exterior",
+  ETF_US: "dividendos_exterior",
+  BDR: "dividendos_exterior",
+};
+
 const BDR_ROW = { name: "BDRs", taxRate: 0.15, volatility: 0.20 };
 
 const TESOURO_REGEX = /tesouro|ntn|\btd\b/i;
+
+const RF_ISENTA_ROW = { name: "Renda Fixa Isenta (LCI/LCA)", taxRate: 0, volatility: 0.05 };
 
 type Acc = { value: number; yieldWeighted: number; gainWeighted: number; labels: string[] };
 
@@ -79,7 +93,8 @@ export function bridgePortfolio(args: {
     rvGroups.set(p.assetClass, acc);
   }
 
-  const rfGroups: Record<"RF_PUBLICO" | "RF_PRIVADO", Acc> = {
+  const rfGroups: Record<"RF_ISENTA" | "RF_PUBLICO" | "RF_PRIVADO", Acc> = {
+    RF_ISENTA: emptyAcc(),
     RF_PUBLICO: emptyAcc(),
     RF_PRIVADO: emptyAcc(),
   };
@@ -93,7 +108,11 @@ export function bridgePortfolio(args: {
     }
     rfBRL += value;
     rfCount += 1;
-    const bucket = p.isTaxExempt || TESOURO_REGEX.test(p.name) ? "RF_PUBLICO" : "RF_PRIVADO";
+    const bucket = p.isTaxExempt
+      ? "RF_ISENTA"
+      : TESOURO_REGEX.test(p.name)
+        ? "RF_PUBLICO"
+        : "RF_PRIVADO";
     const acc = rfGroups[bucket];
     acc.value += value;
     acc.yieldWeighted += value * effectiveAnnualRate(p, macro);
@@ -122,21 +141,30 @@ export function bridgePortfolio(args: {
       taxRate: meta.taxRate,
       note: note(acc.labels),
       volatility: meta.volatility,
+      taxProfile: RV_CLASS_TO_PROFILE[cls],
     });
   }
 
-  for (const bucket of ["RF_PUBLICO", "RF_PRIVADO"] as const) {
+  // RF_ISENTA → "isento" (its own ISENTO row); the regressivas keep their catalog labels.
+  for (const bucket of ["RF_ISENTA", "RF_PUBLICO", "RF_PRIVADO"] as const) {
     const acc = rfGroups[bucket];
     if (acc.value <= 0) continue;
-    const t = PORTFOLIO_TYPE_BY_ID[bucket];
+    const meta =
+      bucket === "RF_ISENTA"
+        ? { name: RF_ISENTA_ROW.name, taxRate: RF_ISENTA_ROW.taxRate, volatility: RF_ISENTA_ROW.volatility, taxProfile: "isento" as TaxProfile }
+        : (() => {
+            const t = PORTFOLIO_TYPE_BY_ID[bucket];
+            return { name: t.label, taxRate: t.defaults.taxRate, volatility: t.defaults.volatility, taxProfile: "rf_regressiva" as TaxProfile };
+          })();
     assets.push({
-      name: t.label,
+      name: meta.name,
       weight: acc.value / totalBRL,
       expectedYield: clampYield(acc.yieldWeighted / acc.value),
       capitalGain: 0,
-      taxRate: t.defaults.taxRate,
+      taxRate: meta.taxRate,
       note: note(acc.labels),
-      volatility: t.defaults.volatility,
+      volatility: meta.volatility,
+      taxProfile: meta.taxProfile,
     });
   }
 

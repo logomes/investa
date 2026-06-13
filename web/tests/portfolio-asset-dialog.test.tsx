@@ -42,6 +42,7 @@ describe("PortfolioAssetDialog", () => {
       taxRate: 0,
       note: "",
       volatility: 0.14,
+      taxProfile: "fii",
     };
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
     render(
@@ -76,5 +77,53 @@ describe("PortfolioAssetDialog", () => {
     expect((screen.getByLabelText(/ganho capital/i) as HTMLInputElement).value).toBe("6");
     expect((screen.getByLabelText(/imposto/i) as HTMLInputElement).value).toBe("30");
     expect((screen.getByLabelText(/volatilidade/i) as HTMLInputElement).value).toBe("18");
+  });
+
+  it("renders the tax profile select with the type's catalog default", () => {
+    render(
+      <PortfolioAssetDialog
+        open
+        mode="add"
+        onClose={onClose}
+        onSubmit={onSubmit}
+      />
+    );
+    // default type FII → profile "fii"
+    const profileSelect = screen.getByLabelText(/perfil tributário/i) as HTMLSelectElement;
+    expect(profileSelect.value).toBe("fii");
+  });
+
+  it("in add mode, picking a type updates the tax profile", () => {
+    render(
+      <PortfolioAssetDialog
+        open
+        mode="add"
+        onClose={onClose}
+        onSubmit={onSubmit}
+      />
+    );
+    const typeSelect = screen.getByLabelText(/tipo/i) as HTMLSelectElement;
+    fireEvent.change(typeSelect, { target: { value: "STOCK_US" } });
+    const profileSelect = screen.getByLabelText(/perfil tributário/i) as HTMLSelectElement;
+    expect(profileSelect.value).toBe("dividendos_exterior");
+  });
+
+  it("submitting includes the selected taxProfile passed through as-is", async () => {
+    render(
+      <PortfolioAssetDialog
+        open
+        mode="add"
+        onClose={onClose}
+        onSubmit={onSubmit}
+      />
+    );
+    fireEvent.input(screen.getByLabelText(/nome/i), { target: { value: "Custom A" } });
+    fireEvent.input(screen.getByLabelText(/peso/i), { target: { value: "10" } });
+    fireEvent.change(screen.getByLabelText(/perfil tributário/i), { target: { value: "isento" } });
+    const form = screen.getByRole("button", { name: /salvar/i }).closest("form")!;
+    fireEvent.submit(form);
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    const arg = onSubmit.mock.calls[0][0] as PortfolioAssetInput;
+    expect(arg.taxProfile).toBe("isento");
   });
 });

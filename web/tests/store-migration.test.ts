@@ -139,3 +139,60 @@ describe("store v6: expectedInflation + displayMode", () => {
     expect(raw.state.displayMode).toBe("nominal");
   });
 });
+
+describe("store v7: taxProfile stamping", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  function preV7Payload(assets: Array<{ name: string; taxProfile?: string }>) {
+    return {
+      state: {
+        scenario: {
+          ...V3_PAYLOAD.state.scenario,
+          expectedInflation: 0.045,
+          portfolio: {
+            ...V3_PAYLOAD.state.scenario.portfolio,
+            assets,
+          },
+        },
+        mc: V3_PAYLOAD.state.mc,
+        goalTarget: V3_PAYLOAD.state.goalTarget,
+      },
+      version: 6,
+    };
+  }
+
+  it("stamps the catalog profile on an asset named like a catalog label", async () => {
+    localStorage.setItem(
+      "investa-scenario-v3",
+      JSON.stringify(preV7Payload([{ name: "FII (Papel/Tijolo/Agro/FoF)" }])),
+    );
+    await useScenarioStore.persist.rehydrate();
+    const a = useScenarioStore.getState().scenario.portfolio.assets[0];
+    expect(a.taxProfile).toBe("fii");
+  });
+
+  it("stamps tributado_anual on an asset with no catalog match", async () => {
+    localStorage.setItem(
+      "investa-scenario-v3",
+      JSON.stringify(preV7Payload([{ name: "Carteira Custom XYZ" }])),
+    );
+    await useScenarioStore.persist.rehydrate();
+    const a = useScenarioStore.getState().scenario.portfolio.assets[0];
+    expect(a.taxProfile).toBe("tributado_anual");
+  });
+
+  it("leaves an already-set taxProfile untouched on a v7 payload", async () => {
+    localStorage.setItem(
+      "investa-scenario-v3",
+      JSON.stringify({
+        ...preV7Payload([{ name: "FII (Papel/Tijolo/Agro/FoF)", taxProfile: "isento" }]),
+        version: 7,
+      }),
+    );
+    await useScenarioStore.persist.rehydrate();
+    const a = useScenarioStore.getState().scenario.portfolio.assets[0];
+    expect(a.taxProfile).toBe("isento");
+  });
+});

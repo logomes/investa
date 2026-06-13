@@ -14,7 +14,7 @@ describe("api-types JSON parity with Pydantic", () => {
         contributionInflationIndexed: true,
         assets: [{
           name: "FIIs", weight: 1.0, expectedYield: 0.13,
-          capitalGain: 0, taxRate: 0, note: "", volatility: 0.14,
+          capitalGain: 0, taxRate: 0, note: "", volatility: 0.14, taxProfile: "fii",
         }],
       },
       benchmark: { kind: "cdi", annualRate: 0.1465, ipcaSpread: 0, taxRate: 0.175 },
@@ -31,6 +31,9 @@ describe("api-types JSON parity with Pydantic", () => {
         patrimony: [230000, 250000, 271000],
         annualIncome: [0, 23000, 25000],
         cumulativeIncome: [0, 23000, 48000],
+        grossPatrimony: [230000, 250000, 271000],
+        taxPaidCumulative: [0, 0, 0],
+        exitTax: [0, 0, 0],
       },
       benchmark: {
         label: "Tesouro Selic",
@@ -39,6 +42,9 @@ describe("api-types JSON parity with Pydantic", () => {
         patrimony: [230000, 256000, 285000],
         annualIncome: [0, 0, 0],
         cumulativeIncome: [0, 0, 0],
+        grossPatrimony: [230000, 256000, 285000],
+        taxPaidCumulative: [0, 0, 0],
+        exitTax: [0, 0, 0],
       },
       sensitivity: [],
       taxComparison: [],

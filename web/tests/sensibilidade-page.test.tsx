@@ -24,6 +24,9 @@ const fakeSimOut: SimulateOut = {
     patrimony: [100_000, 130_000, 160_000, 195_000, 230_000, 270_000, 315_000, 365_000, 420_000, 470_000, 520_000],
     annualIncome: Array(11).fill(8_000) as number[],
     cumulativeIncome: Array(11).fill(0) as number[],
+    grossPatrimony: [100_000, 130_000, 160_000, 195_000, 230_000, 270_000, 315_000, 365_000, 420_000, 470_000, 520_000],
+    taxPaidCumulative: Array(11).fill(0) as number[],
+    exitTax: Array(11).fill(0) as number[],
   },
   benchmark: {} as never,
   sensitivity: [

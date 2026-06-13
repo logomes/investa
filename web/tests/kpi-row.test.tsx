@@ -11,8 +11,8 @@ const portfolioPatrimony = [230_000, 252_000, 277_000, 304_000, 334_000, 367_000
 const annualIncome = years.map((y) => y * 5_000);
 
 const fakeSim: SimulateOut = {
-  portfolio: { label: "PF", color: "#0f0", years, patrimony: portfolioPatrimony, annualIncome, cumulativeIncome: years.map(() => 0) },
-  benchmark: { label: "BM", color: "#00f", years, patrimony: portfolioPatrimony.map((v) => v * 1.1), annualIncome: years.map((y) => y * 4_500), cumulativeIncome: years.map(() => 0) },
+  portfolio: { label: "PF", color: "#0f0", years, patrimony: portfolioPatrimony, annualIncome, cumulativeIncome: years.map(() => 0), grossPatrimony: portfolioPatrimony, taxPaidCumulative: years.map(() => 0), exitTax: years.map(() => 0) },
+  benchmark: { label: "BM", color: "#00f", years, patrimony: portfolioPatrimony.map((v) => v * 1.1), annualIncome: years.map((y) => y * 4_500), cumulativeIncome: years.map(() => 0), grossPatrimony: portfolioPatrimony.map((v) => v * 1.1), taxPaidCumulative: years.map(() => 0), exitTax: years.map(() => 0) },
   sensitivity: [],
   taxComparison: [],
 };

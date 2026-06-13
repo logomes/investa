@@ -7,6 +7,7 @@ const baseAsset = {
   taxRate: 0,
   note: "",
   volatility: 0.1,
+  taxProfile: "tributado_anual" as const,
 };
 
 const makePortfolio = (assets: Array<{ name: string; weight: number }>) => ({

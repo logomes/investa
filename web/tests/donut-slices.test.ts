@@ -23,7 +23,7 @@ describe("donutSlices", () => {
   it("1 segmento (weight=1) gera path com 2 arcos (split)", () => {
     const segs = allocationSegments({
       ...PF,
-      assets: [{ name: "Solo", weight: 1.0, expectedYield: 0.1, capitalGain: 0, taxRate: 0, note: "", volatility: 0.1 }],
+      assets: [{ name: "Solo", weight: 1.0, expectedYield: 0.1, capitalGain: 0, taxRate: 0, note: "", volatility: 0.1, taxProfile: "tributado_anual" }],
     });
     const slices = donutSlices({ segments: segs, cx: 140, cy: 140, outerR: 110, innerR: 70 });
     expect(slices).toHaveLength(1);

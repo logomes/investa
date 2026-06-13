@@ -10,10 +10,10 @@ export const DEFAULT_SCENARIO: SimulateInput = {
     monthlyContribution: 0,
     contributionInflationIndexed: true,
     assets: [
-      { name: "FIIs", weight: 0.50, expectedYield: 0.110, capitalGain: 0.01, taxRate: 0.00, note: "Papel + Tijolo + Agro + FoF + Híbrido", volatility: 0.15 },
-      { name: "Ações BR Dividendos", weight: 0.20, expectedYield: 0.090, capitalGain: 0.03, taxRate: 0.00, note: "", volatility: 0.27 },
-      { name: "Dividend Aristocrats US", weight: 0.15, expectedYield: 0.040, capitalGain: 0.06, taxRate: 0.30, note: "", volatility: 0.18 },
-      { name: "Tesouro IPCA+ / LCI", weight: 0.15, expectedYield: 0.115, capitalGain: 0.00, taxRate: 0.10, note: "", volatility: 0.05 },
+      { name: "FIIs", weight: 0.50, expectedYield: 0.110, capitalGain: 0.01, taxRate: 0.00, note: "Papel + Tijolo + Agro + FoF + Híbrido", volatility: 0.15, taxProfile: "fii" },
+      { name: "Ações BR Dividendos", weight: 0.20, expectedYield: 0.090, capitalGain: 0.03, taxRate: 0.00, note: "", volatility: 0.27, taxProfile: "acoes_br" },
+      { name: "Dividend Aristocrats US", weight: 0.15, expectedYield: 0.040, capitalGain: 0.06, taxRate: 0.30, note: "", volatility: 0.18, taxProfile: "dividendos_exterior" },
+      { name: "Tesouro IPCA+ / LCI", weight: 0.15, expectedYield: 0.115, capitalGain: 0.00, taxRate: 0.10, note: "", volatility: 0.05, taxProfile: "rf_regressiva" },
     ],
   },
   benchmark: {
