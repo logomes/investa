@@ -430,19 +430,20 @@ def sensitivity_portfolio(
         )
         return float(result.patrimony[-1])
 
+    def final_at(h: int) -> float:
+        return float(simulate_portfolio(base_params, h, reinvest_income=True, ipca=ipca).patrimony[-1])
+
     def variant(
         *,
         yield_delta: float = 0.0,
         gain_delta: float = 0.0,
         contribution_mult: float = 1.0,
-        tax_delta: float = 0.0,
     ) -> PortfolioParams:
         assets = [
             replace(
                 a,
                 expected_yield=a.expected_yield + yield_delta,
                 capital_gain=a.capital_gain + gain_delta,
-                tax_rate=min(max(a.tax_rate + tax_delta, 0.0), 1.0),
             )
             for a in base_params.assets
         ]
@@ -452,25 +453,30 @@ def sensitivity_portfolio(
             monthly_contribution=base_params.monthly_contribution * contribution_mult,
         )
 
-    variations = [
-        ("Yield da carteira (±1,5pp)",
-         variant(yield_delta=-0.015), variant(yield_delta=0.015)),
-        ("Ganho de capital (±1,5pp)",
-         variant(gain_delta=-0.015), variant(gain_delta=0.015)),
-        ("Aporte mensal (±25%)",
-         variant(contribution_mult=0.75), variant(contribution_mult=1.25)),
-        ("IR efetivo (±5pp)",
-         variant(tax_delta=0.05), variant(tax_delta=-0.05)),
+    rows = [
+        {
+            "Parâmetro": "Yield da carteira (±1,5pp)",
+            "Cenário Pessimista": final_patrimony(variant(yield_delta=-0.015)),
+            "Cenário Otimista": final_patrimony(variant(yield_delta=0.015)),
+        },
+        {
+            "Parâmetro": "Ganho de capital (±1,5pp)",
+            "Cenário Pessimista": final_patrimony(variant(gain_delta=-0.015)),
+            "Cenário Otimista": final_patrimony(variant(gain_delta=0.015)),
+        },
+        {
+            "Parâmetro": "Aporte mensal (±25%)",
+            "Cenário Pessimista": final_patrimony(variant(contribution_mult=0.75)),
+            "Cenário Otimista": final_patrimony(variant(contribution_mult=1.25)),
+        },
+        {
+            "Parâmetro": "Horizonte (−2a / +2a)",
+            "Cenário Pessimista": final_at(max(horizon_years - 2, 1)),
+            "Cenário Otimista": final_at(min(horizon_years + 2, 30)),
+        },
     ]
 
-    return pd.DataFrame([
-        {
-            "Parâmetro": label,
-            "Cenário Pessimista": final_patrimony(pessimistic),
-            "Cenário Otimista": final_patrimony(optimistic),
-        }
-        for label, pessimistic, optimistic in variations
-    ])
+    return pd.DataFrame(rows)
 
 
 def solve_goal_contribution(
@@ -597,38 +603,47 @@ def build_comparison_dataframe(
     return pd.concat(frames, ignore_index=True)
 
 
-# ---------- Tax impact analysis ----------
+# ---------- Tax projection ----------
 
-def annual_tax_comparison(
-    portfolio: PortfolioParams,
-    benchmark: BenchmarkParams,
-) -> pd.DataFrame:
-    """Compare annual tax burden: carteira vs passive benchmark."""
-    pf_gross_income = sum(
-        portfolio.capital * a.weight * a.expected_yield
-        for a in portfolio.assets
-    )
-    pf_tax = sum(
-        portfolio.capital * a.weight * a.expected_yield * a.tax_rate
-        for a in portfolio.assets
-    )
+def tax_projection(
+    pf_params: PortfolioParams,
+    bench_params: BenchmarkParams,
+    horizon_years: int,
+    ipca: float,
+) -> dict:
+    """Forward tax breakdown: per-class rows + portfolio-level series + the
+    all-taxed counterfactual (every class forced to rf_regressiva)."""
+    gross_means = np.array([a.gross_return for a in pf_params.assets])
+    returns = np.tile(gross_means, (1, horizon_years, 1))
+    out = _simulate_taxed_classes(pf_params, horizon_years, returns, ipca, True)
 
-    bench_gross_income = benchmark.capital * benchmark.annual_rate
-    bench_tax = bench_gross_income * benchmark.tax_rate
-
-    return pd.DataFrame([
+    bench = simulate_benchmark(bench_params, horizon_years, ipca=ipca)
+    rows = [
         {
-            "Cenário": "Carteira Diversificada",
-            "Receita Bruta": pf_gross_income,
-            "Imposto Anual": pf_tax,
-            "Receita Líquida": pf_gross_income - pf_tax,
-            "Carga Tributária Efetiva": pf_tax / pf_gross_income if pf_gross_income else 0.0,
-        },
-        {
-            "Cenário": benchmark.label,
-            "Receita Bruta": bench_gross_income,
-            "Imposto Anual": bench_tax,
-            "Receita Líquida": bench_gross_income - bench_tax,
-            "Carga Tributária Efetiva": benchmark.tax_rate if bench_gross_income else 0.0,
-        },
+            "name": c.name, "tax_profile": c.profile,
+            "tax_paid_path": c.tax_paid, "exit_tax": c.exit_tax,
+            "net_final": c.net, "gross_final": c.gross,
+        }
+        for c in out.per_class_final
+    ]
+    rows.append({
+        "name": bench.label, "tax_profile": "rf_regressiva",
+        "tax_paid_path": float(bench.tax_paid_cumulative[-1]),
+        "exit_tax": float(bench.exit_tax[-1]),
+        "net_final": float(bench.patrimony[-1]),
+        "gross_final": float(bench.gross_patrimony[-1]),
+    })
+
+    all_taxed = replace(pf_params, assets=[
+        replace(a, tax_profile="rf_regressiva") for a in pf_params.assets
     ])
+    all_taxed_final = float(
+        simulate_portfolio(all_taxed, horizon_years, ipca=ipca).patrimony[-1]
+    )
+
+    return {
+        "rows": rows,
+        "tax_paid_by_year": out.tax_paid_cumulative[0].tolist(),
+        "exit_tax_by_year": out.exit_tax[0].tolist(),
+        "all_taxed_final": all_taxed_final,
+    }

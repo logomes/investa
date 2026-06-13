@@ -37,6 +37,9 @@ class SimulationResultOut(_CamelModel):
     patrimony: list[float]
     annual_income: list[float]
     cumulative_income: list[float]
+    gross_patrimony: list[float]
+    tax_paid_cumulative: list[float]
+    exit_tax: list[float]
 
 
 class SensitivityRowOut(_CamelModel):
@@ -45,12 +48,20 @@ class SensitivityRowOut(_CamelModel):
     optimistic: float
 
 
-class TaxComparisonRowOut(_CamelModel):
-    scenario: str
-    gross_income: float
-    annual_tax: float
-    net_income: float
-    effective_tax_burden: float
+class TaxProjectionRowOut(_CamelModel):
+    name: str
+    tax_profile: str
+    tax_paid_path: float
+    exit_tax: float
+    net_final: float
+    gross_final: float
+
+
+class TaxProjectionOut(_CamelModel):
+    rows: list[TaxProjectionRowOut]
+    tax_paid_by_year: list[float]
+    exit_tax_by_year: list[float]
+    all_taxed_final: float       # net final if EVERY class were rf_regressiva ("o que suas isenções valem")
 
 
 class SimulateOut(_CamelModel):
@@ -58,7 +69,7 @@ class SimulateOut(_CamelModel):
     portfolio: SimulationResultOut
     benchmark: SimulationResultOut
     sensitivity: list[SensitivityRowOut]
-    tax_comparison: list[TaxComparisonRowOut]
+    tax_projection: TaxProjectionOut
 
 
 class MonteCarloResultOut(_CamelModel):

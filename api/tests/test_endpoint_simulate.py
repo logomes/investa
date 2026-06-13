@@ -41,7 +41,8 @@ def test_simulate_returns_full_output_shape():
     assert "portfolio" in body
     assert "benchmark" in body
     assert "sensitivity" in body
-    assert "taxComparison" in body
+    assert "taxProjection" in body
+    assert "taxComparison" not in body
     assert "realEstate" not in body
 
 
@@ -84,5 +85,25 @@ def test_simulate_sensitivity_uses_portfolio_tornado():
         "Yield da carteira (±1,5pp)",
         "Ganho de capital (±1,5pp)",
         "Aporte mensal (±25%)",
-        "IR efetivo (±5pp)",
+        "Horizonte (−2a / +2a)",
     }
+
+
+def test_simulate_returns_tax_projection_and_result_tax_fields():
+    client = TestClient(app)
+    resp = client.post("/api/simulate", json=_default_payload())
+    body = resp.json()
+    assert "taxProjection" in body and "taxComparison" not in body
+    tp = body["taxProjection"]
+    assert {"rows", "taxPaidByYear", "exitTaxByYear", "allTaxedFinal"} <= set(tp)
+    assert {"name", "taxProfile", "taxPaidPath", "exitTax", "netFinal", "grossFinal"} <= set(tp["rows"][0])
+    for key in ("grossPatrimony", "taxPaidCumulative", "exitTax"):
+        assert key in body["portfolio"] and key in body["benchmark"]
+
+
+def test_sensitivity_has_horizonte_row_not_ir():
+    client = TestClient(app)
+    rows = client.post("/api/simulate", json=_default_payload()).json()["sensitivity"]
+    labels = {r["parameter"] for r in rows}
+    assert "Horizonte (−2a / +2a)" in labels
+    assert not any("IR efetivo" in l for l in labels)

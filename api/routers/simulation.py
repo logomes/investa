@@ -9,12 +9,12 @@ from core.config import (
     PortfolioParams,
 )
 from core.models import (
-    annual_tax_comparison,
     sensitivity_portfolio,
     simulate_benchmark,
     simulate_portfolio,
     simulate_portfolio_mc,
     solve_goal_contribution,
+    tax_projection,
 )
 from core.services.macro import get_macro_params
 from schemas.inputs import BenchmarkInput, GoalSolveInput, SimulateInput, SimulateMonteCarloInput
@@ -23,7 +23,7 @@ from schemas.outputs import (
     SensitivityRowOut,
     SimulateMonteCarloOut,
     SimulateOut,
-    TaxComparisonRowOut,
+    TaxProjectionOut,
 )
 
 router = APIRouter()
@@ -69,7 +69,7 @@ def _to_benchmark_params(
 
 @router.post("/api/simulate", response_model=SimulateOut)
 def simulate(payload: SimulateInput) -> SimulateOut:
-    """Run deterministic simulations (Portfolio + Benchmark) + sensitivity + tax comparison."""
+    """Run deterministic simulations (Portfolio + Benchmark) + sensitivity + tax projection."""
     pf_params = _to_portfolio_params(payload.portfolio)
     bench_params = _to_benchmark_params(payload.benchmark, payload.capital, pf_params)
     ipca = _resolve_ipca(payload.expected_inflation)
@@ -94,23 +94,13 @@ def simulate(payload: SimulateInput) -> SimulateOut:
         for row in sens_rows.to_dict("records")
     ]
 
-    tax_rows = annual_tax_comparison(pf_params, bench_params)
-    tax_comparison = [
-        TaxComparisonRowOut(
-            scenario=row["Cenário"],
-            gross_income=float(row["Receita Bruta"]),
-            annual_tax=float(row["Imposto Anual"]),
-            net_income=float(row["Receita Líquida"]),
-            effective_tax_burden=float(row["Carga Tributária Efetiva"]),
-        )
-        for row in tax_rows.to_dict("records")
-    ]
+    projection = tax_projection(pf_params, bench_params, payload.horizon, ipca)
 
     return SimulateOut(
         portfolio=simulation_result_to_dto(pf_result),
         benchmark=simulation_result_to_dto(bench_result),
         sensitivity=sensitivity,
-        tax_comparison=tax_comparison,
+        tax_projection=TaxProjectionOut(**projection),
     )
 
 
