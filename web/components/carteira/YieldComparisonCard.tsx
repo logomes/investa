@@ -8,11 +8,12 @@ import type { PortfolioInput, BenchmarkInput, MacroOut } from "@/lib/api-types";
 type Props = {
   pf: PortfolioInput;
   benchmark: BenchmarkInput;
+  horizonYears: number;
   macro: MacroOut;
 };
 
-export function YieldComparisonCard({ pf, benchmark, macro }: Props) {
-  const rows = yieldComparison({ pf, benchmark });
+export function YieldComparisonCard({ pf, benchmark, horizonYears, macro }: Props) {
+  const rows = yieldComparison({ pf, benchmark, horizonYears });
   const refs = yieldRefLines(macro);
   const allValues = [...rows.map((r) => r.value), ...refs.map((r) => r.value)];
   const xMax = Math.max(...allValues, 0.01) + 0.02;

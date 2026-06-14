@@ -30,7 +30,6 @@ export const benchmarkSchema = z.object({
   kind: z.enum(["cdi", "selic", "ipca_plus"]),
   annualRate: z.number().min(0).max(1),
   ipcaSpread: z.number().min(0).max(0.5),
-  taxRate: z.number().min(0).max(1),
 });
 
 export const monteCarloSchema = z.object({

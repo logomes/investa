@@ -17,7 +17,7 @@ import { DEFAULT_SCENARIO } from "@/lib/defaults";
 
 const PF: PortfolioInput = DEFAULT_SCENARIO.portfolio;
 
-const CDI_BENCH: BenchmarkInput = { kind: "cdi", annualRate: 0.12, ipcaSpread: 0, taxRate: 0.175 };
+const CDI_BENCH: BenchmarkInput = { kind: "cdi", annualRate: 0.12, ipcaSpread: 0 };
 const MACRO: MacroOut = {
   selic: 0.1475,
   cdi: 0.1465,
@@ -122,8 +122,17 @@ describe("carteira-derive — allocationSegments", () => {
 });
 
 describe("benchmarkNetYield / benchmarkLabel", () => {
-  it("applies the tax rate to the nominal rate", () => {
-    expect(benchmarkNetYield(CDI_BENCH)).toBeCloseTo(0.12 * 0.825);
+  it("benchmarkNetYield: lump-sum net rate uses 15% bracket at h>=2", () => {
+    // gross 10% a.a. over 10y: net = (1 + (1.1^10 - 1)*0.85)^(1/10) - 1
+    const b = { kind: "cdi", annualRate: 0.10, ipcaSpread: 0 } as const;
+    const expected = Math.pow(1 + (Math.pow(1.1, 10) - 1) * 0.85, 1 / 10) - 1;
+    expect(benchmarkNetYield(b, 10)).toBeCloseTo(expected, 10);
+    expect(benchmarkNetYield(b, 10)).toBeLessThan(0.10);          // net < gross
+  });
+
+  it("benchmarkNetYield: 1-year horizon uses 17,5% bracket", () => {
+    const b = { kind: "cdi", annualRate: 0.10, ipcaSpread: 0 } as const;
+    expect(benchmarkNetYield(b, 1)).toBeCloseTo(0.10 * (1 - 0.175), 10);  // single year: net = gross*(1-0.175)
   });
 
   it("labels each kind", () => {
@@ -135,7 +144,7 @@ describe("benchmarkNetYield / benchmarkLabel", () => {
 
 describe("carteira-derive — yieldComparison", () => {
   it("returns carteira rows plus the benchmark row, no imóvel", () => {
-    const rows = yieldComparison({ pf: PF, benchmark: CDI_BENCH });
+    const rows = yieldComparison({ pf: PF, benchmark: CDI_BENCH, horizonYears: 10 });
     expect(rows.map((r) => r.label)).toEqual([
       "Carteira blended",
       "Carteira total (yield + ganho)",
@@ -144,10 +153,10 @@ describe("carteira-derive — yieldComparison", () => {
   });
 
   it("row values wire to the right helpers", () => {
-    const rows = yieldComparison({ pf: PF, benchmark: CDI_BENCH });
+    const rows = yieldComparison({ pf: PF, benchmark: CDI_BENCH, horizonYears: 10 });
     expect(rows[0].value).toBeCloseTo(blendedYield(PF));
     expect(rows[1].value).toBeCloseTo(totalReturn(PF));
-    expect(rows[2].value).toBeCloseTo(benchmarkNetYield(CDI_BENCH));
+    expect(rows[2].value).toBeCloseTo(benchmarkNetYield(CDI_BENCH, 10));
   });
 });
 

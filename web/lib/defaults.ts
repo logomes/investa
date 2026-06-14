@@ -20,7 +20,6 @@ export const DEFAULT_SCENARIO: SimulateInput = {
     kind: "cdi",
     annualRate: 0.1475,  // prefilled live from /api/macro in the drawer
     ipcaSpread: 0,
-    taxRate: 0.175,
   },
 };
 

@@ -59,11 +59,12 @@ export const useScenarioStore = create<ScenarioStore>()(
       // v5: realEstate dropped from the persisted scenario (imóvel removed from the product).
       // v6: expectedInflation became a scenario field.
       // v7: assets gained taxProfile (stamped from the catalog by name).
-      version: 7,
+      // v8: benchmark.taxRate dropped (benchmark now simulates rf_regressiva server-side).
+      version: 8,
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as {
           scenario?: SimulateInput & {
-            benchmark?: Partial<SimulateInput["benchmark"]> & { selicRate?: number };
+            benchmark?: Partial<SimulateInput["benchmark"]> & { selicRate?: number; taxRate?: number };
             realEstate?: unknown;
             expectedInflation?: number;
             portfolio?: { assets?: Array<{ name: string; taxProfile?: string }> };
@@ -75,7 +76,8 @@ export const useScenarioStore = create<ScenarioStore>()(
             kind: "selic",  // pre-v4 benchmark was Tesouro Selic — preserve intent
             annualRate: old.selicRate ?? DEFAULT_SCENARIO.benchmark.annualRate,
             ipcaSpread: 0,
-            taxRate: old.taxRate ?? DEFAULT_SCENARIO.benchmark.taxRate,
+            // taxRate carried here historically; v8 strips it below.
+            taxRate: old.taxRate ?? 0.175,
           };
         }
         if ((version ?? 0) < 5 && state?.scenario) {
@@ -98,6 +100,11 @@ export const useScenarioStore = create<ScenarioStore>()(
               a.taxProfile = profileForAssetName(a.name);
             }
           }
+        }
+        if ((version ?? 0) < 8 && state?.scenario?.benchmark) {
+          // benchmark.taxRate is obsolete — benchmark now simulates rf_regressiva
+          // (regressive IR at redemption, automatic).
+          delete (state.scenario.benchmark as { taxRate?: number }).taxRate;
         }
         return state;
       },

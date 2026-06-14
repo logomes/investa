@@ -31,7 +31,6 @@ export type BenchmarkInput = {
   kind: BenchmarkKind;
   annualRate: number;
   ipcaSpread: number;
-  taxRate: number;
 };
 
 export type MonteCarloInput = {

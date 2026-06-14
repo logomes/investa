@@ -37,6 +37,7 @@ export function CarteiraPageContent() {
       <YieldComparisonCard
         pf={scenario.portfolio}
         benchmark={scenario.benchmark}
+        horizonYears={scenario.horizon}
         macro={macro.data!}
       />
     </div>
