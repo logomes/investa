@@ -43,10 +43,12 @@ describe("scenario store", () => {
     useScenarioStore.getState().setScenario({ ...DEFAULT_SCENARIO, capital: 999 });
     useScenarioStore.getState().setGoalTarget(123);
     useScenarioStore.getState().setDrawerOpen(true);
+    useScenarioStore.setState({ lastRealImportAt: "2026-06-11T12:00:00.000Z" });
     useScenarioStore.getState().resetToDefaults();
     const s = useScenarioStore.getState();
     expect(s.scenario).toEqual(DEFAULT_SCENARIO);
     expect(s.goalTarget).toBe(DEFAULT_GOAL);
     expect(s.drawerOpen).toBe(true);  // not affected
+    expect(s.lastRealImportAt).toBeNull();
   });
 });

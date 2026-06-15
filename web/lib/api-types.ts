@@ -116,3 +116,18 @@ export type QuoteOut = {
   asOf: string; // ISO 8601
   source: string;
 };
+
+export type GoalSolveInput = {
+  horizon: number;
+  portfolio: PortfolioInput;
+  goalTarget: number;
+  confidence: number;
+  nTrajectories: number;
+};
+
+export type GoalSolveOut = {
+  requiredMonthlyContribution: number;
+  achievedProbability: number;
+  attainable: boolean;
+  iterations: number;
+};

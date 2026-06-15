@@ -343,6 +343,66 @@ def sensitivity_portfolio(
     ])
 
 
+def solve_goal_contribution(
+    portfolio: PortfolioParams,
+    horizon_years: int,
+    goal_target: float,
+    confidence: float,
+    ipca: float = 0.0,
+    n_trajectories: int = 1500,
+    upper_bound: float = 50_000.0,
+    tolerance: float = 50.0,
+) -> dict:
+    """Smallest monthly contribution with P(final patrimony >= goal) >= confidence.
+
+    Binary search over `simulate_portfolio_mc` with a fixed seed, so the
+    probability is monotone in the contribution and the result reproducible.
+    """
+    mc = MonteCarloParams(n_trajectories=n_trajectories, seed=42)
+
+    def probability(monthly: float) -> float:
+        params = replace(portfolio, monthly_contribution=monthly)
+        result = simulate_portfolio_mc(params, horizon_years, mc, ipca=ipca)
+        return result.prob_target(goal_target)
+
+    iterations = 0
+
+    p_zero = probability(0.0)
+    if p_zero >= confidence:
+        return {
+            "required_monthly_contribution": 0.0,
+            "achieved_probability": p_zero,
+            "attainable": True,
+            "iterations": iterations,
+        }
+
+    p_hi = probability(upper_bound)
+    if p_hi < confidence:
+        return {
+            "required_monthly_contribution": upper_bound,
+            "achieved_probability": p_hi,
+            "attainable": False,
+            "iterations": iterations,
+        }
+
+    lo, hi = 0.0, upper_bound
+    while hi - lo > tolerance and iterations < 12:
+        mid = (lo + hi) / 2
+        iterations += 1
+        p_mid = probability(mid)
+        if p_mid >= confidence:
+            hi, p_hi = mid, p_mid
+        else:
+            lo = mid
+
+    return {
+        "required_monthly_contribution": hi,
+        "achieved_probability": p_hi,
+        "attainable": True,
+        "iterations": iterations,
+    }
+
+
 def simulate_benchmark(
     params: BenchmarkParams,
     horizon_years: int,

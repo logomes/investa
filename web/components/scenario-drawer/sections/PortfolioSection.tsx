@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, RotateCcw } from "lucide-react";
+import { Plus, Pencil, Trash2, RotateCcw, Download } from "lucide-react";
 import { Controller, useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import type { ScenarioFormValues } from "../schema";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,12 @@ import { PortfolioAssetDialog } from "../PortfolioAssetDialog";
 import { assignColor, MAX_PORTFOLIO_ASSETS } from "@/lib/portfolio-asset-types";
 import { DEFAULT_SCENARIO } from "@/lib/defaults";
 import type { PortfolioAssetInput } from "@/lib/api-types";
-import { formatPercent } from "@/lib/format";
+import { formatPercent, formatRs } from "@/lib/format";
+import { useMacro } from "@/lib/api";
+import { useAssetsStore } from "@/lib/ativos-store";
+import { useFixedIncomeStore } from "@/lib/fi-store";
+import { useScenarioStore } from "@/lib/store";
+import { bridgePortfolio, type BridgeResult } from "@/lib/portfolio-bridge";
 
 type DialogState =
   | { open: false }
@@ -20,9 +25,42 @@ type DialogState =
   | { open: true; mode: "edit"; index: number };
 
 export function PortfolioSection() {
-  const { register, control, formState } = useFormContext<ScenarioFormValues>();
+  const { register, control, formState, setValue, getValues } = useFormContext<ScenarioFormValues>();
   const { fields, append, remove, update, replace } = useFieldArray({ control, name: "portfolio.assets" });
   const [dialog, setDialog] = useState<DialogState>({ open: false });
+
+  const macro = useMacro();
+  const realPositions = useAssetsStore((s) => s.positions);
+  const fiPositions = useFixedIncomeStore((s) => s.positions);
+  const lastRealImportAt = useScenarioStore((s) => s.lastRealImportAt);
+  const pendingRealImportAt = useScenarioStore((s) => s.pendingRealImportAt);
+  const setPendingRealImportAt = useScenarioStore((s) => s.setPendingRealImportAt);
+  const [preview, setPreview] = useState<BridgeResult | null>(null);
+
+  const canImport =
+    !!macro.data && (realPositions.length > 0 || fiPositions.length > 0);
+
+  const handlePreviewImport = () => {
+    if (!macro.data) return;
+    const current = getValues();
+    const result = bridgePortfolio({
+      positions: realPositions,
+      fiPositions,
+      macro: macro.data,
+      monthlyContribution: current.portfolio.monthlyContribution,
+      contributionInflationIndexed: current.portfolio.contributionInflationIndexed,
+    });
+    setPreview(result);
+  };
+
+  const handleConfirmImport = () => {
+    if (!preview) return;
+    replace(preview.portfolio.assets);
+    setValue("portfolio.capital", preview.portfolio.capital, { shouldDirty: true });
+    setValue("capital", preview.portfolio.capital, { shouldDirty: true });
+    setPendingRealImportAt(new Date().toISOString());
+    setPreview(null);
+  };
 
   const assets = useWatch({ control, name: "portfolio.assets" });
   const sum = assets.reduce((acc, a) => acc + (a.weight || 0), 0);
@@ -54,6 +92,7 @@ export function PortfolioSection() {
   const handleReset = () => {
     if (confirm("Restaurar 5 ativos padrão? Mudanças serão perdidas.")) {
       replace(DEFAULT_SCENARIO.portfolio.assets);
+      setPendingRealImportAt(null);
     }
   };
 
@@ -112,6 +151,17 @@ export function PortfolioSection() {
               type="button"
               variant="outline"
               size="sm"
+              onClick={handlePreviewImport}
+              disabled={!canImport}
+              className="h-6 px-2 text-[11px]"
+            >
+              <Download className="w-3 h-3 mr-1" />
+              Usar carteira real
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={handleAdd}
               disabled={fields.length >= MAX_PORTFOLIO_ASSETS}
               className="h-6 px-2 text-[11px]"
@@ -131,6 +181,40 @@ export function PortfolioSection() {
             </Button>
           </div>
         </div>
+
+        {preview && (
+          <div className="bg-bg-3 border border-line rounded-card p-3 space-y-2">
+            <p className="text-[12px] text-ink">
+              <span className="font-semibold">{formatRs(preview.totalBRL)}</span>{" "}
+              em {preview.portfolio.assets.length} classes
+              ({preview.positionsCount} posições RV, {preview.rfCount} RF)
+            </p>
+            {preview.skipped.length > 0 && (
+              <p className="text-[11px] text-accent-amber">
+                Ignorados (valor zero): {preview.skipped.join(", ")}
+              </p>
+            )}
+            <div className="flex gap-2">
+              <Button type="button" size="sm" className="h-6 px-2 text-[11px]" onClick={handleConfirmImport}>
+                Substituir cenário
+              </Button>
+              <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-[11px]" onClick={() => setPreview(null)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
+        {(() => {
+          const effectiveImportAt = pendingRealImportAt !== undefined ? pendingRealImportAt : lastRealImportAt;
+          return effectiveImportAt ? (
+            <p className="text-[10px] text-ink-4">
+              Importado da carteira real em{" "}
+              {new Intl.DateTimeFormat("pt-BR", {
+                day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+              }).format(new Date(effectiveImportAt))}
+            </p>
+          ) : null;
+        })()}
 
         <div className="space-y-1">
           {fields.map((field, idx) => {

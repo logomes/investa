@@ -1,10 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useScenarioStore } from "./store";
 import type {
   SimulateOut,
   SimulateMonteCarloInput,
   SimulateMonteCarloOut,
   MacroOut,
+  GoalSolveInput,
+  GoalSolveOut,
 } from "./api-types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -83,6 +85,14 @@ export function useMacro() {
     queryKey: ["macro"],
     queryFn: () => fetchMacro(),
     staleTime: 60 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+export function useGoalSolve() {
+  return useMutation({
+    mutationFn: (input: GoalSolveInput) =>
+      postJson<GoalSolveOut>("/api/goal/solve", input),
     retry: 1,
   });
 }

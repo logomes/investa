@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GoalCard } from "@/components/visao-geral/GoalCard";
@@ -9,6 +9,21 @@ import type { SimulateOut, SimulateMonteCarloOut, MacroOut } from "@/lib/api-typ
 
 let simPatrimony: number[] = [230_000, 250_000];
 let mcDist: number[] = [];
+
+const goalSolveMock = vi.hoisted(() => ({
+  mutate: vi.fn(),
+  reset: vi.fn(),
+  isPending: false,
+  isError: false,
+  data: undefined as
+    | undefined
+    | {
+        requiredMonthlyContribution: number;
+        achievedProbability: number;
+        attainable: boolean;
+        iterations: number;
+      },
+}));
 
 function makeSim(patrimony: number[]): SimulateOut {
   return {
@@ -39,6 +54,7 @@ vi.mock("@/lib/api", () => ({
   useSimulate: () => ({ data: makeSim(simPatrimony), isLoading: false, error: null, refetch: vi.fn() }),
   useMonteCarlo: () => ({ data: makeMc(mcDist), isLoading: false, error: null, refetch: vi.fn() }),
   useMacro: () => ({ data: fakeMacro, isLoading: false, error: null, refetch: vi.fn() }),
+  useGoalSolve: () => goalSolveMock,
 }));
 
 const wrap = (ui: React.ReactElement) => {
@@ -46,11 +62,22 @@ const wrap = (ui: React.ReactElement) => {
   return <QueryClientProvider client={qc}>{ui}</QueryClientProvider>;
 };
 
+// wrapper function for { wrapper } pattern used in new tests
+const wrapper = ({ children }: { children: React.ReactNode }) => {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
+};
+
 describe("GoalCard editable target", () => {
   beforeEach(() => {
     useScenarioStore.setState({ goalTarget: DEFAULT_GOAL });
     simPatrimony = [230_000, 250_000];
     mcDist = [];
+    goalSolveMock.data = undefined;
+    goalSolveMock.isPending = false;
+    goalSolveMock.isError = false;
+    goalSolveMock.mutate.mockClear();
+    goalSolveMock.reset.mockClear();
   });
 
   it("renders the goal as a button by default (not in edit mode)", () => {
@@ -123,6 +150,11 @@ describe("GoalCard recommendation states", () => {
     useScenarioStore.setState({ goalTarget: DEFAULT_GOAL });
     simPatrimony = [230_000, 250_000];
     mcDist = [];
+    goalSolveMock.data = undefined;
+    goalSolveMock.isPending = false;
+    goalSolveMock.isError = false;
+    goalSolveMock.mutate.mockClear();
+    goalSolveMock.reset.mockClear();
   });
 
   it("renders 'Meta atingida' when capital >= goal", () => {
@@ -176,5 +208,82 @@ describe("GoalCard recommendation states", () => {
     render(wrap(<GoalCard />));
     // formatPercent uses Brazilian locale: 70,0% — match the <p> containing probability badge
     expect(screen.getByText((_, el) => !!el && el.tagName === "P" && /70[,.]0%/.test(el.textContent ?? "") && /prov[áa]vel/i.test(el.textContent ?? ""))).toBeInTheDocument();
+  });
+});
+
+describe("GoalCard Monte Carlo refinement", () => {
+  beforeEach(() => {
+    useScenarioStore.setState({ goalTarget: DEFAULT_GOAL });
+    simPatrimony = [230_000, 300_000];
+    mcDist = [];
+    goalSolveMock.data = undefined;
+    goalSolveMock.isPending = false;
+    goalSolveMock.isError = false;
+    goalSolveMock.mutate.mockClear();
+    goalSolveMock.reset.mockClear();
+  });
+
+  it("renders the refine button and fires the mutation with the scenario", () => {
+    render(<GoalCard />, { wrapper });
+    fireEvent.click(screen.getByRole("button", { name: /Refinar com Monte Carlo/i }));
+    expect(goalSolveMock.mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ confidence: 0.8, horizon: expect.any(Number), nTrajectories: 1500 }),
+    );
+  });
+
+  it("shows the solver result with an apply button", () => {
+    goalSolveMock.data = {
+      requiredMonthlyContribution: 2_345,
+      achievedProbability: 0.82,
+      attainable: true,
+      iterations: 9,
+    };
+    render(<GoalCard />, { wrapper });
+    expect(screen.getByText(/R\$\s*2\.345/)).toBeInTheDocument();
+    expect(screen.getByText(/82/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Aplicar aporte refinado/i })).toBeInTheDocument();
+  });
+
+  it("applying the refined contribution mutates the scenario", () => {
+    goalSolveMock.data = {
+      requiredMonthlyContribution: 2_345,
+      achievedProbability: 0.82,
+      attainable: true,
+      iterations: 9,
+    };
+    render(<GoalCard />, { wrapper });
+    fireEvent.click(screen.getByRole("button", { name: /Aplicar aporte refinado/i }));
+    expect(useScenarioStore.getState().scenario.portfolio.monthlyContribution).toBe(2_345);
+  });
+
+  it("renders the unattainable message", () => {
+    goalSolveMock.data = {
+      requiredMonthlyContribution: 50_000,
+      achievedProbability: 0.4,
+      attainable: false,
+      iterations: 0,
+    };
+    render(<GoalCard />, { wrapper });
+    expect(screen.getByText(/improvável mesmo com R\$\s*50\.000/i)).toBeInTheDocument();
+  });
+
+  it("resets the mutation when the goal changes", () => {
+    goalSolveMock.data = {
+      requiredMonthlyContribution: 2_345,
+      achievedProbability: 0.82,
+      attainable: true,
+      iterations: 9,
+    };
+    // Render with data already set; effect fires on mount with the current goal
+    render(<GoalCard />, { wrapper });
+    expect(goalSolveMock.reset).toHaveBeenCalled();
+
+    goalSolveMock.reset.mockClear();
+
+    // Changing the goal triggers a re-render → effect fires → reset called again
+    act(() => {
+      useScenarioStore.setState({ goalTarget: 999_000 });
+    });
+    expect(goalSolveMock.reset).toHaveBeenCalled();
   });
 });

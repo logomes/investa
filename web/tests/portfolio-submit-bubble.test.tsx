@@ -6,6 +6,10 @@ import { PortfolioSection } from "@/components/scenario-drawer/sections/Portfoli
 import { scenarioFormSchema, type ScenarioFormValues } from "@/components/scenario-drawer/schema";
 import { DEFAULT_SCENARIO, DEFAULT_MC } from "@/lib/defaults";
 
+vi.mock("@/lib/api", () => ({
+  useMacro: () => ({ data: undefined }),
+}));
+
 // Regression: dialog Salvar must not bubble to ScenarioDrawer's outer <form>.
 // Bubbling would call setScenario with stale values and clobber the row update.
 function FullDrawerHarness({ initial, onOuterSubmit }: { initial: ScenarioFormValues; onOuterSubmit: (data: ScenarioFormValues) => void }) {

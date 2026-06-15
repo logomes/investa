@@ -40,7 +40,7 @@ class PortfolioInput(_CamelModel):
     capital: float = Field(gt=0)
     monthly_contribution: float = Field(default=0.0, ge=0)
     contribution_inflation_indexed: bool = True
-    assets: list[PortfolioAssetInput]
+    assets: list[PortfolioAssetInput] = Field(min_length=1, max_length=12)
 
 
 class BenchmarkInput(_CamelModel):
@@ -68,6 +68,14 @@ class SimulateMonteCarloInput(_CamelModel):
     horizon: int = Field(ge=1, le=30)
     portfolio: PortfolioInput
     mc: MonteCarloInput
+
+
+class GoalSolveInput(_CamelModel):
+    horizon: int = Field(ge=1, le=30)
+    portfolio: PortfolioInput
+    goal_target: float = Field(gt=0)
+    confidence: float = Field(default=0.80, ge=0.5, le=0.99)
+    n_trajectories: int = Field(default=1500, ge=100, le=1500)
 
 
 class FixedIncomePositionInput(_CamelModel):

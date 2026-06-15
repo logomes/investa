@@ -6,6 +6,10 @@ import { PortfolioSection } from "@/components/scenario-drawer/sections/Portfoli
 import { scenarioFormSchema, type ScenarioFormValues } from "@/components/scenario-drawer/schema";
 import { DEFAULT_SCENARIO, DEFAULT_MC } from "@/lib/defaults";
 
+vi.mock("@/lib/api", () => ({
+  useMacro: () => ({ data: undefined }),
+}));
+
 function Harness({ initial }: { initial: ScenarioFormValues }) {
   const form = useForm<ScenarioFormValues>({
     resolver: zodResolver(scenarioFormSchema),

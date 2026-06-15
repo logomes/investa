@@ -87,3 +87,22 @@ describe("store migration v5: realEstate dropped", () => {
     expect("realEstate" in s.scenario).toBe(false);
   });
 });
+
+describe("lastRealImportAt provenance field", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useScenarioStore.setState({ lastRealImportAt: null });
+  });
+
+  it("hydrates lastRealImportAt as null for pre-existing payloads", async () => {
+    localStorage.setItem("investa-scenario-v3", JSON.stringify(V3_PAYLOAD));
+    await useScenarioStore.persist.rehydrate();
+    expect(useScenarioStore.getState().lastRealImportAt).toBeNull();
+  });
+
+  it("persists lastRealImportAt through the partialize", async () => {
+    useScenarioStore.getState().setLastRealImportAt("2026-06-11T12:00:00.000Z");
+    const raw = JSON.parse(localStorage.getItem("investa-scenario-v3")!);
+    expect(raw.state.lastRealImportAt).toBe("2026-06-11T12:00:00.000Z");
+  });
+});

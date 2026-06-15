@@ -16,6 +16,7 @@ beforeEach(() => {
     mc: DEFAULT_MC,
     goalTarget: DEFAULT_GOAL,
     drawerOpen: false,
+    pendingRealImportAt: undefined,
   });
 });
 
@@ -53,5 +54,38 @@ describe("ScenarioDrawer", () => {
     await waitFor(() => {
       expect(useScenarioStore.getState().drawerOpen).toBe(false);
     });
+  });
+
+  it("submit commits pendingRealImportAt to lastRealImportAt and resets pending to undefined", async () => {
+    const stamp = "2026-06-11T15:00:00.000Z";
+    useScenarioStore.setState({ drawerOpen: true, lastRealImportAt: null });
+    render(<ScenarioDrawer />);
+    await waitFor(() => screen.getByRole("button", { name: /Aplicar cenário/i }));
+    // Set the pending stamp after the mount effect has settled (the effect fires on
+    // drawerOpen change; setting state directly here does not retrigger it).
+    useScenarioStore.setState({ pendingRealImportAt: stamp });
+    fireEvent.click(screen.getByRole("button", { name: /Aplicar cenário/i }));
+    await waitFor(() => {
+      expect(useScenarioStore.getState().drawerOpen).toBe(false);
+    });
+    expect(useScenarioStore.getState().lastRealImportAt).toBe(stamp);
+    expect(useScenarioStore.getState().pendingRealImportAt).toBeUndefined();
+  });
+
+  it("reopening the drawer clears a stale pending without touching lastRealImportAt", async () => {
+    const persisted = "2026-06-10T08:00:00.000Z";
+    useScenarioStore.setState({
+      drawerOpen: false,
+      pendingRealImportAt: "2026-06-11T15:00:00.000Z",
+      lastRealImportAt: persisted,
+    });
+    render(<ScenarioDrawer />);
+    // Toggle drawerOpen to true — triggers the useEffect
+    useScenarioStore.getState().setDrawerOpen(true);
+    await waitFor(() => {
+      expect(useScenarioStore.getState().pendingRealImportAt).toBeUndefined();
+    });
+    // lastRealImportAt must be untouched
+    expect(useScenarioStore.getState().lastRealImportAt).toBe(persisted);
   });
 });
