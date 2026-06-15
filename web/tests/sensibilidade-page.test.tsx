@@ -34,7 +34,7 @@ const fakeSimOut: SimulateOut = {
     { parameter: "Yield da carteira (±1,5pp)", pessimistic: 320_000, optimistic: 470_000 },
     { parameter: "Ganho de capital (±1,5pp)",  pessimistic: 340_000, optimistic: 450_000 },
     { parameter: "Aporte mensal (±25%)",       pessimistic: 410_000, optimistic: 380_000 },
-    { parameter: "IR efetivo (±5pp)",          pessimistic: 400_000, optimistic: 385_000 },
+    { parameter: "Horizonte (−2a / +2a)",       pessimistic: 400_000, optimistic: 385_000 },
   ],
   taxProjection: MOCK_TAX_PROJECTION,
 };
@@ -75,7 +75,7 @@ describe("SensibilidadePageContent", () => {
     render(wrap(<SensibilidadePageContent />));
     expect(screen.getAllByText(/Yield da carteira/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/Ganho de capital/).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/IR efetivo/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Horizonte/).length).toBeGreaterThanOrEqual(1);
   });
 
   it("loading → renderiza skeleton", () => {

@@ -132,6 +132,24 @@ Toggle global "R$ de hoje" / "Nominal" na Topbar (default real); todas as superf
 
 **Deferido para rodada futura:** Deflação do `/historico` (IPCA realizado, série histórica BCB) — requer endpoint `/api/macro/ipca-series` + store de snapshots IPCA para deflacionar patrimônio histórico pelo CPI realizado em vez do IPCA projetado.
 
+## Tributação forward
+
+### Tributação forward — ✅ shipped 2026-06-13
+
+O motor de projeção agora modela tributação *forward* por classe de ativo (perfis `isento`, `fii`, `acoes_br`, `rf_regressiva`, `come_cotas`, `dividendos_exterior`, `tributado_anual`): IR regressivo diferido até o resgate, come-cotas semestral, isenções preservadas. Página `/tributacao` reescrita (KPIs de IR total/efetivo/latente, timeline de IR pago vs latente, tabela por classe) + comparadores standalone LCI×CDB e PGBL×VGBL. Spec: `specs/2026-06-12-tributacao-forward-design.md`.
+
+**Release notes — 5 mudanças intencionais de comportamento:**
+1. `patrimony` agora é **líquido de resgate** (era valor de mercado com IR descontado anualmente via haircut).
+2. Carteiras multi-classe são **buy-and-hold** (os pesos derivam ao longo do tempo; não há rebalanceamento anual implícito).
+3. `reinvest_income=False` agora significa "rendimentos distribuídos não são reinvestidos" (perfis de accrual continuam acumulando); a antiga semântica de `rate` só sobre ganho de capital saiu.
+4. Valores de RF/benchmark **sobem** (diferimento); o campo de IR do benchmark saiu do drawer (regressiva automática).
+5. Linha de sensibilidade "IR efetivo (±5pp)" → "Horizonte (−2a / +2a)".
+
+**Deferred (não nesta rodada):**
+- Rebalanceamento tributado (approach-C) — modelar o evento taxável do rebalance entre classes.
+- JCP (juros sobre capital próprio) — perfil tributário próprio (15% retido na fonte).
+- Previdência como classe de cenário — hoje é só comparador standalone (PGBL×VGBL), não entra na projeção da carteira.
+
 ## Performance / Infra
 
 ### Render Hobby upgrade ($7/mo)

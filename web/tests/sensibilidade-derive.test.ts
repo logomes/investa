@@ -10,7 +10,7 @@ const SAMPLE: SensitivityRowOut[] = [
   { parameter: "Yield da carteira (±1,5pp)",  pessimistic: 320_000, optimistic: 470_000 },
   { parameter: "Ganho de capital (±1,5pp)",   pessimistic: 340_000, optimistic: 450_000 },
   { parameter: "Aporte mensal (±25%)",        pessimistic: 410_000, optimistic: 380_000 },
-  { parameter: "IR efetivo (±5pp)",           pessimistic: 400_000, optimistic: 385_000 },
+  { parameter: "Horizonte (−2a / +2a)",        pessimistic: 400_000, optimistic: 385_000 },
 ];
 
 const BASE = 393_000;
@@ -49,7 +49,7 @@ describe("sensibilidade-derive — sortByImpact", () => {
       "Yield da carteira (±1,5pp)",
       "Ganho de capital (±1,5pp)",
       "Aporte mensal (±25%)",
-      "IR efetivo (±5pp)",
+      "Horizonte (−2a / +2a)",
     ]);
     expect(enriched[0].parameter).toBe("Yield da carteira (±1,5pp)");
   });

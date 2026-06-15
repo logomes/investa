@@ -1,7 +1,7 @@
 # Tributação Forward (IR dentro da simulação) — Design
 
 **Date:** 2026-06-12
-**Status:** In review
+**Status:** Implemented
 **Owner:** lucgomes
 
 ## Context
@@ -191,7 +191,8 @@ aporte anual (capped at 12% da renda for the deduction), alíquota marginal IRPF
 - PGBL: invest `A` per year + reinvest the annual restitution `A × marginal` (treated
   as invested together in the same year); exit tax = **10% on TOTAL balance**
   (regressiva de previdência ≥10 anos; for `h < 10` use the tranche-correct rate per
-  aporte: 35−5×⌊years/2⌋ %, floor 10%).
+  aporte: 35 − 5×⌊(years−1)/2⌋ %, floor 10% — bate com as bandas da Lei 11.053/2004:
+  ≤2a 35%, (2,4] 30%, (4,6] 25%, (6,8] 20%, (8,10] 15%, >10a 10%).
 - VGBL: invest `A` per year; exit tax = same regressive rate **on gains only**.
 - Output: líquido PGBL, líquido VGBL, diferença, and the verdict text ("PGBL vence se
   você usa a declaração completa e fica até X anos"). Card with the 4 inputs + result.
@@ -223,8 +224,13 @@ aporte anual (capped at 12% da renda for the deduction), alíquota marginal IRPF
 ## Risks
 
 - **Engine rewrite risk**: per-class accumulation touches the hottest code. Mitigated
-  by the `tributado_anual` regression pin (old outputs must be reproducible bit-for-bit
-  under the fallback profile) and the closed-form anchors.
+  by the `tributado_anual` regression pin and the closed-form anchors. **The
+  byte-identical pin holds for single-class portfolios only.** Multi-class portfolios
+  *intentionally* change behavior: the old engine applied a single blended rate, which
+  implicitly **rebalanced** the portfolio to fixed weights every year; the new engine is
+  **buy-and-hold per class** (weights drift over time). Rebalancing is a taxable event,
+  so modeling it untaxed would overstate returns, and taxing it correctly is approach-C
+  complexity — buy-and-hold is the deferral-consistent choice for this round.
 - **Result shifts**: RF and benchmark values move up (deferral) — intencional; release
   note in FUTURE_IMPROVEMENTS.
 - **Stack depth**: 4th PR in the train. Merge order unchanged (#1→#2→#3→#4).
