@@ -31,11 +31,11 @@ describe("store migration v3 → v4", () => {
     localStorage.setItem("investa-scenario-v3", JSON.stringify(V3_PAYLOAD));
     await useScenarioStore.persist.rehydrate();
     const s = useScenarioStore.getState();
+    // v8 strips the obsolete taxRate that v4 reshaping carried over.
     expect(s.scenario.benchmark).toEqual({
       kind: "selic",
       annualRate: 0.12,
       ipcaSpread: 0,
-      taxRate: 0.2,
     });
   });
 
@@ -65,11 +65,11 @@ describe("store migration v3 → v4", () => {
     );
     await useScenarioStore.persist.rehydrate();
     const s = useScenarioStore.getState();
+    // v8 strips taxRate even from an already-v4-shaped benchmark.
     expect(s.scenario.benchmark).toEqual({
       kind: "ipca_plus",
       annualRate: 0.105,
       ipcaSpread: 0.06,
-      taxRate: 0.15,
     });
     expect("realEstate" in s.scenario).toBe(false);
   });
@@ -137,5 +137,114 @@ describe("store v6: expectedInflation + displayMode", () => {
     useScenarioStore.getState().setDisplayMode("nominal");
     const raw = JSON.parse(localStorage.getItem("investa-scenario-v3")!);
     expect(raw.state.displayMode).toBe("nominal");
+  });
+});
+
+describe("store v7: taxProfile stamping", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  function preV7Payload(assets: Array<{ name: string; taxProfile?: string }>) {
+    return {
+      state: {
+        scenario: {
+          ...V3_PAYLOAD.state.scenario,
+          expectedInflation: 0.045,
+          portfolio: {
+            ...V3_PAYLOAD.state.scenario.portfolio,
+            assets,
+          },
+        },
+        mc: V3_PAYLOAD.state.mc,
+        goalTarget: V3_PAYLOAD.state.goalTarget,
+      },
+      version: 6,
+    };
+  }
+
+  it("stamps the catalog profile on an asset named like a catalog label", async () => {
+    localStorage.setItem(
+      "investa-scenario-v3",
+      JSON.stringify(preV7Payload([{ name: "FII (Papel/Tijolo/Agro/FoF)" }])),
+    );
+    await useScenarioStore.persist.rehydrate();
+    const a = useScenarioStore.getState().scenario.portfolio.assets[0];
+    expect(a.taxProfile).toBe("fii");
+  });
+
+  it("stamps tributado_anual on an asset with no catalog match", async () => {
+    localStorage.setItem(
+      "investa-scenario-v3",
+      JSON.stringify(preV7Payload([{ name: "Carteira Custom XYZ" }])),
+    );
+    await useScenarioStore.persist.rehydrate();
+    const a = useScenarioStore.getState().scenario.portfolio.assets[0];
+    expect(a.taxProfile).toBe("tributado_anual");
+  });
+
+  it("leaves an already-set taxProfile untouched on a v7 payload", async () => {
+    localStorage.setItem(
+      "investa-scenario-v3",
+      JSON.stringify({
+        ...preV7Payload([{ name: "FII (Papel/Tijolo/Agro/FoF)", taxProfile: "isento" }]),
+        version: 7,
+      }),
+    );
+    await useScenarioStore.persist.rehydrate();
+    const a = useScenarioStore.getState().scenario.portfolio.assets[0];
+    expect(a.taxProfile).toBe("isento");
+  });
+});
+
+describe("store v8: benchmark.taxRate dropped", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("drops the obsolete benchmark.taxRate, keeping other fields intact", async () => {
+    localStorage.setItem(
+      "investa-scenario-v3",
+      JSON.stringify({
+        state: {
+          scenario: {
+            ...V3_PAYLOAD.state.scenario,
+            expectedInflation: 0.045,
+            benchmark: { kind: "cdi", annualRate: 0.1465, ipcaSpread: 0, taxRate: 0.175 },
+          },
+          mc: V3_PAYLOAD.state.mc,
+          goalTarget: V3_PAYLOAD.state.goalTarget,
+        },
+        version: 7,
+      }),
+    );
+    await useScenarioStore.persist.rehydrate();
+    const b = useScenarioStore.getState().scenario.benchmark as { taxRate?: number };
+    expect(b.taxRate).toBeUndefined();
+    expect(b).toEqual({ kind: "cdi", annualRate: 0.1465, ipcaSpread: 0 });
+  });
+
+  it("leaves an already-v8 payload untouched", async () => {
+    localStorage.setItem(
+      "investa-scenario-v3",
+      JSON.stringify({
+        state: {
+          scenario: {
+            ...V3_PAYLOAD.state.scenario,
+            expectedInflation: 0.045,
+            benchmark: { kind: "selic", annualRate: 0.14, ipcaSpread: 0 },
+          },
+          mc: V3_PAYLOAD.state.mc,
+          goalTarget: V3_PAYLOAD.state.goalTarget,
+        },
+        version: 8,
+      }),
+    );
+    await useScenarioStore.persist.rehydrate();
+    expect(useScenarioStore.getState().scenario.benchmark).toEqual({
+      kind: "selic",
+      annualRate: 0.14,
+      ipcaSpread: 0,
+    });
   });
 });

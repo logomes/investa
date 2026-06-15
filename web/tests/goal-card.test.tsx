@@ -6,6 +6,7 @@ import { GoalCard } from "@/components/visao-geral/GoalCard";
 import { useScenarioStore } from "@/lib/store";
 import { DEFAULT_GOAL, DEFAULT_SCENARIO } from "@/lib/defaults";
 import type { SimulateOut, SimulateMonteCarloOut, MacroOut } from "@/lib/api-types";
+import { MOCK_TAX_PROJECTION } from "./fixtures";
 
 let simPatrimony: number[] = [230_000, 250_000];
 let mcDist: number[] = [];
@@ -27,10 +28,10 @@ const goalSolveMock = vi.hoisted(() => ({
 
 function makeSim(patrimony: number[]): SimulateOut {
   return {
-    portfolio: { label: "PF", color: "#fff", years: [0, 1], patrimony, annualIncome: [0, 5_000], cumulativeIncome: [0, 5_000] },
-    benchmark: { label: "BM", color: "#fff", years: [0, 1], patrimony: [100, 110], annualIncome: [0, 0], cumulativeIncome: [0, 0] },
+    portfolio: { label: "PF", color: "#fff", years: [0, 1], patrimony, annualIncome: [0, 5_000], cumulativeIncome: [0, 5_000], grossPatrimony: patrimony, taxPaidCumulative: [0, 0], exitTax: [0, 0] },
+    benchmark: { label: "BM", color: "#fff", years: [0, 1], patrimony: [100, 110], annualIncome: [0, 0], cumulativeIncome: [0, 0], grossPatrimony: [100, 110], taxPaidCumulative: [0, 0], exitTax: [0, 0] },
     sensitivity: [],
-    taxComparison: [],
+    taxProjection: MOCK_TAX_PROJECTION,
   };
 }
 

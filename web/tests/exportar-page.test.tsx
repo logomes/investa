@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ExportarPageContent } from "@/components/exportar/ExportarPageContent";
 import type { SimulateOut } from "@/lib/api-types";
+import { MOCK_TAX_PROJECTION } from "./fixtures";
 
 type MockStore = { scenario: { horizon: number; expectedInflation: number }; displayMode: "nominal" | "real" };
 
@@ -19,6 +20,9 @@ const fakeSimOut: SimulateOut = {
     patrimony: Array.from({ length: 11 }, (_, i) => 230_000 + i * 25_000),
     annualIncome: Array.from({ length: 11 }, (_, i) => i * 1_500),
     cumulativeIncome: Array.from({ length: 11 }, (_, i) => i * i * 750),
+    grossPatrimony: Array.from({ length: 11 }, (_, i) => 230_000 + i * 25_000),
+    taxPaidCumulative: Array.from({ length: 11 }, () => 0),
+    exitTax: Array.from({ length: 11 }, () => 0),
   },
   benchmark: {
     label: "CDI (líquido)",
@@ -27,9 +31,12 @@ const fakeSimOut: SimulateOut = {
     patrimony: Array.from({ length: 11 }, (_, i) => 230_000 + i * 28_000),
     annualIncome: Array.from({ length: 11 }, (_, i) => i * 2_800),
     cumulativeIncome: Array.from({ length: 11 }, (_, i) => i * i * 1_400),
+    grossPatrimony: Array.from({ length: 11 }, (_, i) => 230_000 + i * 28_000),
+    taxPaidCumulative: Array.from({ length: 11 }, () => 0),
+    exitTax: Array.from({ length: 11 }, () => 0),
   },
   sensitivity: [],
-  taxComparison: [],
+  taxProjection: MOCK_TAX_PROJECTION,
 };
 
 let mockSim: { data: SimulateOut | undefined; isLoading: boolean; error: Error | null; refetch: () => void };

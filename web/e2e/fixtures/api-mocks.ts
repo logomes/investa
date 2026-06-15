@@ -14,6 +14,9 @@ export const simulateOut = {
     patrimony: portfolioPatrimony,
     annualIncome: portfolioAnnualIncome,
     cumulativeIncome: cumulative(portfolioAnnualIncome),
+    grossPatrimony: portfolioPatrimony,
+    taxPaidCumulative: years.map(() => 0),
+    exitTax: years.map(() => 0),
   },
   benchmark: {
     label: "CDI (líquido)",
@@ -22,9 +25,23 @@ export const simulateOut = {
     patrimony: [230_000, 258_000, 289_000, 324_000, 364_000, 408_000, 458_000, 513_000, 576_000, 646_000, 725_000],
     annualIncome: [28_000, 28_000, 31_000, 35_000, 39_000, 44_000, 49_000, 55_000, 62_000, 70_000, 78_000],
     cumulativeIncome: [28_000, 56_000, 87_000, 122_000, 161_000, 205_000, 254_000, 309_000, 371_000, 441_000, 519_000],
+    grossPatrimony: [230_000, 258_000, 289_000, 324_000, 364_000, 408_000, 458_000, 513_000, 576_000, 646_000, 725_000],
+    taxPaidCumulative: years.map(() => 0),
+    exitTax: years.map(() => 0),
   },
   sensitivity: [],
-  taxComparison: [],
+  taxProjection: {
+    rows: [
+      { name: "Tesouro IPCA+", taxProfile: "rf_regressiva", taxPaidPath: 0, exitTax: 18_400, netFinal: 142_000, grossFinal: 160_400 },
+      { name: "Fundo Multimercado", taxProfile: "come_cotas", taxPaidPath: 9_200, exitTax: 1_100, netFinal: 88_000, grossFinal: 98_300 },
+      { name: "FIIs", taxProfile: "fii", taxPaidPath: 0, exitTax: 6_400, netFinal: 121_000, grossFinal: 127_400 },
+      { name: "Ações BR", taxProfile: "acoes_br", taxPaidPath: 0, exitTax: 14_700, netFinal: 145_000, grossFinal: 159_700 },
+      { name: "CDI (líquido)", taxProfile: "rf_regressiva", taxPaidPath: 0, exitTax: 31_500, netFinal: 193_500, grossFinal: 225_000 },
+    ],
+    taxPaidByYear: [0, 1_500, 3_100, 4_800, 6_700, 8_800, 11_100, 13_700, 16_500, 19_700, 23_200],
+    exitTaxByYear: [0, 4_200, 8_900, 14_100, 19_900, 26_300, 33_400, 41_300, 50_000, 59_700, 70_400],
+    allTaxedFinal: 521_000,
+  },
 };
 
 const finalDistribution = Array.from({ length: 100 }, (_, i) => 400_000 + i * 4_000);

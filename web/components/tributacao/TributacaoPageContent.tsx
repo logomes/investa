@@ -1,16 +1,20 @@
 "use client";
 
 import { useSimulate } from "@/lib/api";
+import { useScenarioStore } from "@/lib/store";
 import { ErrorCard } from "@/components/error/ErrorCard";
 import { KpiSkeleton } from "@/components/kpi/KpiSkeleton";
-import { splitTaxRows } from "@/lib/tributacao-derive";
+import { totalContributed, taxKpis } from "@/lib/tributacao-derive";
 import { KpiRowTributacao } from "./KpiRowTributacao";
-import { TaxComparisonChart } from "./TaxComparisonChart";
+import { TaxTimelineChart } from "./TaxTimelineChart";
 import { TributacaoTable } from "./TributacaoTable";
+import { LciCdbCard } from "./LciCdbCard";
+import { PrevidenciaCard } from "./PrevidenciaCard";
 import { TaxNotesCard } from "./TaxNotesCard";
 
 export function TributacaoPageContent() {
   const sim = useSimulate();
+  const scenario = useScenarioStore((s) => s.scenario);
 
   if (sim.isLoading) {
     return (
@@ -27,17 +31,19 @@ export function TributacaoPageContent() {
   }
 
   const data = sim.data!;
-  const { portfolio, benchmark } = splitTaxRows(data.taxComparison);
-
-  if (!portfolio || !benchmark) {
-    return <ErrorCard message="Dados de tributação incompletos" onRetry={() => sim.refetch()} />;
-  }
+  const contributed = totalContributed(scenario);
+  const kpis = taxKpis(data, contributed);
 
   return (
     <div className="space-y-6">
-      <KpiRowTributacao portfolio={portfolio} benchmark={benchmark} />
-      <TaxComparisonChart portfolio={portfolio} benchmark={benchmark} />
-      <TributacaoTable rows={data.taxComparison} />
+      <KpiRowTributacao kpis={kpis} horizon={scenario.horizon} />
+      <TaxTimelineChart
+        taxPaidByYear={data.taxProjection.taxPaidByYear}
+        exitTaxByYear={data.taxProjection.exitTaxByYear}
+      />
+      <TributacaoTable rows={data.taxProjection.rows} horizon={scenario.horizon} />
+      <LciCdbCard />
+      <PrevidenciaCard />
       <TaxNotesCard />
     </div>
   );

@@ -64,6 +64,9 @@ describe("bridgePortfolio — RV grouping", () => {
     expect(fii.capitalGain).toBeCloseTo((1_000 * 0.01 + 3_000 * 0.03) / 4_000);
     expect(fii.weight).toBeCloseTo(4_000 / 10_000);
     expect(fii.note).toBe("HGLG11, KNCR11");
+    expect(fii.taxProfile).toBe("fii");
+    const acao = result.portfolio.assets.find((a) => a.name === "Ações BR (dividendos)")!;
+    expect(acao.taxProfile).toBe("acoes_br");
     const sum = result.portfolio.assets.reduce((s, a) => s + a.weight, 0);
     expect(sum).toBeCloseTo(1, 6);
   });
@@ -89,6 +92,7 @@ describe("bridgePortfolio — RV grouping", () => {
     expect(bdr.name).toBe("BDRs");
     expect(bdr.taxRate).toBe(0.15);
     expect(bdr.volatility).toBe(0.20);
+    expect(bdr.taxProfile).toBe("dividendos_exterior");
   });
 
   it("truncates the note after 2 tickers", () => {
@@ -102,7 +106,7 @@ describe("bridgePortfolio — RV grouping", () => {
 });
 
 describe("bridgePortfolio — RF grouping", () => {
-  it("splits tesouro/isentos into RF_PUBLICO and the rest into RF_PRIVADO", () => {
+  it("3-way split: isenta (isento), tesouro (rf_regressiva), CDB (rf_regressiva)", () => {
     const result = bridgePortfolio({
       ...BASE_ARGS,
       positions: [],
@@ -112,10 +116,16 @@ describe("bridgePortfolio — RF grouping", () => {
         rf({ name: "CDB Inter 110%", indexer: "cdi", rate: 1.10, initialAmount: 30_000 }),
       ],
     })!;
+    const isenta = result.portfolio.assets.find((a) => a.name === "Renda Fixa Isenta (LCI/LCA)")!;
     const pub = result.portfolio.assets.find((a) => a.name === "Renda Fixa Tesouro/LCI")!;
     const priv = result.portfolio.assets.find((a) => a.name === "Renda Fixa CDB/Debênture")!;
-    expect(pub.weight).toBeCloseTo(30_000 / 60_000);
+    expect(isenta.weight).toBeCloseTo(10_000 / 60_000);
+    expect(isenta.taxProfile).toBe("isento");
+    expect(isenta.taxRate).toBe(0);
+    expect(pub.weight).toBeCloseTo(20_000 / 60_000);
+    expect(pub.taxProfile).toBe("rf_regressiva");
     expect(priv.weight).toBeCloseTo(30_000 / 60_000);
+    expect(priv.taxProfile).toBe("rf_regressiva");
     expect(priv.expectedYield).toBeCloseTo(0.149 * 1.10);  // effectiveAnnualRate cdi
     expect(pub.capitalGain).toBe(0);
     expect(result.rfBRL).toBeCloseTo(60_000);

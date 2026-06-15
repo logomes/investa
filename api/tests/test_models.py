@@ -107,9 +107,11 @@ def test_contribution_with_reinvest_false():
     assert result.patrimony[-1] == pytest.approx(28_000, abs=1.0)
 
 
-def test_simulate_benchmark_unchanged():
-    """Regression: benchmark simulation must be unaffected by Phase 1 changes."""
+def test_simulate_benchmark_deferred_rf():
+    """Benchmark simulation uses deferred-RF (regressiva): gross compounds, tax only at exit."""
     bench = BenchmarkParams(capital=100_000)
     result = simulate_benchmark(bench, horizon_years=5)
-    expected = 100_000 * (1 + bench.net_yield()) ** 5
-    assert result.patrimony[-1] == pytest.approx(expected, rel=1e-6)
+    gross = 100_000 * (1 + bench.annual_rate) ** 5
+    expected_net = gross - 0.15 * (gross - 100_000)
+    assert result.patrimony[-1] == pytest.approx(expected_net, rel=1e-6)
+    assert result.gross_patrimony[-1] == pytest.approx(gross, rel=1e-6)

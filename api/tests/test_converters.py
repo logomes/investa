@@ -15,13 +15,17 @@ from converters import (
 def test_simulation_result_dto_converts_arrays_to_lists():
     """Build a SimulationResult by hand and convert."""
     from core.models import SimulationResult
+    patrimony = np.array([1000.0, 1100.0, 1210.0, 1331.0])
     r = SimulationResult(
         years=np.arange(4),
-        patrimony=np.array([1000.0, 1100.0, 1210.0, 1331.0]),
+        patrimony=patrimony,
         annual_income=np.array([0.0, 100.0, 110.0, 121.0]),
         cumulative_income=np.array([0.0, 100.0, 210.0, 331.0]),
         label="Test",
         color="#FF0000",
+        gross_patrimony=patrimony.copy(),
+        tax_paid_cumulative=np.zeros_like(patrimony),
+        exit_tax=np.zeros_like(patrimony),
     )
     dto = simulation_result_to_dto(r)
     assert dto.label == "Test"

@@ -3,6 +3,10 @@
 
 export type DisplayMode = "real" | "nominal";
 
+export type TaxProfile =
+  | "isento" | "fii" | "acoes_br" | "rf_regressiva"
+  | "come_cotas" | "dividendos_exterior" | "tributado_anual";
+
 export type PortfolioAssetInput = {
   name: string;
   weight: number;
@@ -11,6 +15,7 @@ export type PortfolioAssetInput = {
   taxRate: number;
   note: string;
   volatility: number;
+  taxProfile: TaxProfile;
 };
 
 export type PortfolioInput = {
@@ -26,7 +31,6 @@ export type BenchmarkInput = {
   kind: BenchmarkKind;
   annualRate: number;
   ipcaSpread: number;
-  taxRate: number;
 };
 
 export type MonteCarloInput = {
@@ -60,6 +64,9 @@ export type SimulationResultOut = {
   patrimony: number[];
   annualIncome: number[];
   cumulativeIncome: number[];
+  grossPatrimony: number[];
+  taxPaidCumulative: number[];
+  exitTax: number[];
 };
 
 export type SensitivityRowOut = {
@@ -68,19 +75,21 @@ export type SensitivityRowOut = {
   optimistic: number;
 };
 
-export type TaxComparisonRowOut = {
-  scenario: string;
-  grossIncome: number;
-  annualTax: number;
-  netIncome: number;
-  effectiveTaxBurden: number;
+export type TaxProjectionRowOut = {
+  name: string; taxProfile: string; taxPaidPath: number;
+  exitTax: number; netFinal: number; grossFinal: number;
+};
+
+export type TaxProjectionOut = {
+  rows: TaxProjectionRowOut[]; taxPaidByYear: number[];
+  exitTaxByYear: number[]; allTaxedFinal: number;
 };
 
 export type SimulateOut = {
   portfolio: SimulationResultOut;
   benchmark: SimulationResultOut;
   sensitivity: SensitivityRowOut[];
-  taxComparison: TaxComparisonRowOut[];
+  taxProjection: TaxProjectionOut;
 };
 
 export type MonteCarloResultOut = {

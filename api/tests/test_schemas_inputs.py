@@ -107,3 +107,26 @@ def test_portfolio_input_rejects_empty_assets():
             "contributionInflationIndexed": True,
             "assets": [],
         })
+
+
+def test_asset_input_accepts_tax_profile():
+    a = PortfolioAssetInput.model_validate({
+        "name": "CDB", "weight": 1.0, "expectedYield": 0.12,
+        "taxProfile": "rf_regressiva",
+    })
+    assert a.tax_profile == "rf_regressiva"
+
+
+def test_asset_input_tax_profile_defaults_to_tributado_anual():
+    a = PortfolioAssetInput.model_validate({
+        "name": "X", "weight": 1.0, "expectedYield": 0.10,
+    })
+    assert a.tax_profile == "tributado_anual"
+
+
+def test_asset_input_rejects_unknown_profile():
+    with pytest.raises(ValidationError):
+        PortfolioAssetInput.model_validate({
+            "name": "X", "weight": 1.0, "expectedYield": 0.10,
+            "taxProfile": "isento_total",
+        })

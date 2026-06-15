@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { SimulateInput, MonteCarloInput, DisplayMode } from "./api-types";
 import { DEFAULT_SCENARIO, DEFAULT_MC, DEFAULT_GOAL } from "./defaults";
+import { profileForAssetName } from "./portfolio-asset-types";
 
 type ScenarioStore = {
   scenario: SimulateInput;
@@ -57,13 +58,16 @@ export const useScenarioStore = create<ScenarioStore>()(
       // v4: benchmark reshaped from {selicRate,taxRate} to {kind,annualRate,ipcaSpread,taxRate}.
       // v5: realEstate dropped from the persisted scenario (imóvel removed from the product).
       // v6: expectedInflation became a scenario field.
-      version: 6,
+      // v7: assets gained taxProfile (stamped from the catalog by name).
+      // v8: benchmark.taxRate dropped (benchmark now simulates rf_regressiva server-side).
+      version: 8,
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as {
           scenario?: SimulateInput & {
-            benchmark?: Partial<SimulateInput["benchmark"]> & { selicRate?: number };
+            benchmark?: Partial<SimulateInput["benchmark"]> & { selicRate?: number; taxRate?: number };
             realEstate?: unknown;
             expectedInflation?: number;
+            portfolio?: { assets?: Array<{ name: string; taxProfile?: string }> };
           };
         };
         if ((version ?? 0) < 4 && state?.scenario) {
@@ -72,7 +76,8 @@ export const useScenarioStore = create<ScenarioStore>()(
             kind: "selic",  // pre-v4 benchmark was Tesouro Selic — preserve intent
             annualRate: old.selicRate ?? DEFAULT_SCENARIO.benchmark.annualRate,
             ipcaSpread: 0,
-            taxRate: old.taxRate ?? DEFAULT_SCENARIO.benchmark.taxRate,
+            // taxRate carried here historically; v8 strips it below.
+            taxRate: old.taxRate ?? 0.175,
           };
         }
         if ((version ?? 0) < 5 && state?.scenario) {
@@ -84,6 +89,22 @@ export const useScenarioStore = create<ScenarioStore>()(
           if (state.scenario.expectedInflation === undefined) {
             state.scenario.expectedInflation = DEFAULT_SCENARIO.expectedInflation;
           }
+        }
+        // v7: stamp taxProfile on each asset by matching its name against the
+        // catalog labels. A renamed asset won't match and falls back to
+        // tributado_anual — the most-taxed (fail-safe) profile, user-correctable
+        // via the dialog's "Perfil tributário" select.
+        if ((version ?? 0) < 7 && state?.scenario?.portfolio?.assets) {
+          for (const a of state.scenario.portfolio.assets) {
+            if (a.taxProfile === undefined) {
+              a.taxProfile = profileForAssetName(a.name);
+            }
+          }
+        }
+        if ((version ?? 0) < 8 && state?.scenario?.benchmark) {
+          // benchmark.taxRate is obsolete — benchmark now simulates rf_regressiva
+          // (regressive IR at redemption, automatic).
+          delete (state.scenario.benchmark as { taxRate?: number }).taxRate;
         }
         return state;
       },

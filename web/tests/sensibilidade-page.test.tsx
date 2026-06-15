@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SensibilidadePageContent } from "@/components/sensibilidade/SensibilidadePageContent";
 import type { SimulateOut } from "@/lib/api-types";
+import { MOCK_TAX_PROJECTION } from "./fixtures";
 
 type MockScenario = { horizon: number; expectedInflation: number };
 type MockStore = { scenario: MockScenario; displayMode: "nominal" | "real" };
@@ -24,15 +25,18 @@ const fakeSimOut: SimulateOut = {
     patrimony: [100_000, 130_000, 160_000, 195_000, 230_000, 270_000, 315_000, 365_000, 420_000, 470_000, 520_000],
     annualIncome: Array(11).fill(8_000) as number[],
     cumulativeIncome: Array(11).fill(0) as number[],
+    grossPatrimony: [100_000, 130_000, 160_000, 195_000, 230_000, 270_000, 315_000, 365_000, 420_000, 470_000, 520_000],
+    taxPaidCumulative: Array(11).fill(0) as number[],
+    exitTax: Array(11).fill(0) as number[],
   },
   benchmark: {} as never,
   sensitivity: [
     { parameter: "Yield da carteira (±1,5pp)", pessimistic: 320_000, optimistic: 470_000 },
     { parameter: "Ganho de capital (±1,5pp)",  pessimistic: 340_000, optimistic: 450_000 },
     { parameter: "Aporte mensal (±25%)",       pessimistic: 410_000, optimistic: 380_000 },
-    { parameter: "IR efetivo (±5pp)",          pessimistic: 400_000, optimistic: 385_000 },
+    { parameter: "Horizonte (−2a / +2a)",       pessimistic: 400_000, optimistic: 385_000 },
   ],
-  taxComparison: [] as never,
+  taxProjection: MOCK_TAX_PROJECTION,
 };
 
 let mockSimReturn: { data: SimulateOut | undefined; isLoading: boolean; error: Error | null; refetch: () => void };
@@ -71,7 +75,7 @@ describe("SensibilidadePageContent", () => {
     render(wrap(<SensibilidadePageContent />));
     expect(screen.getAllByText(/Yield da carteira/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/Ganho de capital/).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/IR efetivo/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Horizonte/).length).toBeGreaterThanOrEqual(1);
   });
 
   it("loading → renderiza skeleton", () => {

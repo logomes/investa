@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RiscoPageContent } from "@/components/risco/RiscoPageContent";
 import type { SimulateMonteCarloOut, SimulateOut } from "@/lib/api-types";
+import { MOCK_TAX_PROJECTION } from "./fixtures";
 
 const fakeMcOut: SimulateMonteCarloOut = {
   portfolio: {
@@ -25,9 +26,12 @@ const fakeSimOut: SimulateOut = {
     patrimony: [230_000, 250_000, 275_000],
     annualIncome: [],
     cumulativeIncome: [],
+    grossPatrimony: [230_000, 250_000, 275_000],
+    taxPaidCumulative: [],
+    exitTax: [],
   },
   sensitivity: [] as never,
-  taxComparison: [] as never,
+  taxProjection: MOCK_TAX_PROJECTION,
 };
 
 type MockStore = {

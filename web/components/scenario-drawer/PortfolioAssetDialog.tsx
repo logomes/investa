@@ -16,7 +16,17 @@ import {
   PORTFOLIO_TYPE_BY_ID,
   type PortfolioAssetTypeId,
 } from "@/lib/portfolio-asset-types";
-import type { PortfolioAssetInput } from "@/lib/api-types";
+import type { PortfolioAssetInput, TaxProfile } from "@/lib/api-types";
+
+const TAX_PROFILE_OPTIONS: { value: TaxProfile; label: string }[] = [
+  { value: "isento", label: "Isento (LCI/LCA)" },
+  { value: "fii", label: "FII" },
+  { value: "acoes_br", label: "Ações BR" },
+  { value: "rf_regressiva", label: "RF regressiva (CDB/Tesouro)" },
+  { value: "come_cotas", label: "Fundo (come-cotas)" },
+  { value: "dividendos_exterior", label: "Dividendos exterior" },
+  { value: "tributado_anual", label: "Tributado anual" },
+];
 
 const formSchema = z.object({
   typeId: z.string(),
@@ -27,6 +37,7 @@ const formSchema = z.object({
   taxRate: z.number().min(0, "0–100%").max(100, "0–100%"),
   volatility: z.number().min(0, "0–100%").max(100, "0–100%"),
   note: z.string(),
+  taxProfile: z.enum(["isento", "fii", "acoes_br", "rf_regressiva", "come_cotas", "dividendos_exterior", "tributado_anual"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -55,6 +66,7 @@ function pctFromInitial(initial: PortfolioAssetInput | undefined, defaults: type
       taxRate: toPct(initial.taxRate),
       volatility: toPct(initial.volatility),
       note: initial.note,
+      taxProfile: initial.taxProfile,
     };
   }
   return {
@@ -66,6 +78,7 @@ function pctFromInitial(initial: PortfolioAssetInput | undefined, defaults: type
     taxRate: toPct(defaults.taxRate),
     volatility: toPct(defaults.volatility),
     note: "",
+    taxProfile: defaults.taxProfile,
   };
 }
 
@@ -91,6 +104,7 @@ export function PortfolioAssetDialog({ open, mode, initial, onClose, onSubmit, o
       form.setValue("capitalGain", toPct(meta.defaults.capitalGain));
       form.setValue("taxRate", toPct(meta.defaults.taxRate));
       form.setValue("volatility", toPct(meta.defaults.volatility));
+      form.setValue("taxProfile", meta.defaults.taxProfile);
     }
   };
 
@@ -108,6 +122,7 @@ export function PortfolioAssetDialog({ open, mode, initial, onClose, onSubmit, o
         taxRate: data.taxRate / 100,
         volatility: data.volatility / 100,
         note: data.note,
+        taxProfile: data.taxProfile,
       });
     })(e);
   };
@@ -129,6 +144,19 @@ export function PortfolioAssetDialog({ open, mode, initial, onClose, onSubmit, o
             >
               {PORTFOLIO_ASSET_TYPES.map((t) => (
                 <option key={t.id} value={t.id}>{t.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="pa-profile">Perfil tributário</Label>
+            <select
+              id="pa-profile"
+              {...form.register("taxProfile")}
+              className="w-full bg-bg-2 border border-line rounded-md px-2 py-1.5 text-xs text-ink"
+            >
+              {TAX_PROFILE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
           </div>

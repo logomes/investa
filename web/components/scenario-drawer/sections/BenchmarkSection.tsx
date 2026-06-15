@@ -84,15 +84,6 @@ export function BenchmarkSection() {
             {...register("benchmark.annualRate", { valueAsNumber: true })}
           />
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="bench-tax" className="text-xs">IR sobre rendimentos</Label>
-          <Input
-            id="bench-tax"
-            type="number"
-            step="0.005"
-            {...register("benchmark.taxRate", { valueAsNumber: true })}
-          />
-        </div>
       </div>
     </div>
   );

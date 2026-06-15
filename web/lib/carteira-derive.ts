@@ -58,8 +58,12 @@ export function allocationSegments(pf: PortfolioInput): AllocationSegment[] {
 
 export type YieldRow = { label: string; value: number; color: string };
 
-export function benchmarkNetYield(b: BenchmarkInput): number {
-  return b.annualRate * (1 - b.taxRate);
+/** Effective NET annual rate of a deferred-RF lump sum held for `horizonYears` years. */
+export function benchmarkNetYield(b: BenchmarkInput, horizonYears: number): number {
+  const rate = horizonYears >= 2 ? 0.15 : 0.175;
+  const gross = Math.pow(1 + b.annualRate, horizonYears);
+  const net = 1 + (gross - 1) * (1 - rate);
+  return Math.pow(net, 1 / horizonYears) - 1;
 }
 
 export function benchmarkLabel(b: BenchmarkInput): string {
@@ -71,12 +75,13 @@ export function benchmarkLabel(b: BenchmarkInput): string {
 export function yieldComparison(args: {
   pf: PortfolioInput;
   benchmark: BenchmarkInput;
+  horizonYears: number;
 }): YieldRow[] {
-  const { pf, benchmark } = args;
+  const { pf, benchmark, horizonYears } = args;
   return [
-    { label: "Carteira blended",               value: blendedYield(pf),             color: "#46E8A4" },
-    { label: "Carteira total (yield + ganho)", value: totalReturn(pf),              color: "#FFC857" },
-    { label: benchmarkLabel(benchmark),        value: benchmarkNetYield(benchmark), color: "#5CC8FF" },
+    { label: "Carteira blended",               value: blendedYield(pf),                          color: "#46E8A4" },
+    { label: "Carteira total (yield + ganho)", value: totalReturn(pf),                           color: "#FFC857" },
+    { label: benchmarkLabel(benchmark),        value: benchmarkNetYield(benchmark, horizonYears), color: "#5CC8FF" },
   ];
 }
 

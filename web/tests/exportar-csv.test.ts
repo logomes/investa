@@ -7,6 +7,7 @@ import {
   type LongRow,
 } from "@/lib/exportar-csv";
 import type { SimulateOut } from "@/lib/api-types";
+import { MOCK_TAX_PROJECTION } from "./fixtures";
 
 const SIM: SimulateOut = {
   portfolio: {
@@ -16,6 +17,9 @@ const SIM: SimulateOut = {
     patrimony: [230_000, 250_000, 275_000],
     annualIncome: [0, 14_794, 15_500],
     cumulativeIncome: [0, 14_794, 30_294],
+    grossPatrimony: [230_000, 250_000, 275_000],
+    taxPaidCumulative: [0, 0, 0],
+    exitTax: [0, 0, 0],
   },
   benchmark: {
     label: "CDI (líquido)",
@@ -24,9 +28,12 @@ const SIM: SimulateOut = {
     patrimony: [230_000, 258_000, 289_000],
     annualIncome: [0, 28_000, 31_000],
     cumulativeIncome: [0, 28_000, 59_000],
+    grossPatrimony: [230_000, 258_000, 289_000],
+    taxPaidCumulative: [0, 0, 0],
+    exitTax: [0, 0, 0],
   },
   sensitivity: [],
-  taxComparison: [],
+  taxProjection: MOCK_TAX_PROJECTION,
 };
 
 describe("exportar-csv — buildLongFormatRows", () => {

@@ -1,6 +1,6 @@
 """Tests for the portfolio tornado sensitivity."""
 from core.config import AssetClass, PortfolioParams
-from core.models import sensitivity_portfolio, simulate_portfolio
+from core.models import sensitivity_portfolio
 
 
 def _params() -> PortfolioParams:
@@ -21,7 +21,7 @@ def test_four_rows_with_expected_labels():
         "Yield da carteira (±1,5pp)",
         "Ganho de capital (±1,5pp)",
         "Aporte mensal (±25%)",
-        "IR efetivo (±5pp)",
+        "Horizonte (−2a / +2a)",
     ]
     assert set(df.columns) == {"Parâmetro", "Cenário Pessimista", "Cenário Otimista"}
 
@@ -47,19 +47,16 @@ def test_zero_contribution_makes_aporte_row_flat():
     assert row["Cenário Pessimista"] == row["Cenário Otimista"]
 
 
-def test_tax_clamp_makes_negative_delta_a_noop_at_zero_tax():
-    # All assets at 0% tax: the optimistic −5pp IR delta clamps to 0,
-    # so the IR row's optimistic scenario equals the base final patrimony.
-    params = PortfolioParams(
-        capital=100_000,
-        monthly_contribution=0.0,
-        contribution_inflation_indexed=False,
-        assets=[
-            AssetClass("A", 0.5, 0.10, 0.02, 0.00, volatility=0.10),
-            AssetClass("B", 0.5, 0.08, 0.01, 0.00, volatility=0.20),
-        ],
-    )
-    base = float(simulate_portfolio(params, 10, reinvest_income=True).patrimony[-1])
-    df = sensitivity_portfolio(params, horizon_years=10)
-    row = df[df["Parâmetro"] == "IR efetivo (±5pp)"].iloc[0]
-    assert row["Cenário Otimista"] == base
+def test_horizonte_row_optimistic_geq_pessimistic():
+    # Longer horizon always beats shorter for positive-return portfolios.
+    df = sensitivity_portfolio(_params(), horizon_years=10)
+    row = df[df["Parâmetro"] == "Horizonte (−2a / +2a)"].iloc[0]
+    assert row["Cenário Otimista"] >= row["Cenário Pessimista"]
+
+
+def test_horizonte_row_clamps_to_valid_range():
+    # horizon=2 → pessimistic clips to max(2-2, 1)=1 yr; no crash.
+    df = sensitivity_portfolio(_params(), horizon_years=2)
+    row = df[df["Parâmetro"] == "Horizonte (−2a / +2a)"].iloc[0]
+    assert row["Cenário Pessimista"] > 0
+    assert row["Cenário Otimista"] > row["Cenário Pessimista"]

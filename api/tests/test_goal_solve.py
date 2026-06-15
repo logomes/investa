@@ -112,3 +112,28 @@ def test_endpoint_solves():
 def test_endpoint_validates_confidence_bounds():
     resp = client.post("/api/goal/solve", json=_payload(confidence=0.3))
     assert resp.status_code == 422
+
+
+def test_solver_targets_net_of_redemption():
+    # rf_regressiva, g=0.10, h=8, no contributions:
+    #   gross = 100k × 1.10^8 ≈ 214_358.88
+    #   exit tax = 0.15 × (214_358.88 − 100_000) ≈ 17_153.83
+    #   net ≈ 197_205.05
+    # Goal of 260_000 (net) is above the zero-contribution net final → requires c > 0.
+    from dataclasses import replace
+
+    pf = PortfolioParams(
+        capital=100_000, monthly_contribution=0.0,
+        contribution_inflation_indexed=False,
+        assets=[AssetClass("RF", 1.0, expected_yield=0.0, capital_gain=0.10,
+                           volatility=0.0, tax_profile="rf_regressiva")],
+    )
+    goal = 260_000.0
+    result = solve_goal_contribution(pf, horizon_years=8, goal_target=goal, confidence=0.8)
+    assert result["attainable"] is True
+    c = result["required_monthly_contribution"]
+    assert c > 0  # goal is above zero-contribution net final (~197_205)
+    achieved_net = float(
+        simulate_portfolio(replace(pf, monthly_contribution=c), 8).patrimony[-1]
+    )
+    assert achieved_net >= goal  # solver solves in NET space
