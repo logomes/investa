@@ -10,7 +10,7 @@ export function KpiBaseCard({ base, horizonYears }: Props) {
   return (
     <div className="grid grid-cols-1">
       <KpiCard
-        label={`Patrimônio Imóvel ao fim de ${horizonYears} ${horizonYears === 1 ? "ano" : "anos"}`}
+        label={`Patrimônio Carteira ao fim de ${horizonYears} ${horizonYears === 1 ? "ano" : "anos"}`}
         value={formatRs(base)}
         icon={Target}
         feature

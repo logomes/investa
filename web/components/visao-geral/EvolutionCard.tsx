@@ -45,7 +45,6 @@ export function EvolutionCard() {
 
   const series = [
     { name: data.portfolio.label, color: data.portfolio.color, values: project(data.portfolio.patrimony) },
-    { name: data.realEstate.label, color: data.realEstate.color, values: project(data.realEstate.patrimony) },
     { name: data.benchmark.label, color: data.benchmark.color, values: project(data.benchmark.patrimony) },
   ];
 
@@ -58,12 +57,6 @@ export function EvolutionCard() {
           color: "rgba(39, 174, 96, 0.18)",
           lower: mc.data.portfolio.p10.slice(0, sliceN),
           upper: mc.data.portfolio.p90.slice(0, sliceN),
-        },
-        {
-          name: `${mc.data.realEstate.label} p10–p90`,
-          color: "rgba(192, 57, 43, 0.14)",
-          lower: mc.data.realEstate.p10.slice(0, sliceN),
-          upper: mc.data.realEstate.p90.slice(0, sliceN),
         },
       ]
     : undefined;

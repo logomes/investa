@@ -4,6 +4,12 @@ import { ScenarioDrawer } from "@/components/scenario-drawer/ScenarioDrawer";
 import { useScenarioStore } from "@/lib/store";
 import { DEFAULT_SCENARIO, DEFAULT_MC, DEFAULT_GOAL } from "@/lib/defaults";
 
+vi.mock("@/lib/api", () => ({
+  useMacro: () => ({
+    data: { selic: 0.15, cdi: 0.149, ipca: 0.045, usdBrl: 5.0, isStale: false, sourceLabel: "test" },
+  }),
+}));
+
 beforeEach(() => {
   useScenarioStore.setState({
     scenario: DEFAULT_SCENARIO,

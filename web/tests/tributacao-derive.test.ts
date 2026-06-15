@@ -7,84 +7,61 @@ import {
 } from "@/lib/tributacao-derive";
 import type { TaxComparisonRowOut } from "@/lib/api-types";
 
-const RE_ROW: TaxComparisonRowOut = {
-  scenario: "Imóvel",
-  grossIncome: 18_000,
-  annualTax: 1_237.5,
-  netIncome: 16_762.5,
-  effectiveTaxBurden: 0.0688,
-};
-
-const RE_FINANCED_ROW: TaxComparisonRowOut = {
-  ...RE_ROW,
-  scenario: "Imóvel (financiado)",
-};
-
 const PF_ROW: TaxComparisonRowOut = {
-  scenario: "Carteira Diversificada",
-  grossIncome: 27_945,
-  annualTax: 414,
-  netIncome: 27_531,
-  effectiveTaxBurden: 0.0148,
+  scenario: "Carteira Diversificada", grossIncome: 10_000, annualTax: 2_000,
+  netIncome: 8_000, effectiveTaxBurden: 0.20,
+};
+const BENCH_ROW: TaxComparisonRowOut = {
+  scenario: "CDI (líquido)", grossIncome: 12_000, annualTax: 2_100,
+  netIncome: 9_900, effectiveTaxBurden: 0.175,
 };
 
-describe("tributacao-derive — splitTaxRows", () => {
-  it('localiza "Imóvel" e "Carteira Diversificada"', () => {
-    const split = splitTaxRows([RE_ROW, PF_ROW]);
-    expect(split.realEstate?.scenario).toBe("Imóvel");
-    expect(split.portfolio?.scenario).toBe("Carteira Diversificada");
+describe("splitTaxRows", () => {
+  it("splits into portfolio and benchmark", () => {
+    const { portfolio, benchmark } = splitTaxRows([PF_ROW, BENCH_ROW]);
+    expect(portfolio).toEqual(PF_ROW);
+    expect(benchmark).toEqual(BENCH_ROW);
   });
 
-  it('localiza "Imóvel (financiado)" pelo prefix', () => {
-    const split = splitTaxRows([RE_FINANCED_ROW, PF_ROW]);
-    expect(split.realEstate?.scenario).toBe("Imóvel (financiado)");
-    expect(split.portfolio?.scenario).toBe("Carteira Diversificada");
+  it("returns nulls when rows are missing", () => {
+    expect(splitTaxRows([])).toEqual({ portfolio: null, benchmark: null });
   });
 
-  it("retorna nulls quando array vazio", () => {
-    expect(splitTaxRows([])).toEqual({ realEstate: null, portfolio: null });
-  });
-
-  it("retorna realEstate null se só houver carteira", () => {
-    expect(splitTaxRows([PF_ROW])).toEqual({
-      realEstate: null,
-      portfolio: PF_ROW,
-    });
+  it("returns null benchmark when only the portfolio row exists", () => {
+    expect(splitTaxRows([PF_ROW])).toEqual({ portfolio: PF_ROW, benchmark: null });
   });
 });
 
-describe("tributacao-derive — taxDelta", () => {
-  it("Imóvel paga mais imposto absoluto → realEstatePaysMore = true", () => {
-    const d = taxDelta(RE_ROW, PF_ROW);
-    expect(d.realEstatePaysMore).toBe(true);
-    expect(d.taxDiffAbs).toBeCloseTo(1_237.5 - 414, 2);
+describe("taxDelta", () => {
+  it("computes portfolio − benchmark", () => {
+    const d = taxDelta(PF_ROW, BENCH_ROW);
+    expect(d.taxDiffAbs).toBeCloseTo(-100);
+    expect(d.burdenDiffPp).toBeCloseTo(0.025);
+    expect(d.portfolioPaysMore).toBe(false);
   });
 
-  it("Imóvel paga menos → realEstatePaysMore = false", () => {
-    const reIsento = { ...RE_ROW, annualTax: 0, effectiveTaxBurden: 0 };
-    const pfHigh   = { ...PF_ROW, annualTax: 5_000, effectiveTaxBurden: 0.18 };
-    const d = taxDelta(reIsento, pfHigh);
-    expect(d.realEstatePaysMore).toBe(false);
-    expect(d.taxDiffAbs).toBe(-5_000);
-  });
-
-  it("burdenDiffPp = re.effectiveTaxBurden - pf.effectiveTaxBurden", () => {
-    const d = taxDelta(RE_ROW, PF_ROW);
-    expect(d.burdenDiffPp).toBeCloseTo(0.0688 - 0.0148, 5);
+  it("flags portfolioPaysMore when the carteira tax is higher", () => {
+    const d = taxDelta({ ...PF_ROW, annualTax: 3_000 }, BENCH_ROW);
+    expect(d.taxDiffAbs).toBeCloseTo(900);
+    expect(d.portfolioPaysMore).toBe(true);
   });
 });
 
 describe("tributacao-derive — TAX_NOTES + SCENARIO_COLORS", () => {
-  it("TAX_NOTES tem 5 entradas com title + body não-vazios", () => {
-    expect(TAX_NOTES).toHaveLength(5);
+  it("TAX_NOTES tem 4 entradas com title + body não-vazios", () => {
+    expect(TAX_NOTES).toHaveLength(4);
     TAX_NOTES.forEach((n) => {
       expect(n.title).toBeTruthy();
       expect(n.body).toBeTruthy();
     });
   });
 
-  it("SCENARIO_COLORS expõe realEstate / portfolio / tax como hex válidos", () => {
-    expect(SCENARIO_COLORS.realEstate).toMatch(/^#[0-9A-F]{6}$/i);
+  it("TAX_NOTES não contém entrada Aluguel (PF)", () => {
+    expect(TAX_NOTES.find((n) => n.title === "Aluguel (PF)")).toBeUndefined();
+  });
+
+  it("SCENARIO_COLORS expõe benchmark / portfolio / tax como hex válidos", () => {
+    expect(SCENARIO_COLORS.benchmark).toMatch(/^#[0-9A-F]{6}$/i);
     expect(SCENARIO_COLORS.portfolio).toMatch(/^#[0-9A-F]{6}$/i);
     expect(SCENARIO_COLORS.tax).toMatch(/^#[0-9A-F]{6}$/i);
   });

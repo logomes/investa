@@ -1,18 +1,5 @@
 import type { SensitivityRowOut } from "./api-types";
 
-export const PARAMETER_LABELS: Record<string, string> = {
-  monthly_rent:            "Aluguel mensal (±20%)",
-  annual_appreciation:     "Valorização (±3pp)",
-  vacancy_months_per_year: "Vacância (0–3 meses)",
-  management_fee_pct:      "Adm. imobiliária (0–15%)",
-  iptu_rate:               "IPTU (0,5–2%)",
-  income_tax_bracket:      "Faixa IR (0–27,5%)",
-};
-
-export function paramLabel(parameter: string): string {
-  return PARAMETER_LABELS[parameter] ?? parameter;
-}
-
 export type SensitivityRow = {
   parameter: string;
   label: string;
@@ -30,7 +17,7 @@ export function enrichRows(
 ): SensitivityRow[] {
   return rows.map((r) => ({
     parameter:   r.parameter,
-    label:       paramLabel(r.parameter),
+    label:       r.parameter,
     pessimistic: r.pessimistic,
     optimistic:  r.optimistic,
     base,

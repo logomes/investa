@@ -10,25 +10,20 @@ vi.mock("@/lib/store", () => ({
 }));
 
 const fakeSimOut: SimulateOut = {
-  realEstate: {
-    label: "Imóvel",
-    color: "#C0392B",
+  portfolio: {
+    label: "Carteira",
+    color: "#1A73E8",
     years: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    patrimony: [230_000, 250_000, 270_000, 290_000, 310_000, 330_000, 350_000, 365_000, 378_000, 386_000, 393_000],
-    annualIncome: Array(11).fill(10_000) as number[],
+    patrimony: [100_000, 130_000, 160_000, 195_000, 230_000, 270_000, 315_000, 365_000, 420_000, 470_000, 520_000],
+    annualIncome: Array(11).fill(8_000) as number[],
     cumulativeIncome: Array(11).fill(0) as number[],
-    debtBalance: null,
-    internalPortfolio: null,
-  } as never,
-  portfolio: {} as never,
+  },
   benchmark: {} as never,
   sensitivity: [
-    { parameter: "monthly_rent",            pessimistic: 320_000, optimistic: 470_000 },
-    { parameter: "annual_appreciation",     pessimistic: 340_000, optimistic: 450_000 },
-    { parameter: "vacancy_months_per_year", pessimistic: 410_000, optimistic: 380_000 },
-    { parameter: "management_fee_pct",      pessimistic: 400_000, optimistic: 385_000 },
-    { parameter: "iptu_rate",               pessimistic: 395_000, optimistic: 390_000 },
-    { parameter: "income_tax_bracket",      pessimistic: 393_000, optimistic: 392_500 },
+    { parameter: "Yield da carteira (±1,5pp)", pessimistic: 320_000, optimistic: 470_000 },
+    { parameter: "Ganho de capital (±1,5pp)",  pessimistic: 340_000, optimistic: 450_000 },
+    { parameter: "Aporte mensal (±25%)",       pessimistic: 410_000, optimistic: 380_000 },
+    { parameter: "IR efetivo (±5pp)",          pessimistic: 400_000, optimistic: 385_000 },
   ],
   taxComparison: [] as never,
 };
@@ -53,22 +48,22 @@ describe("SensibilidadePageContent", () => {
 
   it("renderiza KPI banner com base patrimony", () => {
     render(wrap(<SensibilidadePageContent />));
-    expect(screen.getByText(/patrimônio imóvel/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/393\.000/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/patrimônio carteira/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/520\.000/).length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renderiza tornado svg com 6 linhas (uma por parâmetro)", () => {
+  it("renderiza tornado svg com 4 linhas (uma por parâmetro)", () => {
     const { container } = render(wrap(<SensibilidadePageContent />));
     const svg = container.querySelector("svg[aria-label='Tornado de sensibilidade']");
     expect(svg).toBeTruthy();
-    expect(svg!.querySelectorAll("g").length).toBe(6);
+    expect(svg!.querySelectorAll("g").length).toBe(4);
   });
 
-  it("renderiza tabela com labels traduzidos", () => {
+  it("renderiza tabela com labels da carteira", () => {
     render(wrap(<SensibilidadePageContent />));
-    expect(screen.getAllByText(/Aluguel mensal/).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/IPTU/).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/Faixa IR/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Yield da carteira/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/Ganho de capital/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/IR efetivo/).length).toBeGreaterThanOrEqual(1);
   });
 
   it("loading → renderiza skeleton", () => {

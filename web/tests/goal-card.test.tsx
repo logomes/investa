@@ -12,7 +12,6 @@ let mcDist: number[] = [];
 
 function makeSim(patrimony: number[]): SimulateOut {
   return {
-    realEstate: { label: "RE", color: "#fff", years: [0, 1], patrimony: [100, 110], annualIncome: [0, 12], cumulativeIncome: [0, 12] },
     portfolio: { label: "PF", color: "#fff", years: [0, 1], patrimony, annualIncome: [0, 5_000], cumulativeIncome: [0, 5_000] },
     benchmark: { label: "BM", color: "#fff", years: [0, 1], patrimony: [100, 110], annualIncome: [0, 0], cumulativeIncome: [0, 0] },
     sensitivity: [],
@@ -28,7 +27,7 @@ function makeMc(distribution: number[]): SimulateMonteCarloOut {
     finalDistribution: d,
     maxDrawdowns: [],
   });
-  return { realEstate: mkResult([]), portfolio: mkResult(distribution) };
+  return { portfolio: mkResult(distribution) };
 }
 
 const fakeMacro: MacroOut = {

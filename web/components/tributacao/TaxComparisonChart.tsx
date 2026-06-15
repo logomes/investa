@@ -6,8 +6,8 @@ import { formatRs, formatPercent } from "@/lib/format";
 import type { TaxComparisonRowOut } from "@/lib/api-types";
 
 type Props = {
-  realEstate: TaxComparisonRowOut;
-  portfolio:  TaxComparisonRowOut;
+  portfolio: TaxComparisonRowOut;
+  benchmark: TaxComparisonRowOut;
 };
 
 const WIDTH = 720;
@@ -20,13 +20,13 @@ const BAR_HEIGHT = 32;
 const COLOR_INK = "#eaf6f4";
 const COLOR_INK3 = "#7d9591";
 
-export function TaxComparisonChart({ realEstate, portfolio }: Props) {
+export function TaxComparisonChart({ portfolio, benchmark }: Props) {
   const innerW = WIDTH - PAD_LEFT - PAD_RIGHT;
-  const maxGross = Math.max(realEstate.grossIncome, portfolio.grossIncome, 1);
+  const maxGross = Math.max(portfolio.grossIncome, benchmark.grossIncome, 1);
 
   const rows = [
-    { label: "Imóvel",   row: realEstate, color: SCENARIO_COLORS.realEstate },
-    { label: "Carteira", row: portfolio,  color: SCENARIO_COLORS.portfolio },
+    { label: "Carteira",  row: portfolio, color: SCENARIO_COLORS.portfolio },
+    { label: "Benchmark", row: benchmark, color: SCENARIO_COLORS.benchmark },
   ];
 
   return (
@@ -109,12 +109,12 @@ export function TaxComparisonChart({ realEstate, portfolio }: Props) {
         </svg>
         <div className="flex items-center gap-4 mt-3 text-[10px] text-ink-3">
           <span className="flex items-center gap-1.5">
-            <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: SCENARIO_COLORS.realEstate }} />
-            Líquido Imóvel
-          </span>
-          <span className="flex items-center gap-1.5">
             <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: SCENARIO_COLORS.portfolio }} />
             Líquido Carteira
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: SCENARIO_COLORS.benchmark }} />
+            Líquido Benchmark
           </span>
           <span className="flex items-center gap-1.5">
             <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: SCENARIO_COLORS.tax }} />

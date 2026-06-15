@@ -4,15 +4,22 @@ import { Topbar } from "@/components/shell/Topbar";
 
 const mocks = vi.hoisted(() => ({
   pathname: "/",
+  horizon: 10,
 }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => mocks.pathname,
 }));
 
+vi.mock("@/lib/store", () => ({
+  useScenarioStore: <T,>(selector: (s: { scenario: { horizon: number }; setDrawerOpen: (v: boolean) => void }) => T) =>
+    selector({ scenario: { horizon: mocks.horizon }, setDrawerOpen: () => {} }),
+}));
+
 describe("Topbar", () => {
   beforeEach(() => {
     mocks.pathname = "/";
+    mocks.horizon = 10;
   });
 
   it("derives the title from the pathname (Visão Geral on root)", () => {
@@ -44,5 +51,11 @@ describe("Topbar", () => {
   it("renders the 'Simular cenário' CTA button", () => {
     render(<Topbar />);
     expect(screen.getByRole("button", { name: /Simular cenário/i })).toBeInTheDocument();
+  });
+
+  it("subtitle shows carteira vs benchmark with the scenario horizon", () => {
+    mocks.horizon = 25;
+    render(<Topbar />);
+    expect(screen.getByText(/Carteira vs Benchmark · 25 anos/)).toBeInTheDocument();
   });
 });

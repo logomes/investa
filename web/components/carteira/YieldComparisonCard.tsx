@@ -3,17 +3,16 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { yieldComparison, yieldRefLines } from "@/lib/carteira-derive";
 import { formatPercent } from "@/lib/format";
-import type { PortfolioInput, RealEstateInput, MacroOut } from "@/lib/api-types";
+import type { PortfolioInput, BenchmarkInput, MacroOut } from "@/lib/api-types";
 
 type Props = {
   pf: PortfolioInput;
-  re: RealEstateInput;
-  benchmarkTaxRate: number;
+  benchmark: BenchmarkInput;
   macro: MacroOut;
 };
 
-export function YieldComparisonCard({ pf, re, benchmarkTaxRate, macro }: Props) {
-  const rows = yieldComparison({ pf, re, benchmarkTaxRate, macro });
+export function YieldComparisonCard({ pf, benchmark, macro }: Props) {
+  const rows = yieldComparison({ pf, benchmark });
   const refs = yieldRefLines(macro);
   const allValues = [...rows.map((r) => r.value), ...refs.map((r) => r.value)];
   const xMax = Math.max(...allValues, 0.01) + 0.02;

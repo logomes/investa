@@ -5,22 +5,18 @@ from converters import monte_carlo_result_to_dto, simulation_result_to_dto
 from core.config import (
     AssetClass,
     BenchmarkParams,
-    FinancingParams,
     MonteCarloParams,
     PortfolioParams,
-    RealEstateParams,
 )
 from core.models import (
     annual_tax_comparison,
-    sensitivity_real_estate,
+    sensitivity_portfolio,
     simulate_benchmark,
     simulate_portfolio,
     simulate_portfolio_mc,
-    simulate_real_estate,
-    simulate_real_estate_mc,
 )
 from core.services.macro import get_macro_params
-from schemas.inputs import SimulateInput, SimulateMonteCarloInput
+from schemas.inputs import BenchmarkInput, SimulateInput, SimulateMonteCarloInput
 from schemas.outputs import (
     SensitivityRowOut,
     SimulateMonteCarloOut,
@@ -29,34 +25,6 @@ from schemas.outputs import (
 )
 
 router = APIRouter()
-
-
-def _to_real_estate_params(input_re) -> RealEstateParams:
-    """Map RealEstateInput Pydantic model to RealEstateParams dataclass."""
-    financing = None
-    if input_re.financing is not None:
-        f = input_re.financing
-        financing = FinancingParams(
-            term_years=f.term_years,
-            annual_rate=f.annual_rate,
-            entry_pct=f.entry_pct,
-            system=f.system,
-            monthly_insurance_rate=f.monthly_insurance_rate,
-        )
-    return RealEstateParams(
-        property_value=input_re.property_value,
-        monthly_rent=input_re.monthly_rent,
-        annual_appreciation=input_re.annual_appreciation,
-        iptu_rate=input_re.iptu_rate,
-        vacancy_months_per_year=input_re.vacancy_months_per_year,
-        management_fee_pct=input_re.management_fee_pct,
-        maintenance_annual=input_re.maintenance_annual,
-        insurance_annual=input_re.insurance_annual,
-        income_tax_bracket=input_re.income_tax_bracket,
-        acquisition_cost_pct=input_re.acquisition_cost_pct,
-        appreciation_volatility=input_re.appreciation_volatility,
-        financing=financing,
-    )
 
 
 def _to_portfolio_params(input_pf) -> PortfolioParams:
@@ -75,53 +43,46 @@ def _to_portfolio_params(input_pf) -> PortfolioParams:
     )
 
 
-def _to_benchmark_params(input_bench, capital: float) -> BenchmarkParams:
+def _benchmark_label(input_bench: BenchmarkInput) -> str:
+    if input_bench.kind == "cdi":
+        return "CDI (líquido)"
+    if input_bench.kind == "selic":
+        return "Selic (líquido)"
+    spread_pct = f"{input_bench.ipca_spread * 100:.1f}".replace(".", ",")
+    return f"IPCA + {spread_pct}% (líquido)"
+
+
+def _to_benchmark_params(
+    input_bench: BenchmarkInput, capital: float, pf_params: PortfolioParams,
+) -> BenchmarkParams:
     return BenchmarkParams(
-        selic_rate=input_bench.selic_rate,
-        tax_rate=input_bench.tax_rate,
         capital=capital,
+        annual_rate=input_bench.annual_rate,
+        tax_rate=input_bench.tax_rate,
+        monthly_contribution=pf_params.monthly_contribution,
+        contribution_inflation_indexed=pf_params.contribution_inflation_indexed,
+        label=_benchmark_label(input_bench),
     )
-
-
-def _build_sensitivity_deltas(re_params: RealEstateParams) -> dict:
-    """Standard ±% sensitivity ranges used by the dashboard."""
-    return {
-        "monthly_rent": (re_params.monthly_rent * 0.8, re_params.monthly_rent * 1.2),
-        "annual_appreciation": (
-            re_params.annual_appreciation - 0.03,
-            re_params.annual_appreciation + 0.03,
-        ),
-        "vacancy_months_per_year": (0.0, 3.0),
-        "management_fee_pct": (0.0, 0.15),
-        "iptu_rate": (0.005, 0.020),
-        "income_tax_bracket": (0.0, 0.275),
-    }
 
 
 @router.post("/api/simulate", response_model=SimulateOut)
 def simulate(payload: SimulateInput) -> SimulateOut:
-    """Run all three deterministic simulations + sensitivity + tax comparison."""
-    re_params = _to_real_estate_params(payload.real_estate)
+    """Run deterministic simulations (Portfolio + Benchmark) + sensitivity + tax comparison."""
     pf_params = _to_portfolio_params(payload.portfolio)
-    bench_params = _to_benchmark_params(payload.benchmark, payload.capital)
+    bench_params = _to_benchmark_params(payload.benchmark, payload.capital, pf_params)
     macro = get_macro_params()
 
-    re_result = simulate_real_estate(
-        re_params,
-        horizon_years=payload.horizon,
-        reinvest_income=payload.reinvest,
-        capital_initial=payload.capital,
-    )
     pf_result = simulate_portfolio(
         pf_params,
         horizon_years=payload.horizon,
         reinvest_income=payload.reinvest,
         ipca=macro.ipca,
     )
-    bench_result = simulate_benchmark(bench_params, horizon_years=payload.horizon)
+    bench_result = simulate_benchmark(
+        bench_params, horizon_years=payload.horizon, ipca=macro.ipca,
+    )
 
-    deltas = _build_sensitivity_deltas(re_params)
-    sens_rows = sensitivity_real_estate(re_params, payload.horizon, deltas)
+    sens_rows = sensitivity_portfolio(pf_params, payload.horizon, ipca=macro.ipca)
     sensitivity = [
         SensitivityRowOut(
             parameter=row["Parâmetro"],
@@ -131,7 +92,7 @@ def simulate(payload: SimulateInput) -> SimulateOut:
         for row in sens_rows.to_dict("records")
     ]
 
-    tax_rows = annual_tax_comparison(re_params, pf_params)
+    tax_rows = annual_tax_comparison(pf_params, bench_params)
     tax_comparison = [
         TaxComparisonRowOut(
             scenario=row["Cenário"],
@@ -144,7 +105,6 @@ def simulate(payload: SimulateInput) -> SimulateOut:
     ]
 
     return SimulateOut(
-        real_estate=simulation_result_to_dto(re_result),
         portfolio=simulation_result_to_dto(pf_result),
         benchmark=simulation_result_to_dto(bench_result),
         sensitivity=sensitivity,
@@ -162,17 +122,11 @@ def _to_mc_params(input_mc) -> MonteCarloParams:
 
 @router.post("/api/simulate/monte-carlo", response_model=SimulateMonteCarloOut)
 def simulate_monte_carlo(payload: SimulateMonteCarloInput) -> SimulateMonteCarloOut:
-    """Run Monte Carlo for both Real Estate and Portfolio scenarios."""
-    re_params = _to_real_estate_params(payload.real_estate)
+    """Run Monte Carlo for the Portfolio scenario."""
     pf_params = _to_portfolio_params(payload.portfolio)
     mc_params = _to_mc_params(payload.mc)
     macro = get_macro_params()
 
-    re_mc = simulate_real_estate_mc(
-        re_params,
-        horizon_years=payload.horizon,
-        mc_params=mc_params,
-    )
     pf_mc = simulate_portfolio_mc(
         pf_params,
         horizon_years=payload.horizon,
@@ -181,6 +135,5 @@ def simulate_monte_carlo(payload: SimulateMonteCarloInput) -> SimulateMonteCarlo
     )
 
     return SimulateMonteCarloOut(
-        real_estate=monte_carlo_result_to_dto(re_mc),
         portfolio=monte_carlo_result_to_dto(pf_mc),
     )

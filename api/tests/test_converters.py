@@ -28,7 +28,6 @@ def test_simulation_result_dto_converts_arrays_to_lists():
     assert dto.color == "#FF0000"
     assert dto.years == [0.0, 1.0, 2.0, 3.0]
     assert dto.patrimony == [1000.0, 1100.0, 1210.0, 1331.0]
-    assert dto.debt_balance is None  # None passes through
 
 
 def test_fixed_income_dto_includes_position_metadata():

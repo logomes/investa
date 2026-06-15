@@ -21,7 +21,6 @@ export function buildLongFormatRows(sim: SimulateOut): LongRow[] {
       });
     }
   };
-  append(sim.realEstate);
   append(sim.portfolio);
   append(sim.benchmark);
   return result;
@@ -50,5 +49,5 @@ export function toCsvBR(rows: LongRow[]): string {
 }
 
 export function csvFilename(horizonYears: number): string {
-  return `simulacao_imovel_vs_carteira_${horizonYears}anos.csv`;
+  return `simulacao_investa_${horizonYears}anos.csv`;
 }

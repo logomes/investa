@@ -30,15 +30,13 @@ class MacroOut(_CamelModel):
 
 
 class SimulationResultOut(_CamelModel):
-    """Yearly arrays for a single scenario (RE / Portfolio / Benchmark)."""
+    """Yearly arrays for a single scenario (Portfolio / Benchmark)."""
     label: str
     color: str
     years: list[float]
     patrimony: list[float]
     annual_income: list[float]
     cumulative_income: list[float]
-    debt_balance: list[float] | None = None
-    internal_portfolio: list[float] | None = None
 
 
 class SensitivityRowOut(_CamelModel):
@@ -57,7 +55,6 @@ class TaxComparisonRowOut(_CamelModel):
 
 class SimulateOut(_CamelModel):
     """Full deterministic-simulation output."""
-    real_estate: SimulationResultOut
     portfolio: SimulationResultOut
     benchmark: SimulationResultOut
     sensitivity: list[SensitivityRowOut]
@@ -75,7 +72,6 @@ class MonteCarloResultOut(_CamelModel):
 
 
 class SimulateMonteCarloOut(_CamelModel):
-    real_estate: MonteCarloResultOut
     portfolio: MonteCarloResultOut
 
 
@@ -97,7 +93,6 @@ class FixedIncomePortfolioOut(_CamelModel):
 
 
 class PortfolioDefaultsOut(_CamelModel):
-    real_estate: dict
     portfolio: dict
     benchmark: dict
 

@@ -3,7 +3,6 @@
 These check cross-endpoint invariants that unit tests miss:
 - shape compatibility (defaults round-trip through simulate)
 - statistical coherence (deterministic sim sits within MC distribution)
-- physical coherence (debt amortizes when financing is enabled)
 - determinism (seeded MC repeats; same payload twice = same response)
 """
 from __future__ import annotations
@@ -18,20 +17,6 @@ def _base_simulate_payload() -> dict:
         "capital": 230_000.0,
         "horizon": 10,
         "reinvest": True,
-        "realEstate": {
-            "propertyValue": 230_000.0,
-            "monthlyRent": 1_500.0,
-            "annualAppreciation": 0.055,
-            "iptuRate": 0.010,
-            "vacancyMonthsPerYear": 1.0,
-            "managementFeePct": 0.10,
-            "maintenanceAnnual": 900.0,
-            "insuranceAnnual": 600.0,
-            "incomeTaxBracket": 0.075,
-            "acquisitionCostPct": 0.05,
-            "appreciationVolatility": 0.10,
-            "financing": None,
-        },
         "portfolio": {
             "capital": 230_000.0,
             "monthlyContribution": 0.0,
@@ -41,7 +26,7 @@ def _base_simulate_payload() -> dict:
                  "capitalGain": 0.02, "taxRate": 0.0, "note": "", "volatility": 0.15},
             ],
         },
-        "benchmark": {"selicRate": 0.1475, "taxRate": 0.175},
+        "benchmark": {"kind": "cdi", "annualRate": 0.1465, "taxRate": 0.175},
     }
 
 
@@ -49,7 +34,6 @@ def _mc_payload_from_simulate(simulate_payload: dict, seed: int = 42, n: int = 1
     """Build a /api/simulate/monte-carlo payload that matches a simulate input."""
     return {
         "horizon": simulate_payload["horizon"],
-        "realEstate": simulate_payload["realEstate"],
         "portfolio": simulate_payload["portfolio"],
         "mc": {"nTrajectories": n, "seed": seed, "targetPatrimony": 0.0},
     }
@@ -85,41 +69,12 @@ def test_defaults_round_trip_through_simulate():
         "capital": defaults["portfolio"]["capital"],
         "horizon": 10,
         "reinvest": True,
-        "realEstate": defaults["realEstate"],
         "portfolio": defaults["portfolio"],
         "benchmark": defaults["benchmark"],
     }
 
     response = client.post("/api/simulate", json=payload)
     assert response.status_code == 200, response.text
-
-
-def test_financing_scenario_produces_decreasing_debt_balance():
-    """When financing is on, the debtBalance array must decrease monotonically
-    (modulo the very first amortization) and reach near-zero by the end of
-    the financing term."""
-    client = TestClient(app)
-    payload = _base_simulate_payload()
-    payload["realEstate"]["financing"] = {
-        "termYears": 10,
-        "annualRate": 0.10,
-        "entryPct": 0.20,
-        "system": "SAC",
-        "monthlyInsuranceRate": 0.0005,
-    }
-    payload["horizon"] = 10
-
-    sim = client.post("/api/simulate", json=payload).json()
-    debt = sim["realEstate"].get("debtBalance")
-    assert debt is not None, "financing scenario should populate debtBalance"
-    assert len(debt) == 11
-
-    # Strictly decreasing year over year (or equal at the floor of zero).
-    for prev, cur in zip(debt, debt[1:]):
-        assert cur <= prev + 1e-6, f"debt grew from {prev} to {cur}"
-
-    # By the end of the financing term debt should be near zero.
-    assert debt[-1] < 1.0
 
 
 def test_seeded_monte_carlo_is_deterministic_across_repeated_calls():
@@ -134,7 +89,6 @@ def test_seeded_monte_carlo_is_deterministic_across_repeated_calls():
 
     assert a["portfolio"]["p50"] == b["portfolio"]["p50"]
     assert a["portfolio"]["finalDistribution"] == b["portfolio"]["finalDistribution"]
-    assert a["realEstate"]["maxDrawdowns"] == b["realEstate"]["maxDrawdowns"]
 
 
 def test_simulate_is_idempotent_for_identical_payload():
@@ -147,7 +101,6 @@ def test_simulate_is_idempotent_for_identical_payload():
     b = client.post("/api/simulate", json=payload).json()
 
     assert a["portfolio"]["patrimony"] == b["portfolio"]["patrimony"]
-    assert a["realEstate"]["patrimony"] == b["realEstate"]["patrimony"]
     assert a["benchmark"]["patrimony"] == b["benchmark"]["patrimony"]
 
 
@@ -163,4 +116,3 @@ def test_changing_horizon_changes_array_length_consistently():
 
     assert len(sim["portfolio"]["patrimony"]) == 6
     assert len(mc["portfolio"]["p50"]) == 6
-    assert len(mc["realEstate"]["p50"]) == 6

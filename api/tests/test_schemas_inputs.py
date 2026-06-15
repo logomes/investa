@@ -4,13 +4,11 @@ from pydantic import ValidationError
 
 from schemas.inputs import (
     BenchmarkInput,
-    FinancingInput,
     FixedIncomePositionInput,
     FixedIncomeSimulateInput,
     MonteCarloInput,
     PortfolioAssetInput,
     PortfolioInput,
-    RealEstateInput,
     SimulateInput,
     SimulateMonteCarloInput,
 )
@@ -21,20 +19,6 @@ def test_simulate_input_accepts_camelcase_payload():
         "capital": 230_000.0,
         "horizon": 10,
         "reinvest": True,
-        "realEstate": {
-            "propertyValue": 230_000.0,
-            "monthlyRent": 1_500.0,
-            "annualAppreciation": 0.055,
-            "iptuRate": 0.010,
-            "vacancyMonthsPerYear": 1.0,
-            "managementFeePct": 0.10,
-            "maintenanceAnnual": 900.0,
-            "insuranceAnnual": 600.0,
-            "incomeTaxBracket": 0.075,
-            "acquisitionCostPct": 0.05,
-            "appreciationVolatility": 0.10,
-            "financing": None,
-        },
         "portfolio": {
             "capital": 230_000.0,
             "monthlyContribution": 0.0,
@@ -44,27 +28,20 @@ def test_simulate_input_accepts_camelcase_payload():
                  "capitalGain": 0.0, "taxRate": 0.0, "note": "", "volatility": 0.15},
             ],
         },
-        "benchmark": {"selicRate": 0.1475, "taxRate": 0.175},
+        "benchmark": {"kind": "cdi", "annualRate": 0.1465, "taxRate": 0.175},
     }
     parsed = SimulateInput.model_validate(payload)
     assert parsed.capital == 230_000.0
-    assert parsed.real_estate.monthly_rent == 1_500.0
     assert parsed.portfolio.assets[0].expected_yield == 0.10
-    assert parsed.benchmark.selic_rate == 0.1475
+    assert parsed.benchmark.annual_rate == 0.1465
 
 
 def test_simulate_input_rejects_horizon_out_of_range():
     payload = {
         "capital": 100_000.0, "horizon": 50, "reinvest": True,
-        "realEstate": {"propertyValue": 100_000, "monthlyRent": 0,
-                       "annualAppreciation": 0, "iptuRate": 0,
-                       "vacancyMonthsPerYear": 0, "managementFeePct": 0,
-                       "maintenanceAnnual": 0, "insuranceAnnual": 0,
-                       "incomeTaxBracket": 0, "acquisitionCostPct": 0,
-                       "appreciationVolatility": 0, "financing": None},
         "portfolio": {"capital": 100_000, "monthlyContribution": 0,
                       "contributionInflationIndexed": True, "assets": []},
-        "benchmark": {"selicRate": 0.10, "taxRate": 0.15},
+        "benchmark": {"kind": "cdi", "annualRate": 0.10, "taxRate": 0.15},
     }
     with pytest.raises(ValidationError, match="horizon"):
         SimulateInput.model_validate(payload)
@@ -92,3 +69,19 @@ def test_fixed_income_position_input_rejects_invalid_indexer():
             "name": "X", "initialAmount": 1000, "purchaseDate": "2025-01-01",
             "indexer": "bitcoin", "rate": 0.1,
         })
+
+
+def test_benchmark_input_accepts_kind_and_rate():
+    b = BenchmarkInput.model_validate(
+        {"kind": "ipca_plus", "annualRate": 0.105, "ipcaSpread": 0.06, "taxRate": 0.15}
+    )
+    assert b.kind == "ipca_plus"
+    assert b.annual_rate == 0.105
+    assert b.ipca_spread == 0.06
+
+
+def test_benchmark_input_defaults():
+    b = BenchmarkInput.model_validate({"annualRate": 0.1465})
+    assert b.kind == "cdi"
+    assert b.ipca_spread == 0.0
+    assert b.tax_rate == 0.175

@@ -100,23 +100,17 @@ describe("risco-derive — distributionPercentiles", () => {
   });
 });
 
-describe("risco-derive — lossRateInfo", () => {
-  it("ambos < 5% → show=false, flagged vazio", () => {
-    const info = lossRateInfo({ realEstateRate: 0.02, portfolioRate: 0.01 });
+describe("lossRateInfo (portfolio-only)", () => {
+  it("flags the portfolio above the threshold", () => {
+    const info = lossRateInfo({ portfolioRate: 0.10 });
+    expect(info.show).toBe(true);
+    expect(info.flagged).toEqual([{ label: "Carteira", rate: 0.10 }]);
+  });
+
+  it("stays hidden below the threshold", () => {
+    const info = lossRateInfo({ portfolioRate: 0.01 });
     expect(info.show).toBe(false);
     expect(info.flagged).toEqual([]);
-  });
-
-  it("Imóvel 8% → show=true, flagged inclui Imóvel", () => {
-    const info = lossRateInfo({ realEstateRate: 0.08, portfolioRate: 0.02 });
-    expect(info.show).toBe(true);
-    expect(info.flagged).toEqual([{ label: "Imóvel", rate: 0.08 }]);
-  });
-
-  it("Carteira 12% → show=true, flagged inclui Carteira", () => {
-    const info = lossRateInfo({ realEstateRate: 0.02, portfolioRate: 0.12 });
-    expect(info.show).toBe(true);
-    expect(info.flagged).toEqual([{ label: "Carteira", rate: 0.12 }]);
   });
 });
 

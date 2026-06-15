@@ -1,6 +1,5 @@
 import {
   LayoutGrid,
-  Home,
   LineChart,
   Target,
   Receipt,
@@ -28,7 +27,6 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "ANÁLISE",
     items: [
       { slug: "", label: "Visão Geral", href: "/", icon: LayoutGrid, fase: 3 },
-      { slug: "imovel", label: "Imóvel", href: "/imovel", icon: Home, fase: 5 },
       { slug: "carteira", label: "Carteira", href: "/carteira", icon: LineChart, fase: 5 },
       { slug: "ativos", label: "Ativos", href: "/ativos", icon: Briefcase, fase: 5 },
       { slug: "sensibilidade", label: "Sensibilidade", href: "/sensibilidade", icon: Target, fase: 5 },

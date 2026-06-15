@@ -2,6 +2,8 @@
 from fastapi.testclient import TestClient
 
 from main import app
+from routers.simulation import _benchmark_label
+from schemas.inputs import BenchmarkInput
 
 
 def _default_payload() -> dict:
@@ -10,20 +12,6 @@ def _default_payload() -> dict:
         "capital": 230_000.0,
         "horizon": 10,
         "reinvest": True,
-        "realEstate": {
-            "propertyValue": 230_000.0,
-            "monthlyRent": 1_500.0,
-            "annualAppreciation": 0.055,
-            "iptuRate": 0.010,
-            "vacancyMonthsPerYear": 1.0,
-            "managementFeePct": 0.10,
-            "maintenanceAnnual": 900.0,
-            "insuranceAnnual": 600.0,
-            "incomeTaxBracket": 0.075,
-            "acquisitionCostPct": 0.05,
-            "appreciationVolatility": 0.10,
-            "financing": None,
-        },
         "portfolio": {
             "capital": 230_000.0,
             "monthlyContribution": 0.0,
@@ -41,7 +29,7 @@ def _default_payload() -> dict:
                  "capitalGain": 0.0, "taxRate": 0.10, "note": "", "volatility": 0.05},
             ],
         },
-        "benchmark": {"selicRate": 0.1475, "taxRate": 0.175},
+        "benchmark": {"kind": "cdi", "annualRate": 0.1465, "taxRate": 0.175},
     }
 
 
@@ -50,11 +38,11 @@ def test_simulate_returns_full_output_shape():
     response = client.post("/api/simulate", json=_default_payload())
     assert response.status_code == 200, response.text
     body = response.json()
-    assert "realEstate" in body
     assert "portfolio" in body
     assert "benchmark" in body
     assert "sensitivity" in body
     assert "taxComparison" in body
+    assert "realEstate" not in body
 
 
 def test_simulate_yearly_arrays_have_horizon_plus_one_points():
@@ -62,9 +50,9 @@ def test_simulate_yearly_arrays_have_horizon_plus_one_points():
     payload["horizon"] = 5
     client = TestClient(app)
     body = client.post("/api/simulate", json=payload).json()
-    assert len(body["realEstate"]["years"]) == 6  # 0..5 inclusive
-    assert len(body["realEstate"]["patrimony"]) == 6
+    assert len(body["portfolio"]["years"]) == 6  # 0..5 inclusive
     assert len(body["portfolio"]["patrimony"]) == 6
+    assert len(body["benchmark"]["patrimony"]) == 6
 
 
 def test_simulate_rejects_invalid_horizon():
@@ -73,3 +61,28 @@ def test_simulate_rejects_invalid_horizon():
     client = TestClient(app)
     response = client.post("/api/simulate", json=payload)
     assert response.status_code == 422  # Pydantic validation error
+
+
+def test_benchmark_label_canonical_pt_br():
+    cdi = BenchmarkInput(kind="cdi", annual_rate=0.1465, tax_rate=0.175)
+    assert _benchmark_label(cdi) == "CDI (líquido)"
+
+    selic = BenchmarkInput(kind="selic", annual_rate=0.1475, tax_rate=0.175)
+    assert _benchmark_label(selic) == "Selic (líquido)"
+
+    ipca = BenchmarkInput(kind="ipca_plus", annual_rate=0.16, tax_rate=0.175, ipca_spread=0.06)
+    assert _benchmark_label(ipca) == "IPCA + 6,0% (líquido)"
+
+
+def test_simulate_sensitivity_uses_portfolio_tornado():
+    client = TestClient(app)
+    resp = client.post("/api/simulate", json=_default_payload())
+    assert resp.status_code == 200
+    rows = resp.json()["sensitivity"]
+    assert len(rows) == 4
+    assert {r["parameter"] for r in rows} == {
+        "Yield da carteira (±1,5pp)",
+        "Ganho de capital (±1,5pp)",
+        "Aporte mensal (±25%)",
+        "IR efetivo (±5pp)",
+    }

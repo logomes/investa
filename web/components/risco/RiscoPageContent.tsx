@@ -39,29 +39,23 @@ export function RiscoPageContent() {
   }
 
   const data = mc.data!;
-  const years = sim.data!.realEstate.years;
-  const reStats = riskStats({ result: data.realEstate, target, capitalInitial: capital });
+  const benchmark = sim.data!.benchmark;
+  const years = sim.data!.portfolio.years;
   const pfStats = riskStats({ result: data.portfolio, target, capitalInitial: capital });
-  const lossInfo = lossRateInfo({
-    realEstateRate: reStats.lossRate,
-    portfolioRate: pfStats.lossRate,
-  });
+  const lossInfo = lossRateInfo({ portfolioRate: pfStats.lossRate });
+  const benchmarkFinal = benchmark.patrimony[benchmark.patrimony.length - 1];
 
   return (
     <div className="space-y-6">
       <LossRateBanner info={lossInfo} capitalInitial={capital} />
-      <KpiRowRisco reStats={reStats} pfStats={pfStats} hasTarget={target > 0} />
+      <KpiRowRisco pfStats={pfStats} benchmarkFinal={benchmarkFinal} hasTarget={target > 0} />
       <MCBandCard
-        realEstate={data.realEstate}
         portfolio={data.portfolio}
+        benchmark={benchmark}
         years={years}
         nTrajectories={nTrajectories}
       />
-      <DistributionCard
-        realEstate={data.realEstate}
-        portfolio={data.portfolio}
-        target={target}
-      />
+      <DistributionCard portfolio={data.portfolio} target={target} />
     </div>
   );
 }

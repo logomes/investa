@@ -35,8 +35,6 @@ def simulation_result_to_dto(r: SimulationResult) -> SimulationResultOut:
         patrimony=_to_list(r.patrimony),
         annual_income=_to_list(r.annual_income),
         cumulative_income=_to_list(r.cumulative_income),
-        debt_balance=_to_list(r.debt_balance),
-        internal_portfolio=_to_list(r.internal_portfolio),
     )
 
 

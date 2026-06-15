@@ -5,35 +5,21 @@ import { ExportarPageContent } from "@/components/exportar/ExportarPageContent";
 import type { SimulateOut } from "@/lib/api-types";
 
 const fakeSimOut: SimulateOut = {
-  realEstate: {
-    label: "Imóvel",
-    color: "#C0392B",
-    years: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    patrimony: Array.from({ length: 11 }, (_, i) => 230_000 + i * 30_000),
-    annualIncome: Array.from({ length: 11 }, (_, i) => i * 1_000),
-    cumulativeIncome: Array.from({ length: 11 }, (_, i) => i * i * 500),
-    debtBalance: null,
-    internalPortfolio: null,
-  },
   portfolio: {
-    label: "Carteira diversificada",
+    label: "Carteira Diversificada",
     color: "#27AE60",
     years: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     patrimony: Array.from({ length: 11 }, (_, i) => 230_000 + i * 25_000),
     annualIncome: Array.from({ length: 11 }, (_, i) => i * 1_500),
     cumulativeIncome: Array.from({ length: 11 }, (_, i) => i * i * 750),
-    debtBalance: null,
-    internalPortfolio: null,
   },
   benchmark: {
-    label: "Tesouro Selic líquido",
+    label: "CDI (líquido)",
     color: "#5CC8FF",
     years: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     patrimony: Array.from({ length: 11 }, (_, i) => 230_000 + i * 28_000),
     annualIncome: Array.from({ length: 11 }, (_, i) => i * 2_800),
     cumulativeIncome: Array.from({ length: 11 }, (_, i) => i * i * 1_400),
-    debtBalance: null,
-    internalPortfolio: null,
   },
   sensitivity: [],
   taxComparison: [],
@@ -64,20 +50,20 @@ describe("ExportarPageContent", () => {
 
   it("renderiza header + botão Baixar CSV", () => {
     render(wrap(<ExportarPageContent />));
-    expect(screen.getByText(/Comparativo Imóvel/i)).toBeInTheDocument();
+    expect(screen.getByText(/Comparativo Carteira/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /baixar csv/i })).toBeInTheDocument();
   });
 
-  it("renderiza tabela com 33 linhas (3 cenários × 11 anos)", () => {
+  it("renderiza tabela com 22 linhas (2 cenários × 11 anos)", () => {
     const { container } = render(wrap(<ExportarPageContent />));
     const tbody = container.querySelector("tbody");
     expect(tbody).toBeTruthy();
-    expect(tbody!.querySelectorAll("tr")).toHaveLength(33);
+    expect(tbody!.querySelectorAll("tr")).toHaveLength(22);
   });
 
   it("caption mostra 'X linhas' com contagem correta", () => {
     render(wrap(<ExportarPageContent />));
-    expect(screen.getByText(/33 linhas/i)).toBeInTheDocument();
+    expect(screen.getByText(/22 linhas/i)).toBeInTheDocument();
   });
 
   it("loading → renderiza skeleton", () => {

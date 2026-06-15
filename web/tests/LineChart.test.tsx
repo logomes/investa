@@ -5,7 +5,7 @@ import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 
 const series = [
   { name: "Carteira", color: "#27AE60", values: [230000, 250000, 271000] },
-  { name: "Imóvel", color: "#C0392B", values: [230000, 240000, 250000] },
+  { name: "Benchmark", color: "#C0392B", values: [230000, 240000, 250000] },
 ];
 
 const bands = [

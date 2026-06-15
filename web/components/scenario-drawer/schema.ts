@@ -1,28 +1,5 @@
 import { z } from "zod";
 
-export const financingSchema = z.object({
-  termYears: z.number().int().min(1).max(40),
-  annualRate: z.number().min(0).max(1),
-  entryPct: z.number().min(0).max(1),
-  system: z.enum(["SAC", "Price"]),
-  monthlyInsuranceRate: z.number().min(0).max(0.01),
-});
-
-export const realEstateSchema = z.object({
-  propertyValue: z.number().positive(),
-  monthlyRent: z.number().min(0),
-  annualAppreciation: z.number().min(-0.5).max(1),
-  iptuRate: z.number().min(0).max(0.5),
-  vacancyMonthsPerYear: z.number().min(0).max(12),
-  managementFeePct: z.number().min(0).max(1),
-  maintenanceAnnual: z.number().min(0),
-  insuranceAnnual: z.number().min(0),
-  incomeTaxBracket: z.number().min(0).max(0.5),
-  acquisitionCostPct: z.number().min(0).max(0.5),
-  appreciationVolatility: z.number().min(0).max(1),
-  financing: financingSchema.nullable(),
-});
-
 export const portfolioAssetSchema = z.object({
   name: z.string().min(1),
   weight: z.number().min(0).max(1),
@@ -49,7 +26,9 @@ export const portfolioSchema = z
   );
 
 export const benchmarkSchema = z.object({
-  selicRate: z.number().min(0).max(1),
+  kind: z.enum(["cdi", "selic", "ipca_plus"]),
+  annualRate: z.number().min(0).max(1),
+  ipcaSpread: z.number().min(0).max(0.5),
   taxRate: z.number().min(0).max(1),
 });
 
@@ -63,7 +42,6 @@ export const scenarioFormSchema = z.object({
   capital: z.number().positive(),
   horizon: z.number().int().min(1).max(30),
   reinvest: z.boolean(),
-  realEstate: realEstateSchema,
   portfolio: portfolioSchema,
   benchmark: benchmarkSchema,
   mc: monteCarloSchema,

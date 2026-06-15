@@ -4,6 +4,7 @@ import { Download } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toCsvBR, csvFilename, type LongRow } from "@/lib/exportar-csv";
+import { SCENARIO_COLORS } from "@/lib/tributacao-derive";
 import { formatRs } from "@/lib/format";
 
 type Props = {
@@ -11,15 +12,10 @@ type Props = {
   horizonYears: number;
 };
 
-const SCENARIO_COLORS: Record<string, string> = {
-  "Imóvel": "#FF6B5B",
-  "Imóvel (financiado)": "#FF6B5B",
-  "Carteira diversificada": "#46E8A4",
-  "Tesouro Selic líquido": "#5CC8FF",
-};
-
 function bulletColor(scenario: string): string {
-  return SCENARIO_COLORS[scenario] ?? "#7d9591";
+  return scenario === "Carteira Diversificada"
+    ? SCENARIO_COLORS.portfolio
+    : SCENARIO_COLORS.benchmark;
 }
 
 function downloadCsv(rows: LongRow[], horizonYears: number) {
@@ -36,16 +32,17 @@ function downloadCsv(rows: LongRow[], horizonYears: number) {
 }
 
 export function ExportPreviewCard({ rows, horizonYears }: Props) {
+  const scenarioCount = new Set(rows.map((r) => r.scenario)).size;
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between gap-4">
           <div>
             <h3 className="text-[13.5px] font-semibold text-ink">
-              Comparativo Imóvel × Carteira × Tesouro
+              Comparativo Carteira × Benchmark
             </h3>
             <p className="text-[11px] text-ink-3 mt-1">
-              Long format · 3 cenários × {horizonYears + 1} anos = {rows.length} linhas
+              Long format · {scenarioCount} cenários × {horizonYears + 1} anos = {rows.length} linhas
             </p>
           </div>
           <Button onClick={() => downloadCsv(rows, horizonYears)}>

@@ -1,46 +1,41 @@
 import type { TaxComparisonRowOut } from "./api-types";
 
-function isRealEstate(scenario: string): boolean {
-  return scenario.toLowerCase().startsWith("imóvel");
-}
-
-function isPortfolio(scenario: string): boolean {
-  return scenario === "Carteira Diversificada";
-}
+const PORTFOLIO_SCENARIO = "Carteira Diversificada";
 
 export function splitTaxRows(rows: TaxComparisonRowOut[]): {
-  realEstate: TaxComparisonRowOut | null;
-  portfolio:  TaxComparisonRowOut | null;
+  portfolio: TaxComparisonRowOut | null;
+  benchmark: TaxComparisonRowOut | null;
 } {
+  // API contract: exactly 2 rows — portfolio + one benchmark.
   return {
-    realEstate: rows.find((r) => isRealEstate(r.scenario)) ?? null,
-    portfolio:  rows.find((r) => isPortfolio(r.scenario))  ?? null,
+    portfolio: rows.find((r) => r.scenario === PORTFOLIO_SCENARIO) ?? null,
+    benchmark: rows.find((r) => r.scenario !== PORTFOLIO_SCENARIO) ?? null,
   };
 }
 
 export type TaxDelta = {
-  taxDiffAbs:         number;
-  burdenDiffPp:       number;
-  realEstatePaysMore: boolean;
+  taxDiffAbs:        number;  // portfolio − benchmark
+  burdenDiffPp:      number;
+  portfolioPaysMore: boolean;
 };
 
 export function taxDelta(
-  re: TaxComparisonRowOut,
   pf: TaxComparisonRowOut,
+  bench: TaxComparisonRowOut,
 ): TaxDelta {
-  const taxDiffAbs   = re.annualTax - pf.annualTax;
-  const burdenDiffPp = re.effectiveTaxBurden - pf.effectiveTaxBurden;
+  const taxDiffAbs   = pf.annualTax - bench.annualTax;
+  const burdenDiffPp = pf.effectiveTaxBurden - bench.effectiveTaxBurden;
   return {
     taxDiffAbs,
     burdenDiffPp,
-    realEstatePaysMore: taxDiffAbs > 0,
+    portfolioPaysMore: taxDiffAbs > 0,
   };
 }
 
 export const SCENARIO_COLORS = {
-  realEstate: "#FF6B5B",
-  portfolio:  "#46E8A4",
-  tax:        "#FF5D72",
+  benchmark: "#5CC8FF",
+  portfolio: "#46E8A4",
+  tax:       "#FF5D72",
 } as const;
 
 export const TAX_NOTES: Array<{ title: string; body: string }> = [
@@ -55,10 +50,6 @@ export const TAX_NOTES: Array<{ title: string; body: string }> = [
   {
     title: "Ações US — dividendos",
     body: "30% retidos na fonte; tratado de bitributação pode reduzir.",
-  },
-  {
-    title: "Aluguel (PF)",
-    body: "Tabela progressiva via carnê-leão (0% a 27,5% conforme renda).",
   },
   {
     title: "Tesouro Direto",

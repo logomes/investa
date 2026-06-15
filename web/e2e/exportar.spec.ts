@@ -6,15 +6,15 @@ test.describe("Exportar page", () => {
     await mockBackend(page);
   });
 
-  test("renders the long-format comparison table with 33 rows", async ({ page }) => {
+  test("renders the long-format comparison table with 22 rows", async ({ page }) => {
     await page.goto("/exportar");
-    await expect(page.getByRole("heading", { name: /Comparativo Imóvel × Carteira × Tesouro/i })).toBeVisible();
-    await expect(page.getByText(/3 cenários × 11 anos = 33 linhas/i)).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Comparativo Carteira × Benchmark/i })).toBeVisible();
+    await expect(page.getByText(/2 cenários × 11 anos = 22 linhas/i)).toBeVisible();
 
-    // The table should show all 3 scenario labels somewhere
+    // The table should show the 2 scenario labels; Imóvel must NOT appear
     await expect(page.getByRole("cell", { name: "Carteira Diversificada" }).first()).toBeVisible();
-    await expect(page.getByRole("cell", { name: "Imóvel" }).first()).toBeVisible();
-    await expect(page.getByRole("cell", { name: "Tesouro Selic (líquido)" }).first()).toBeVisible();
+    await expect(page.getByRole("cell", { name: "CDI (líquido)" }).first()).toBeVisible();
+    await expect(page.getByRole("cell", { name: "Imóvel" })).toHaveCount(0);
   });
 
   test("download CSV triggers a file download", async ({ page }) => {

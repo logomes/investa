@@ -22,6 +22,7 @@ export function Topbar({ onMenuClick }: Props) {
   const pathname = usePathname();
   const title = deriveTitle(pathname);
   const setDrawerOpen = useScenarioStore((s) => s.setDrawerOpen);
+  const horizon = useScenarioStore((s) => s.scenario.horizon);
   const searchRef = useRef<HTMLInputElement>(null);
   // Default false → SSR and first client render show "Ctrl K". Effect upgrades
   // to ⌘K on Mac post-hydration without mismatch.
@@ -71,7 +72,7 @@ export function Topbar({ onMenuClick }: Props) {
           {title}
         </h1>
         <p className="text-[12.5px] text-ink-3 leading-tight truncate">
-          Análise · Imóvel vs Carteira · 10 anos
+          Análise · Carteira vs Benchmark · {horizon} anos
         </p>
       </div>
 

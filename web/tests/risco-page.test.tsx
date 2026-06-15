@@ -5,15 +5,6 @@ import { RiscoPageContent } from "@/components/risco/RiscoPageContent";
 import type { SimulateMonteCarloOut, SimulateOut } from "@/lib/api-types";
 
 const fakeMcOut: SimulateMonteCarloOut = {
-  realEstate: {
-    label: "Imóvel",
-    color: "#C0392B",
-    p10: [230_000, 240_000, 250_000],
-    p50: [230_000, 260_000, 290_000],
-    p90: [230_000, 280_000, 330_000],
-    finalDistribution: Array.from({ length: 100 }, (_, i) => 200_000 + i * 1_500),
-    maxDrawdowns: Array.from({ length: 100 }, () => 0.18),
-  },
   portfolio: {
     label: "Carteira",
     color: "#27AE60",
@@ -26,9 +17,15 @@ const fakeMcOut: SimulateMonteCarloOut = {
 };
 
 const fakeSimOut: SimulateOut = {
-  realEstate: { years: [0, 1, 2] } as never,
-  portfolio: {} as never,
-  benchmark: {} as never,
+  portfolio: { years: [0, 1, 2] } as never,
+  benchmark: {
+    label: "CDI",
+    color: "#F1C40F",
+    years: [0, 1, 2],
+    patrimony: [230_000, 250_000, 275_000],
+    annualIncome: [],
+    cumulativeIncome: [],
+  },
   sensitivity: [] as never,
   taxComparison: [] as never,
 };
@@ -71,6 +68,11 @@ describe("RiscoPageContent", () => {
     expect(screen.getByText(/drawdown médio/i)).toBeInTheDocument();
   });
 
+  it("não renderiza referências a Imóvel nos KPIs", () => {
+    render(wrap(<RiscoPageContent />));
+    expect(screen.queryByText(/Imóvel/)).toBeNull();
+  });
+
   it("sem target → KPI Prob meta mostra '—' + sub configure", () => {
     render(wrap(<RiscoPageContent />));
     expect(screen.getByText("—")).toBeInTheDocument();
@@ -83,16 +85,28 @@ describe("RiscoPageContent", () => {
     expect(screen.queryByText("—")).not.toBeInTheDocument();
   });
 
-  it("loss < 5% nos dois → LossRateBanner não monta", () => {
+  it("loss < 5% na carteira → LossRateBanner não monta", () => {
     mockStore = { capital: 100_000, targetPatrimony: 0, nTrajectories: 2_000 };
     render(wrap(<RiscoPageContent />));
     expect(screen.queryByText(/perda nominal abaixo/i)).not.toBeInTheDocument();
   });
 
-  it("loss > 5% no Imóvel → banner com 'Imóvel'", () => {
+  it("loss > 5% na carteira → LossRateBanner monta com texto e label da carteira", () => {
+    // portfolio finalDistribution starts at 250k; with capital=300k, 28 of 100 values fall
+    // below 300k (28% > 5% threshold) → banner must render
+    mockStore = { capital: 300_000, targetPatrimony: 0, nTrajectories: 2_000 };
     render(wrap(<RiscoPageContent />));
     expect(screen.getByText(/perda nominal abaixo/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/Imóvel/).length).toBeGreaterThan(0);
+    const banner = screen.getByText(/perda nominal abaixo/i).closest("p")!;
+    expect(banner).toHaveTextContent(/Carteira/);
+  });
+
+  it("renderiza referência ao benchmark no KPI de patrimônio mediano", () => {
+    render(wrap(<RiscoPageContent />));
+    // KpiCard sub-label shows "Benchmark: R$ 275k" — benchmarkFinal is patrimony's last element
+    const benchmarkLabel = screen.getByText(/Benchmark:/i);
+    expect(benchmarkLabel).toBeInTheDocument();
+    expect(benchmarkLabel).toHaveTextContent(/R\$\s*275/);
   });
 
   it("mc.isLoading → renderiza skeleton", () => {

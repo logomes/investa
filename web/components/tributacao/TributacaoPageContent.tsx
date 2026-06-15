@@ -27,16 +27,16 @@ export function TributacaoPageContent() {
   }
 
   const data = sim.data!;
-  const { realEstate, portfolio } = splitTaxRows(data.taxComparison);
+  const { portfolio, benchmark } = splitTaxRows(data.taxComparison);
 
-  if (!realEstate || !portfolio) {
+  if (!portfolio || !benchmark) {
     return <ErrorCard message="Dados de tributação incompletos" onRetry={() => sim.refetch()} />;
   }
 
   return (
     <div className="space-y-6">
-      <KpiRowTributacao realEstate={realEstate} portfolio={portfolio} />
-      <TaxComparisonChart realEstate={realEstate} portfolio={portfolio} />
+      <KpiRowTributacao portfolio={portfolio} benchmark={benchmark} />
+      <TaxComparisonChart portfolio={portfolio} benchmark={benchmark} />
       <TributacaoTable rows={data.taxComparison} />
       <TaxNotesCard />
     </div>

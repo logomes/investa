@@ -8,54 +8,40 @@ import {
 import type { SimulateOut } from "@/lib/api-types";
 
 const SIM: SimulateOut = {
-  realEstate: {
-    label: "Imóvel",
-    color: "#C0392B",
-    years: [0, 1, 2],
-    patrimony: [230_000, 260_000, 290_000],
-    annualIncome: [0, 9_000, 9_500],
-    cumulativeIncome: [0, 9_000, 18_500],
-    debtBalance: null,
-    internalPortfolio: null,
-  },
   portfolio: {
-    label: "Carteira diversificada",
+    label: "Carteira Diversificada",
     color: "#27AE60",
     years: [0, 1, 2],
     patrimony: [230_000, 250_000, 275_000],
     annualIncome: [0, 14_794, 15_500],
     cumulativeIncome: [0, 14_794, 30_294],
-    debtBalance: null,
-    internalPortfolio: null,
   },
   benchmark: {
-    label: "Tesouro Selic líquido",
+    label: "CDI (líquido)",
     color: "#5CC8FF",
     years: [0, 1, 2],
     patrimony: [230_000, 258_000, 289_000],
     annualIncome: [0, 28_000, 31_000],
     cumulativeIncome: [0, 28_000, 59_000],
-    debtBalance: null,
-    internalPortfolio: null,
   },
   sensitivity: [],
   taxComparison: [],
 };
 
 describe("exportar-csv — buildLongFormatRows", () => {
-  it("retorna 3 × years.length linhas", () => {
+  it("retorna 2 × years.length linhas (portfolio + benchmark, sem realEstate)", () => {
     const rows = buildLongFormatRows(SIM);
-    expect(rows).toHaveLength(9);
+    expect(rows).toHaveLength(6);
   });
 
-  it("ordem fixa: realEstate → portfolio → benchmark", () => {
+  it("ordem fixa: portfolio → benchmark; realEstate NÃO aparece", () => {
     const rows = buildLongFormatRows(SIM);
-    expect(rows[0].scenario).toBe("Imóvel");
-    expect(rows[2].scenario).toBe("Imóvel");
-    expect(rows[3].scenario).toBe("Carteira diversificada");
-    expect(rows[5].scenario).toBe("Carteira diversificada");
-    expect(rows[6].scenario).toBe("Tesouro Selic líquido");
-    expect(rows[8].scenario).toBe("Tesouro Selic líquido");
+    const scenarios = rows.map((r) => r.scenario);
+    expect(scenarios).not.toContain("Imóvel");
+    expect(rows[0].scenario).toBe("Carteira Diversificada");
+    expect(rows[2].scenario).toBe("Carteira Diversificada");
+    expect(rows[3].scenario).toBe("CDI (líquido)");
+    expect(rows[5].scenario).toBe("CDI (líquido)");
   });
 
   it("cada row tem ano + 4 colunas numéricas", () => {
@@ -89,7 +75,7 @@ describe("exportar-csv — toCsvBR", () => {
 
   it("usa ';' como separador (5 colunas → 4 separadores por linha)", () => {
     const row: LongRow = {
-      scenario: "Imóvel",
+      scenario: "Cenário X",
       year: 0,
       patrimony: 230_000,
       annualIncome: 0,
@@ -136,9 +122,9 @@ describe("exportar-csv — toCsvBR", () => {
 });
 
 describe("exportar-csv — csvFilename", () => {
-  it("formato 'simulacao_imovel_vs_carteira_{N}anos.csv'", () => {
-    expect(csvFilename(10)).toBe("simulacao_imovel_vs_carteira_10anos.csv");
-    expect(csvFilename(1)).toBe("simulacao_imovel_vs_carteira_1anos.csv");
-    expect(csvFilename(30)).toBe("simulacao_imovel_vs_carteira_30anos.csv");
+  it("formato 'simulacao_investa_{N}anos.csv'", () => {
+    expect(csvFilename(10)).toBe("simulacao_investa_10anos.csv");
+    expect(csvFilename(1)).toBe("simulacao_investa_1anos.csv");
+    expect(csvFilename(30)).toBe("simulacao_investa_30anos.csv");
   });
 });

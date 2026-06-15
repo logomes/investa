@@ -85,23 +85,19 @@ export function distributionPercentiles(values: number[]): {
 
 export type LossRateInfo = {
   show: boolean;
-  realEstateRate: number;
   portfolioRate: number;
   flagged: Array<{ label: string; rate: number }>;
 };
 
 export function lossRateInfo(args: {
-  realEstateRate: number;
   portfolioRate: number;
   threshold?: number;
 }): LossRateInfo {
   const threshold = args.threshold ?? LOSS_RATE_WARNING;
   const flagged: Array<{ label: string; rate: number }> = [];
-  if (args.realEstateRate > threshold) flagged.push({ label: "Imóvel", rate: args.realEstateRate });
   if (args.portfolioRate > threshold) flagged.push({ label: "Carteira", rate: args.portfolioRate });
   return {
     show: flagged.length > 0,
-    realEstateRate: args.realEstateRate,
     portfolioRate: args.portfolioRate,
     flagged,
   };

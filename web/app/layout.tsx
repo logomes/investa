@@ -20,7 +20,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "investa — Análise patrimonial",
-  description: "Imóvel vs Carteira diversificada — análise patrimonial",
+  description: "Carteira vs Benchmark — análise patrimonial",
 };
 
 // viewport-fit=cover prevents iOS Safari from subtracting the Dynamic
