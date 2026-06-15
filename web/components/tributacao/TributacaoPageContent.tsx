@@ -9,6 +9,7 @@ import { KpiRowTributacao } from "./KpiRowTributacao";
 import { TaxTimelineChart } from "./TaxTimelineChart";
 import { TributacaoTable } from "./TributacaoTable";
 import { LciCdbCard } from "./LciCdbCard";
+import { PrevidenciaCard } from "./PrevidenciaCard";
 import { TaxNotesCard } from "./TaxNotesCard";
 
 export function TributacaoPageContent() {
@@ -42,6 +43,7 @@ export function TributacaoPageContent() {
       />
       <TributacaoTable rows={data.taxProjection.rows} horizon={scenario.horizon} />
       <LciCdbCard />
+      <PrevidenciaCard />
       <TaxNotesCard />
     </div>
   );
