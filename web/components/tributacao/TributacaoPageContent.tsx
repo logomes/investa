@@ -8,6 +8,7 @@ import { totalContributed, taxKpis } from "@/lib/tributacao-derive";
 import { KpiRowTributacao } from "./KpiRowTributacao";
 import { TaxTimelineChart } from "./TaxTimelineChart";
 import { TributacaoTable } from "./TributacaoTable";
+import { LciCdbCard } from "./LciCdbCard";
 import { TaxNotesCard } from "./TaxNotesCard";
 
 export function TributacaoPageContent() {
@@ -40,6 +41,7 @@ export function TributacaoPageContent() {
         exitTaxByYear={data.taxProjection.exitTaxByYear}
       />
       <TributacaoTable rows={data.taxProjection.rows} horizon={scenario.horizon} />
+      <LciCdbCard />
       <TaxNotesCard />
     </div>
   );
