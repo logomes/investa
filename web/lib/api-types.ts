@@ -1,6 +1,8 @@
 // Mirror of api/schemas/inputs.py and api/schemas/outputs.py.
 // camelCase field names match the Pydantic alias_generator output.
 
+export type DisplayMode = "real" | "nominal";
+
 export type PortfolioAssetInput = {
   name: string;
   weight: number;
@@ -37,12 +39,14 @@ export type SimulateInput = {
   capital: number;
   horizon: number;
   reinvest: boolean;
+  expectedInflation: number;
   portfolio: PortfolioInput;
   benchmark: BenchmarkInput;
 };
 
 export type SimulateMonteCarloInput = {
   horizon: number;
+  expectedInflation: number;
   portfolio: PortfolioInput;
   mc: MonteCarloInput;
 };
@@ -119,6 +123,7 @@ export type QuoteOut = {
 
 export type GoalSolveInput = {
   horizon: number;
+  expectedInflation: number;
   portfolio: PortfolioInput;
   goalTarget: number;
   confidence: number;

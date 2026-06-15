@@ -4,6 +4,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ExportarPageContent } from "@/components/exportar/ExportarPageContent";
 import type { SimulateOut } from "@/lib/api-types";
 
+type MockStore = { scenario: { horizon: number; expectedInflation: number }; displayMode: "nominal" | "real" };
+
+let mockStoreState: MockStore = {
+  scenario: { horizon: 10, expectedInflation: 0.10 },
+  displayMode: "nominal",
+};
+
 const fakeSimOut: SimulateOut = {
   portfolio: {
     label: "Carteira Diversificada",
@@ -28,8 +35,7 @@ const fakeSimOut: SimulateOut = {
 let mockSim: { data: SimulateOut | undefined; isLoading: boolean; error: Error | null; refetch: () => void };
 
 vi.mock("@/lib/store", () => ({
-  useScenarioStore: <T,>(selector: (s: { scenario: { horizon: number } }) => T) =>
-    selector({ scenario: { horizon: 10 } }),
+  useScenarioStore: <T,>(selector: (s: MockStore) => T) => selector(mockStoreState),
 }));
 
 vi.mock("@/lib/api", () => ({
@@ -46,6 +52,7 @@ const wrap = (ui: React.ReactElement) => {
 describe("ExportarPageContent", () => {
   beforeEach(() => {
     mockSim = { data: fakeSimOut, isLoading: false, error: null, refetch: vi.fn() };
+    mockStoreState = { scenario: { horizon: 10, expectedInflation: 0.10 }, displayMode: "nominal" };
   });
 
   it("renderiza header + botão Baixar CSV", () => {
@@ -76,5 +83,15 @@ describe("ExportarPageContent", () => {
     mockSim = { data: undefined, isLoading: false, error: new Error("boom"), refetch: vi.fn() };
     render(wrap(<ExportarPageContent />));
     expect(screen.getByText(/falha/i)).toBeInTheDocument();
+  });
+
+  it("modo real: exibe badge 'R$ de hoje' e deflaciona patrimônio do último ano", () => {
+    // patrimony[10] = 230_000 + 10 * 25_000 = 480_000; deflated @10% for 10yr ≈ 185_061
+    mockStoreState = { scenario: { horizon: 10, expectedInflation: 0.10 }, displayMode: "real" };
+    render(wrap(<ExportarPageContent />));
+    // Badge visible
+    expect(screen.getByText(/R\$ de hoje/i)).toBeInTheDocument();
+    // Deflated value: 480_000 / (1.10)^10 ≈ 185_060,78 → formatRs shows "185.061"
+    expect(screen.getByText(/185\.06[01]/)).toBeInTheDocument();
   });
 });

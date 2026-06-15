@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useSimulate, useMonteCarlo } from "@/lib/api";
+import { useDeflation } from "@/lib/use-deflation";
 import { LineChart } from "@/components/charts/LineChart";
 import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { TimelineFilter, type TimelineValue } from "@/components/charts/TimelineFilter";
+import { DisplayModeBadge } from "@/components/shell/DisplayModeBadge";
 import { ErrorCard } from "@/components/error/ErrorCard";
 import { formatRsK } from "@/lib/format";
 import { interpolateMonthly } from "@/lib/interpolation";
@@ -20,6 +22,7 @@ export function EvolutionCard() {
   const [range, setRange] = useState<TimelineValue>("10A");
   const sim = useSimulate();
   const mc = useMonteCarlo();
+  const { isReal, series: deflate } = useDeflation();
 
   if (sim.isLoading) {
     return (
@@ -40,24 +43,40 @@ export function EvolutionCard() {
   const sliceN = rangeToSlice(range, totalYears);
   const isMonthly = range === "1A";
 
-  const project = (arr: number[]) =>
-    isMonthly ? interpolateMonthly(arr.slice(0, sliceN)) : arr.slice(0, sliceN);
+  const project = (arr: number[]) => {
+    const display = isReal ? deflate(arr) : arr;
+    const sliced = display.slice(0, sliceN);
+    return isMonthly ? interpolateMonthly(sliced) : sliced;
+  };
 
   const series = [
     { name: data.portfolio.label, color: data.portfolio.color, values: project(data.portfolio.patrimony) },
     { name: data.benchmark.label, color: data.benchmark.color, values: project(data.benchmark.patrimony) },
   ];
 
+  const nominalPortfolio = data.portfolio.patrimony.slice(0, sliceN);
+  const realPortfolio = deflate(data.portfolio.patrimony).slice(0, sliceN);
+
   // MC bands are annual-only — skip on monthly view to avoid showing flat
   // segments interpolated from 2 yearly percentiles.
-  const bands = !isMonthly && mc.data
+  const bands = !isMonthly
     ? [
-        {
-          name: `${mc.data.portfolio.label} p10–p90`,
-          color: "rgba(39, 174, 96, 0.18)",
-          lower: mc.data.portfolio.p10.slice(0, sliceN),
-          upper: mc.data.portfolio.p90.slice(0, sliceN),
-        },
+        ...(mc.data
+          ? [{
+              name: `${mc.data.portfolio.label} p10–p90`,
+              color: "rgba(39, 174, 96, 0.18)",
+              lower: (isReal ? deflate(mc.data.portfolio.p10) : mc.data.portfolio.p10).slice(0, sliceN),
+              upper: (isReal ? deflate(mc.data.portfolio.p90) : mc.data.portfolio.p90).slice(0, sliceN),
+            }]
+          : []),
+        ...(isReal
+          ? [{
+              name: "Inflação (perda de poder de compra)",
+              color: "rgba(255, 200, 87, 0.10)",
+              lower: realPortfolio,
+              upper: nominalPortfolio,
+            }]
+          : []),
       ]
     : undefined;
 
@@ -68,7 +87,10 @@ export function EvolutionCard() {
   return (
     <div className="bg-bg-2 border border-line rounded-card p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[13.5px] font-semibold text-ink">Evolução do patrimônio</h3>
+        <h3 className="text-[13.5px] font-semibold text-ink flex items-center gap-2">
+          Evolução do patrimônio
+          <DisplayModeBadge />
+        </h3>
         <TimelineFilter value={range} onChange={setRange} />
       </div>
       <LineChart series={series} bands={bands} xLabels={xLabels} width={780} height={300} yFormat={(v) => formatRsK(v).replace("R$ ", "R$")} />
@@ -79,8 +101,14 @@ export function EvolutionCard() {
             {s.name}
           </span>
         ))}
-        {bands && (
-          <span className="ml-auto text-[11px] text-ink-3">Banda p10–p90 · Monte Carlo {mc.data!.portfolio.finalDistribution.length / 1000}k</span>
+        {isReal && !isMonthly && (
+          <span className="flex items-center gap-1.5 text-[11.5px] text-ink-2">
+            <span className="w-2 h-2 rounded-full" style={{ background: "rgba(255, 200, 87, 0.6)" }} />
+            Inflação (perda de poder de compra)
+          </span>
+        )}
+        {bands && mc.data && (
+          <span className="ml-auto text-[11px] text-ink-3">Banda p10–p90 · Monte Carlo {mc.data.portfolio.finalDistribution.length / 1000}k</span>
         )}
       </div>
     </div>

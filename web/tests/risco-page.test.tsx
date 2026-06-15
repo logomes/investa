@@ -30,15 +30,30 @@ const fakeSimOut: SimulateOut = {
   taxComparison: [] as never,
 };
 
+type MockStore = {
+  capital: number;
+  targetPatrimony: number;
+  nTrajectories: number;
+  displayMode: "nominal" | "real";
+  expectedInflation: number;
+};
+
 let mockMc: { data: SimulateMonteCarloOut | undefined; isLoading: boolean; error: Error | null; refetch: () => void };
 let mockSim: { data: SimulateOut | undefined; isLoading: boolean; error: Error | null; refetch: () => void };
-let mockStore: { capital: number; targetPatrimony: number; nTrajectories: number };
+let mockStore: MockStore;
 
 vi.mock("@/lib/store", () => ({
-  useScenarioStore: <T,>(selector: (s: { scenario: { capital: number }; mc: { targetPatrimony: number; nTrajectories: number } }) => T) =>
+  useScenarioStore: <T,>(
+    selector: (s: {
+      scenario: { capital: number; expectedInflation: number };
+      mc: { targetPatrimony: number; nTrajectories: number };
+      displayMode: "nominal" | "real";
+    }) => T,
+  ) =>
     selector({
-      scenario: { capital: mockStore.capital },
+      scenario: { capital: mockStore.capital, expectedInflation: mockStore.expectedInflation },
       mc: { targetPatrimony: mockStore.targetPatrimony, nTrajectories: mockStore.nTrajectories },
+      displayMode: mockStore.displayMode,
     }),
 }));
 
@@ -57,7 +72,13 @@ describe("RiscoPageContent", () => {
   beforeEach(() => {
     mockMc = { data: fakeMcOut, isLoading: false, error: null, refetch: vi.fn() };
     mockSim = { data: fakeSimOut, isLoading: false, error: null, refetch: vi.fn() };
-    mockStore = { capital: 230_000, targetPatrimony: 0, nTrajectories: 2_000 };
+    mockStore = {
+      capital: 230_000,
+      targetPatrimony: 0,
+      nTrajectories: 2_000,
+      displayMode: "nominal",
+      expectedInflation: 0.055,
+    };
   });
 
   it("renderiza KPIs (Prob meta, p50, p10, drawdown)", () => {
@@ -80,13 +101,13 @@ describe("RiscoPageContent", () => {
   });
 
   it("com target → KPI Prob meta mostra valor numérico", () => {
-    mockStore = { capital: 230_000, targetPatrimony: 350_000, nTrajectories: 2_000 };
+    mockStore = { ...mockStore, capital: 230_000, targetPatrimony: 350_000, nTrajectories: 2_000 };
     render(wrap(<RiscoPageContent />));
     expect(screen.queryByText("—")).not.toBeInTheDocument();
   });
 
   it("loss < 5% na carteira → LossRateBanner não monta", () => {
-    mockStore = { capital: 100_000, targetPatrimony: 0, nTrajectories: 2_000 };
+    mockStore = { ...mockStore, capital: 100_000 };
     render(wrap(<RiscoPageContent />));
     expect(screen.queryByText(/perda nominal abaixo/i)).not.toBeInTheDocument();
   });
@@ -94,7 +115,7 @@ describe("RiscoPageContent", () => {
   it("loss > 5% na carteira → LossRateBanner monta com texto e label da carteira", () => {
     // portfolio finalDistribution starts at 250k; with capital=300k, 28 of 100 values fall
     // below 300k (28% > 5% threshold) → banner must render
-    mockStore = { capital: 300_000, targetPatrimony: 0, nTrajectories: 2_000 };
+    mockStore = { ...mockStore, capital: 300_000 };
     render(wrap(<RiscoPageContent />));
     expect(screen.getByText(/perda nominal abaixo/i)).toBeInTheDocument();
     const banner = screen.getByText(/perda nominal abaixo/i).closest("p")!;
@@ -119,5 +140,48 @@ describe("RiscoPageContent", () => {
     mockMc = { data: undefined, isLoading: false, error: new Error("boom"), refetch: vi.fn() };
     render(wrap(<RiscoPageContent />));
     expect(screen.getByText(/falha/i)).toBeInTheDocument();
+  });
+});
+
+describe("RiscoPageContent – real mode (R$ de hoje)", () => {
+  // horizonYears = years.length - 1 = 3 - 1 = 2
+  // IPCA = 0.10, factor = (1.10)^2 = 1.21
+  // p50 final (index 2) = 320_000 → deflated = 320_000 / 1.21 ≈ 264_463 → "R$ 264k"
+  // benchmarkFinal = 275_000 → deflated at year 2 = 275_000 / 1.21 ≈ 227_273 → "R$ 227k"
+  beforeEach(() => {
+    mockMc = { data: fakeMcOut, isLoading: false, error: null, refetch: vi.fn() };
+    mockSim = { data: fakeSimOut, isLoading: false, error: null, refetch: vi.fn() };
+    mockStore = {
+      capital: 230_000,
+      targetPatrimony: 0,
+      nTrajectories: 2_000,
+      displayMode: "real",
+      expectedInflation: 0.10,
+    };
+  });
+
+  it("p50 KPI shows deflated value in real mode", () => {
+    render(wrap(<RiscoPageContent />));
+    // p50[2] = 320_000 deflated by (1.1)^2 ≈ 264_463 → "R$ 264k"
+    expect(screen.getAllByText("R$ 264k").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("benchmark sub shows deflated benchmarkFinal in real mode", () => {
+    render(wrap(<RiscoPageContent />));
+    // benchmarkFinal = 275_000 deflated by (1.1)^2 ≈ 227_273 → "R$ 227k"
+    const benchmarkLabel = screen.getByText(/Benchmark:/i);
+    expect(benchmarkLabel).toHaveTextContent(/R\$\s*227/);
+  });
+
+  it("'R$ de hoje' badge appears in real mode", () => {
+    render(wrap(<RiscoPageContent />));
+    const badges = screen.getAllByText("R$ de hoje");
+    expect(badges.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("p50 sub contains 'R$ de hoje' marker in real mode", () => {
+    render(wrap(<RiscoPageContent />));
+    const benchmarkLabel = screen.getByText(/Benchmark:.*R\$ de hoje/);
+    expect(benchmarkLabel).toBeInTheDocument();
   });
 });

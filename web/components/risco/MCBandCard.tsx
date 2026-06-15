@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LineChart } from "@/components/charts/LineChart";
 import { formatRsK } from "@/lib/format";
+import { DisplayModeBadge } from "@/components/shell/DisplayModeBadge";
 import type { MonteCarloResultOut, SimulationResultOut } from "@/lib/api-types";
 
 type Props = {
@@ -30,7 +31,10 @@ export function MCBandCard({ portfolio, benchmark, years, nTrajectories }: Props
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <h3 className="text-[13.5px] font-semibold text-ink">Banda de patrimônio (p10–p90)</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-[13.5px] font-semibold text-ink">Banda de patrimônio (p10–p90)</h3>
+            <DisplayModeBadge />
+          </div>
           <span className="text-[10px] text-ink-3">
             {nTrajectories.toLocaleString("pt-BR")} trajetórias
           </span>

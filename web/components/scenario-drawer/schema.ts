@@ -42,6 +42,7 @@ export const scenarioFormSchema = z.object({
   capital: z.number().positive(),
   horizon: z.number().int().min(1).max(30),
   reinvest: z.boolean(),
+  expectedInflation: z.number().min(0).max(0.5),
   portfolio: portfolioSchema,
   benchmark: benchmarkSchema,
   mc: monteCarloSchema,

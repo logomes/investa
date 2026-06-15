@@ -4,6 +4,7 @@ export const DEFAULT_SCENARIO: SimulateInput = {
   capital: 230_000,
   horizon: 10,
   reinvest: true,
+  expectedInflation: 0.045,  // prefilled placeholder; user edits in the drawer (BCB live value shown as caption)
   portfolio: {
     capital: 230_000,
     monthlyContribution: 0,

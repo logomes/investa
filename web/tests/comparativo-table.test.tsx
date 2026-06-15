@@ -1,7 +1,9 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ComparativoTable } from "@/components/visao-geral/ComparativoTable";
+import { useScenarioStore } from "@/lib/store";
+import { DEFAULT_SCENARIO } from "@/lib/defaults";
 import type { SimulateOut } from "@/lib/api-types";
 
 const years = Array.from({ length: 11 }, (_, i) => i);
@@ -24,6 +26,10 @@ const wrap = (ui: React.ReactElement) => {
 };
 
 describe("ComparativoTable", () => {
+  beforeEach(() => {
+    useScenarioStore.setState({ displayMode: "nominal" });
+  });
+
   it("exibe a linha da carteira (PF) e a linha do benchmark (BM) na tabela", () => {
     render(wrap(<ComparativoTable />));
     // Each row renders the series label as a pill badge
@@ -34,5 +40,40 @@ describe("ComparativoTable", () => {
   it("não renderiza Imóvel", () => {
     render(wrap(<ComparativoTable />));
     expect(screen.queryByText(/Imóvel/)).toBeNull();
+  });
+});
+
+describe("ComparativoTable real mode", () => {
+  beforeEach(() => {
+    useScenarioStore.setState({
+      displayMode: "real",
+      scenario: { ...DEFAULT_SCENARIO, expectedInflation: 0.10 },
+    });
+  });
+
+  it("final patrimony cell shows deflated value in real mode", () => {
+    render(wrap(<ComparativoTable />));
+    // portfolioPatrimony[10] = 588_000, deflated by (1.1)^10 ≈ 226_699 → formatRsK = "R$ 227k"
+    const finalNominal = portfolioPatrimony[10];
+    const finalReal = finalNominal / Math.pow(1.1, 10);
+    const expectedK = Math.round(finalReal / 1_000);
+    expect(screen.getByText(`R$ ${expectedK}k`)).toBeInTheDocument();
+  });
+
+  it("renders the 'R$ de hoje' badge in real mode", () => {
+    render(wrap(<ComparativoTable />));
+    expect(screen.getByText("R$ de hoje")).toBeInTheDocument();
+  });
+
+  it("yield cell is mode-invariant: shows same value as nominal mode", () => {
+    render(wrap(<ComparativoTable />));
+    // yieldFinal = annualIncome[finalIdx] / patrimony[finalIdx] (always nominal ratio)
+    // annualIncome[10] = 10 * 5_000 = 50_000; patrimony[10] = 588_000
+    const finalIdx = fakeSim.portfolio.years.length - 1;
+    const yieldFinal = fakeSim.portfolio.annualIncome[finalIdx] / fakeSim.portfolio.patrimony[finalIdx];
+    // formatPercent(yieldFinal, 1): pct = yieldFinal*100, toFixed(1).replace('.', ',') + '%'
+    const pct = yieldFinal * 100;
+    const expected = `${Math.abs(pct).toFixed(1).replace(".", ",")}%`;
+    expect(screen.getByText(expected)).toBeInTheDocument();
   });
 });

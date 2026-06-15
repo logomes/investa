@@ -6,10 +6,13 @@ import { Button } from "@/components/ui/button";
 import { toCsvBR, csvFilename, type LongRow } from "@/lib/exportar-csv";
 import { SCENARIO_COLORS } from "@/lib/tributacao-derive";
 import { formatRs } from "@/lib/format";
+import { DisplayModeBadge } from "@/components/shell/DisplayModeBadge";
+import type { DisplayMode } from "@/lib/api-types";
 
 type Props = {
   rows: LongRow[];
   horizonYears: number;
+  mode: DisplayMode;
 };
 
 function bulletColor(scenario: string): string {
@@ -18,34 +21,37 @@ function bulletColor(scenario: string): string {
     : SCENARIO_COLORS.benchmark;
 }
 
-function downloadCsv(rows: LongRow[], horizonYears: number) {
+function downloadCsv(rows: LongRow[], horizonYears: number, mode: DisplayMode) {
   const csv = toCsvBR(rows);
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = csvFilename(horizonYears);
+  a.download = csvFilename(horizonYears, mode);
   document.body.appendChild(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
 }
 
-export function ExportPreviewCard({ rows, horizonYears }: Props) {
+export function ExportPreviewCard({ rows, horizonYears, mode }: Props) {
   const scenarioCount = new Set(rows.map((r) => r.scenario)).size;
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h3 className="text-[13.5px] font-semibold text-ink">
-              Comparativo Carteira × Benchmark
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-[13.5px] font-semibold text-ink">
+                Comparativo Carteira × Benchmark
+              </h3>
+              <DisplayModeBadge />
+            </div>
             <p className="text-[11px] text-ink-3 mt-1">
               Long format · {scenarioCount} cenários × {horizonYears + 1} anos = {rows.length} linhas
             </p>
           </div>
-          <Button onClick={() => downloadCsv(rows, horizonYears)}>
+          <Button onClick={() => downloadCsv(rows, horizonYears, mode)}>
             <Download className="w-4 h-4 mr-1.5" />
             Baixar CSV
           </Button>

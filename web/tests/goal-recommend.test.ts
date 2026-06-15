@@ -64,7 +64,49 @@ describe("recommend", () => {
     expect(nominal.state).toBe("below");
     expect(indexed.state).toBe("below");
     if (nominal.state === "below" && indexed.state === "below") {
-      expect(indexed.suggestedMonthly).toBeGreaterThan(nominal.suggestedMonthly);
+      // After the FV-nominalizer fix: an indexed stream's nominal future value
+      // is real-rate annuity FV × (1+ipca)^h.  Dividing by that factor means
+      // the indexed nominal suggestion is SMALLER than the non-indexed one
+      // (each instalment will be inflated by IPCA, so you need less today).
+      // With BASE: ipca=0.04, h=10, nominalizer≈1.48 → indexed < nominal.
+      expect(indexed.suggestedMonthly).toBeLessThan(nominal.suggestedMonthly);
+    }
+  });
+
+  it("indexed: real-rate-0 case matches the engine closed form", () => {
+    // nominal return == inflation → real rate 0. Engine FV of indexed stream:
+    // 12·A·h·(1+ipca)^h  ⇒  A = gap / (12·h·(1+ipca)^h)
+    const rec = recommend({
+      goal: 1_000_000,
+      capital: 0,
+      horizonYears: 10,
+      currentMonthlyContribution: 0,
+      contributionInflationIndexed: true,
+      totalReturnAnnualNet: 0.10,
+      projectedFinalPatrimony: 0,
+      expectedInflation: 0.10,
+    });
+    expect(rec.state).toBe("below");
+    if (rec.state === "below") {
+      const expected = 1_000_000 / (12 * 10 * Math.pow(1.1, 10));
+      expect(rec.suggestedMonthly).toBeCloseTo(expected, 0);
+    }
+  });
+
+  it("non-indexed path is unchanged by the nominalizer", () => {
+    const rec = recommend({
+      goal: 120_000,
+      capital: 0,
+      horizonYears: 10,
+      currentMonthlyContribution: 0,
+      contributionInflationIndexed: false,
+      totalReturnAnnualNet: 0,
+      projectedFinalPatrimony: 0,
+      expectedInflation: 0.10,
+    });
+    expect(rec.state).toBe("below");
+    if (rec.state === "below") {
+      expect(rec.suggestedMonthly).toBeCloseTo(120_000 / 120, 0);
     }
   });
 

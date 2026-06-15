@@ -3,6 +3,7 @@
 import { TrendingUp, Wallet, Target, AlertTriangle } from "lucide-react";
 import { useSimulate, useMonteCarlo } from "@/lib/api";
 import { useScenarioStore } from "@/lib/store";
+import { useDeflation } from "@/lib/use-deflation";
 import { KpiCard } from "@/components/kpi/KpiCard";
 import { KpiSkeleton } from "@/components/kpi/KpiSkeleton";
 import { ErrorCard } from "@/components/error/ErrorCard";
@@ -13,6 +14,7 @@ export function KpiRow() {
   const mc = useMonteCarlo();
   const goal = useScenarioStore((s) => s.goalTarget);
   const horizon = useScenarioStore((s) => s.scenario.horizon);
+  const { isReal, at, toNominal } = useDeflation();
 
   if (sim.isLoading || mc.isLoading) {
     return (
@@ -29,15 +31,18 @@ export function KpiRow() {
   }
 
   const pf = sim.data!.portfolio;
-  const pfFinal = pf.patrimony[pf.patrimony.length - 1];
+  const lastIdx = pf.patrimony.length - 1;
+  const pfFinalNominal = pf.patrimony[lastIdx];
+  const pfFinal = at(pfFinalNominal, lastIdx);
   const pfInitial = pf.patrimony[0];
   const cagr = Math.pow(pfFinal / pfInitial, 1 / horizon) - 1;
-  const monthlyIncomeFinal = pf.annualIncome[pf.annualIncome.length - 1] / 12;
+  const monthlyIncomeFinal = at(pf.annualIncome[lastIdx], lastIdx) / 12;
   const monthlyIncomeInitial = pf.annualIncome[1] / 12;
   const monthlyDelta = monthlyIncomeFinal - monthlyIncomeInitial;
 
   const pfMc = mc.data!.portfolio;
-  const probGoal = pfMc.finalDistribution.filter((v) => v >= goal).length / pfMc.finalDistribution.length;
+  const nominalGoal = toNominal(goal, horizon);
+  const probGoal = pfMc.finalDistribution.filter((v) => v >= nominalGoal).length / pfMc.finalDistribution.length;
   const drawdownAvg = pfMc.maxDrawdowns.reduce((a, b) => a + b, 0) / pfMc.maxDrawdowns.length;
 
   return (
@@ -46,7 +51,9 @@ export function KpiRow() {
         label={`Patrimônio projetado · ${horizon}a`}
         value={formatRsK(pfFinal)}
         delta={{ value: formatSignedDelta(cagr, "percent"), dir: cagr >= 0 ? "up" : "down" }}
-        sub="Cenário Carteira (mediana)"
+        sub={isReal
+          ? `nominal ${formatRsK(pfFinalNominal)} · inflação consome ${formatRsK(pfFinalNominal - pfFinal)}`
+          : "Cenário Carteira (mediana)"}
         icon={TrendingUp}
         feature
       />
@@ -54,7 +61,7 @@ export function KpiRow() {
         label="Renda mensal estimada"
         value={formatRs(monthlyIncomeFinal)}
         delta={{ value: formatSignedDelta(monthlyDelta, "currency") + " vs hoje", dir: monthlyDelta >= 0 ? "up" : "down" }}
-        sub={`Ano ${horizon}`}
+        sub={isReal ? `Ano ${horizon} · R$ de hoje` : `Ano ${horizon}`}
         icon={Wallet}
       />
       <KpiCard

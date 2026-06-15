@@ -1,4 +1,5 @@
-import type { SimulateOut, SimulationResultOut } from "./api-types";
+import { deflateAt } from "./deflate";
+import type { SimulateOut, SimulationResultOut, DisplayMode } from "./api-types";
 
 export type LongRow = {
   scenario: string;
@@ -26,6 +27,21 @@ export function buildLongFormatRows(sim: SimulateOut): LongRow[] {
   return result;
 }
 
+/**
+ * Deflates all monetary columns of each row by the row's own year.
+ * Note: cumulativeIncome is a sum of multiple years but we deflate it by the
+ * row's year — the standard "everything in this row shown at that year's
+ * purchasing power" reading, not strict present-value of each component.
+ */
+export function deflateRows(rows: readonly LongRow[], ipca: number): LongRow[] {
+  return rows.map((r) => ({
+    ...r,
+    patrimony: deflateAt(r.patrimony, ipca, r.year),
+    annualIncome: deflateAt(r.annualIncome, ipca, r.year),
+    cumulativeIncome: deflateAt(r.cumulativeIncome, ipca, r.year),
+  }));
+}
+
 // `,` as decimal separator. Round monetary values to 2 places (cents) to avoid
 // the long binary-float tail (e.g. 277933.2143036685) leaking into the CSV.
 // Excel BR opens this directly as currency.
@@ -48,6 +64,7 @@ export function toCsvBR(rows: LongRow[]): string {
   return BOM + [header, ...body].join("\r\n") + "\r\n";
 }
 
-export function csvFilename(horizonYears: number): string {
-  return `simulacao_investa_${horizonYears}anos.csv`;
+export function csvFilename(horizonYears: number, mode: DisplayMode): string {
+  const suffix = mode === "real" ? "_reais-de-hoje" : "";
+  return `simulacao_investa_${horizonYears}anos${suffix}.csv`;
 }

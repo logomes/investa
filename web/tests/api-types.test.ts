@@ -7,6 +7,7 @@ describe("api-types JSON parity with Pydantic", () => {
       capital: 230_000,
       horizon: 10,
       reinvest: true,
+      expectedInflation: 0.045,
       portfolio: {
         capital: 230_000,
         monthlyContribution: 0,

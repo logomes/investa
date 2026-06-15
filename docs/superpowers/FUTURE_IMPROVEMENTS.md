@@ -122,6 +122,16 @@ Open Finance Brasil é o padrão regulado pelo Bacen pra compartilhamento de dad
 
 PortfolioSection now supports add/edit/remove via modal (PortfolioAssetDialog), 11 type catalog with auto-populated defaults, Σweights badge (green/red), hard validation `Σ=1.0±0.001`, max 12 assets, reset-to-defaults button.
 
+## Reais de hoje
+
+### Reais de hoje — ✅ shipped 2026-06-11
+
+Toggle global "R$ de hoje" / "Nominal" na Topbar (default real); todas as superfícies de projeção (Visão Geral, Risco, Sensibilidade, Exportar) deflacionam pelo `expectedInflation` do cenário. IPCA projetado como parâmetro de cenário com fallback macro (BCB); decomposição de KPI real/nominal no Evolution com banda de inflação; Exportar CSV sufixado `_reais-de-hoje` no modo real. Spec: `specs/2026-06-11-reais-de-hoje-design.md`.
+
+**Também nesta rodada:** `fix: FV de aportes indexados corrigido ((1+ipca)^h)` — 2026-06-11.
+
+**Deferido para rodada futura:** Deflação do `/historico` (IPCA realizado, série histórica BCB) — requer endpoint `/api/macro/ipca-series` + store de snapshots IPCA para deflacionar patrimônio histórico pelo CPI realizado em vez do IPCA projetado.
+
 ## Performance / Infra
 
 ### Render Hobby upgrade ($7/mo)

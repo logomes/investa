@@ -1,8 +1,10 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { EvolutionCard } from "@/components/visao-geral/EvolutionCard";
+import { useScenarioStore } from "@/lib/store";
+import { DEFAULT_SCENARIO } from "@/lib/defaults";
 import type { SimulateOut, SimulateMonteCarloOut } from "@/lib/api-types";
 
 const years = Array.from({ length: 11 }, (_, i) => i);
@@ -25,12 +27,12 @@ vi.mock("@/lib/api", () => ({
 }));
 
 // LineChart pulls SVG/canvas — we only care about the labels/legend prop wiring,
-// so render a stub that surfaces xLabels and bands as data-attrs.
+// so render a stub that surfaces xLabels, bands, and series values as data-attrs.
 vi.mock("@/components/charts/LineChart", () => ({
-  LineChart: ({ xLabels, bands, series }: { xLabels: string[]; bands?: unknown[]; series: { name: string }[] }) => (
+  LineChart: ({ xLabels, bands, series }: { xLabels: string[]; bands?: unknown[]; series: { name: string; values: number[] }[] }) => (
     <div data-testid="line-chart" data-xlabels={xLabels.join(",")} data-bands={bands ? bands.length : 0}>
       {series.map((s) => (
-        <span key={s.name} data-testid="series-name">{s.name}</span>
+        <span key={s.name} data-testid="series-name" data-values={JSON.stringify(s.values)}>{s.name}</span>
       ))}
     </div>
   ),
@@ -42,6 +44,10 @@ const wrap = (ui: React.ReactElement) => {
 };
 
 describe("EvolutionCard timeline range", () => {
+  beforeEach(() => {
+    useScenarioStore.setState({ displayMode: "nominal" });
+  });
+
   it("default 10A mostra labels Y0..Y10 e bandas MC presentes", () => {
     render(wrap(<EvolutionCard />));
     const chart = screen.getByTestId("line-chart");
@@ -69,5 +75,41 @@ describe("EvolutionCard timeline range", () => {
     expect(screen.getAllByText("BM").length).toBeGreaterThan(0);
     // portfolio fixture label "PF" must appear (in legend and/or chart stub)
     expect(screen.getAllByText("PF").length).toBeGreaterThan(0);
+  });
+});
+
+describe("EvolutionCard real mode", () => {
+  beforeEach(() => {
+    useScenarioStore.setState({
+      displayMode: "real",
+      scenario: { ...DEFAULT_SCENARIO, expectedInflation: 0.10 },
+    });
+  });
+
+  it("portfolio series values are deflated by (1.1)^year in real mode", () => {
+    render(wrap(<EvolutionCard />));
+    const seriesEls = screen.getAllByTestId("series-name");
+    const pfEl = seriesEls.find((el) => el.textContent === "PF");
+    expect(pfEl).toBeDefined();
+    const values: number[] = JSON.parse(pfEl!.dataset.values!);
+    // year 0 stays the same (factor = 1), year 2 is divided by 1.21
+    expect(values[0]).toBeCloseTo(portfolioPatrimony[0], 0);
+    expect(values[2]).toBeCloseTo(portfolioPatrimony[2] / Math.pow(1.1, 2), 0);
+  });
+
+  it("bands count = 2 in real mode (MC band + inflação band)", () => {
+    render(wrap(<EvolutionCard />));
+    const chart = screen.getByTestId("line-chart");
+    expect(chart.dataset.bands).toBe("2");
+  });
+
+  it("renders legend entry 'Inflação (perda de poder de compra)' in real mode", () => {
+    render(wrap(<EvolutionCard />));
+    expect(screen.getByText("Inflação (perda de poder de compra)")).toBeInTheDocument();
+  });
+
+  it("renders the 'R$ de hoje' badge in real mode", () => {
+    render(wrap(<EvolutionCard />));
+    expect(screen.getByText("R$ de hoje")).toBeInTheDocument();
   });
 });

@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Histogram } from "./Histogram";
 import { distributionPercentiles } from "@/lib/risco-derive";
+import { DisplayModeBadge } from "@/components/shell/DisplayModeBadge";
 import type { MonteCarloResultOut } from "@/lib/api-types";
 
 type Props = {
@@ -16,7 +17,10 @@ export function DistributionCard({ portfolio, target }: Props) {
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-[13.5px] font-semibold text-ink">Distribuição final do patrimônio</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-[13.5px] font-semibold text-ink">Distribuição final do patrimônio</h3>
+          <DisplayModeBadge />
+        </div>
       </CardHeader>
       <CardContent>
         <p className="text-[12px] font-medium text-ink mb-2">{portfolio.label}</p>

@@ -106,3 +106,36 @@ describe("lastRealImportAt provenance field", () => {
     expect(raw.state.lastRealImportAt).toBe("2026-06-11T12:00:00.000Z");
   });
 });
+
+describe("store v6: expectedInflation + displayMode", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useScenarioStore.setState({ displayMode: "real" });
+  });
+
+  it("injects expectedInflation into pre-v6 scenarios", async () => {
+    localStorage.setItem("investa-scenario-v3", JSON.stringify(V3_PAYLOAD));
+    await useScenarioStore.persist.rehydrate();
+    expect(useScenarioStore.getState().scenario.expectedInflation).toBe(0.045);
+  });
+
+  it("keeps an existing expectedInflation untouched when the v6 branch runs", async () => {
+    const payload = {
+      state: {
+        ...V3_PAYLOAD.state,
+        scenario: { ...V3_PAYLOAD.state.scenario, expectedInflation: 0.07 },
+      },
+      version: 5,
+    };
+    localStorage.setItem("investa-scenario-v3", JSON.stringify(payload));
+    await useScenarioStore.persist.rehydrate();
+    expect(useScenarioStore.getState().scenario.expectedInflation).toBe(0.07);
+  });
+
+  it("displayMode defaults to real and persists through partialize", () => {
+    expect(useScenarioStore.getState().displayMode).toBe("real");
+    useScenarioStore.getState().setDisplayMode("nominal");
+    const raw = JSON.parse(localStorage.getItem("investa-scenario-v3")!);
+    expect(raw.state.displayMode).toBe("nominal");
+  });
+});

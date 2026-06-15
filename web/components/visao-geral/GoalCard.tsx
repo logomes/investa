@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { Target } from "lucide-react";
-import { useSimulate, useMonteCarlo, useMacro, useGoalSolve } from "@/lib/api";
+import { useSimulate, useMonteCarlo, useGoalSolve } from "@/lib/api";
 import { useScenarioStore } from "@/lib/store";
 import { ChartSkeleton } from "@/components/charts/ChartSkeleton";
 import { ErrorCard } from "@/components/error/ErrorCard";
 import { formatRs, formatPercent } from "@/lib/format";
 import { totalReturn } from "@/lib/carteira-derive";
 import { recommend, goalProbability } from "@/lib/goal-recommend";
+import { useDeflation } from "@/lib/use-deflation";
 
 const SOLVE_CONFIDENCE = 0.8;
 const SOLVE_TRAJECTORIES = 1500;
@@ -16,7 +17,6 @@ const SOLVE_TRAJECTORIES = 1500;
 export function GoalCard() {
   const sim = useSimulate();
   const mc = useMonteCarlo();
-  const macro = useMacro();
   const goalSolve = useGoalSolve();
   const goal = useScenarioStore((s) => s.goalTarget);
   const scenario = useScenarioStore((s) => s.scenario);
@@ -24,6 +24,9 @@ export function GoalCard() {
   const setGoalTarget = useScenarioStore((s) => s.setGoalTarget);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<string>("");
+
+  const { isReal, at, toNominal } = useDeflation();
+  const nominalGoal = toNominal(goal, scenario.horizon);
 
   const { reset: resetGoalSolve } = goalSolve;
   useEffect(() => {
@@ -34,9 +37,10 @@ export function GoalCard() {
     goalSolve.mutate({
       horizon: scenario.horizon,
       portfolio: scenario.portfolio,
-      goalTarget: goal,
+      goalTarget: nominalGoal,
       confidence: SOLVE_CONFIDENCE,
       nTrajectories: SOLVE_TRAJECTORIES,
+      expectedInflation: scenario.expectedInflation,
     });
   };
 
@@ -61,19 +65,19 @@ export function GoalCard() {
   const progress = Math.min(today / goal, 1);
 
   const rec = recommend({
-    goal,
+    goal: nominalGoal,
     capital: today,
     horizonYears: scenario.horizon,
     currentMonthlyContribution: scenario.portfolio.monthlyContribution,
     contributionInflationIndexed: scenario.portfolio.contributionInflationIndexed,
     totalReturnAnnualNet: totalReturn(scenario.portfolio),
     projectedFinalPatrimony: current,
-    expectedInflation: macro.data?.ipca ?? 0.04,
+    expectedInflation: scenario.expectedInflation,
   });
 
   const mcDist = mc.data?.portfolio.finalDistribution ?? [];
   const mcReady = !mc.isLoading && !mc.error && mcDist.length > 0;
-  const probability = mcReady ? goalProbability(mcDist, goal) : null;
+  const probability = mcReady ? goalProbability(mcDist, nominalGoal) : null;
 
   const probabilityColor =
     probability === null
@@ -119,6 +123,7 @@ export function GoalCard() {
           {formatRs(goal)}
         </button>
       )}
+      {isReal && <p className="text-[10px] text-ink-4">meta em R$ de hoje</p>}
       <p className="text-[12px] text-ink-3 mt-1">Hoje · {formatRs(today)}</p>
 
       <div className="mt-4">
@@ -146,6 +151,7 @@ export function GoalCard() {
           horizonYears={scenario.horizon}
           currentMonthly={scenario.portfolio.monthlyContribution}
           ipcaIndexed={scenario.portfolio.contributionInflationIndexed}
+          displayFinal={at(current, scenario.horizon)}
           onApply={(suggested) => {
             const latest = useScenarioStore.getState().scenario;
             setScenario({
@@ -211,10 +217,12 @@ type RecBlockProps = {
   horizonYears: number;
   currentMonthly: number;
   ipcaIndexed: boolean;
+  /** Projected final patrimony in active display mode (nominal or real). */
+  displayFinal: number;
   onApply: (suggested: number) => void;
 };
 
-function RecommendationBlock({ rec, horizonYears, currentMonthly, ipcaIndexed, onApply }: RecBlockProps) {
+function RecommendationBlock({ rec, horizonYears, currentMonthly, ipcaIndexed, displayFinal, onApply }: RecBlockProps) {
   if (rec.state === "already-met") {
     return (
       <div className="bg-bg-3 rounded-card p-3">
@@ -228,7 +236,7 @@ function RecommendationBlock({ rec, horizonYears, currentMonthly, ipcaIndexed, o
     return (
       <div className="bg-bg-3 rounded-card p-3">
         <p className="text-[12px] text-ink-2 leading-relaxed">
-          Aporte atual (<span className="text-ink font-semibold">{formatRs(currentMonthly)}/mês</span>) já é suficiente — projeção <span className="text-ink font-semibold">{formatRs(rec.projectedFinal)}</span> em {horizonYears}a.
+          Aporte atual (<span className="text-ink font-semibold">{formatRs(currentMonthly)}/mês</span>) já é suficiente — projeção <span className="text-ink font-semibold">{formatRs(displayFinal)}</span> em {horizonYears}a.
         </p>
       </div>
     );

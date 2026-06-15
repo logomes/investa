@@ -6,10 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { useMacro } from "@/lib/api";
+import { formatPercent } from "@/lib/format";
 
 export function CapitalSection() {
   const { register, control, watch } = useFormContext<ScenarioFormValues>();
   const horizon = watch("horizon");
+  const macro = useMacro();
 
   return (
     <div className="space-y-4">
@@ -55,6 +58,21 @@ export function CapitalSection() {
             <Switch id="reinvest" checked={field.value} onCheckedChange={field.onChange} />
           )}
         />
+      </div>
+
+      <div className="space-y-1">
+        <Label htmlFor="expected-inflation">Inflação projetada (IPCA)</Label>
+        <Input
+          id="expected-inflation"
+          type="number"
+          step="any"
+          {...register("expectedInflation", { valueAsNumber: true })}
+        />
+        {macro.data && (
+          <p className="text-[10px] text-ink-4">
+            BCB hoje: {formatPercent(macro.data.ipca, 1)} — usada nos aportes indexados e na visão &ldquo;R$ de hoje&rdquo;.
+          </p>
+        )}
       </div>
     </div>
   );

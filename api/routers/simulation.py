@@ -72,19 +72,19 @@ def simulate(payload: SimulateInput) -> SimulateOut:
     """Run deterministic simulations (Portfolio + Benchmark) + sensitivity + tax comparison."""
     pf_params = _to_portfolio_params(payload.portfolio)
     bench_params = _to_benchmark_params(payload.benchmark, payload.capital, pf_params)
-    macro = get_macro_params()
+    ipca = _resolve_ipca(payload.expected_inflation)
 
     pf_result = simulate_portfolio(
         pf_params,
         horizon_years=payload.horizon,
         reinvest_income=payload.reinvest,
-        ipca=macro.ipca,
+        ipca=ipca,
     )
     bench_result = simulate_benchmark(
-        bench_params, horizon_years=payload.horizon, ipca=macro.ipca,
+        bench_params, horizon_years=payload.horizon, ipca=ipca,
     )
 
-    sens_rows = sensitivity_portfolio(pf_params, payload.horizon, ipca=macro.ipca)
+    sens_rows = sensitivity_portfolio(pf_params, payload.horizon, ipca=ipca)
     sensitivity = [
         SensitivityRowOut(
             parameter=row["Parâmetro"],
@@ -114,6 +114,13 @@ def simulate(payload: SimulateInput) -> SimulateOut:
     )
 
 
+def _resolve_ipca(expected_inflation: float | None) -> float:
+    """Scenario-provided inflation wins; otherwise fall back to live macro."""
+    if expected_inflation is not None:
+        return expected_inflation
+    return get_macro_params().ipca
+
+
 def _to_mc_params(input_mc) -> MonteCarloParams:
     return MonteCarloParams(
         n_trajectories=input_mc.n_trajectories,
@@ -127,13 +134,13 @@ def simulate_monte_carlo(payload: SimulateMonteCarloInput) -> SimulateMonteCarlo
     """Run Monte Carlo for the Portfolio scenario."""
     pf_params = _to_portfolio_params(payload.portfolio)
     mc_params = _to_mc_params(payload.mc)
-    macro = get_macro_params()
+    ipca = _resolve_ipca(payload.expected_inflation)
 
     pf_mc = simulate_portfolio_mc(
         pf_params,
         horizon_years=payload.horizon,
         mc_params=mc_params,
-        ipca=macro.ipca,
+        ipca=ipca,
     )
 
     return SimulateMonteCarloOut(
@@ -145,13 +152,13 @@ def simulate_monte_carlo(payload: SimulateMonteCarloInput) -> SimulateMonteCarlo
 def goal_solve(payload: GoalSolveInput) -> GoalSolveOut:
     """Binary-search the monthly contribution for P(final >= goal) >= confidence."""
     pf_params = _to_portfolio_params(payload.portfolio)
-    macro = get_macro_params()
+    ipca = _resolve_ipca(payload.expected_inflation)
     result = solve_goal_contribution(
         pf_params,
         horizon_years=payload.horizon,
         goal_target=payload.goal_target,
         confidence=payload.confidence,
-        ipca=macro.ipca,
+        ipca=ipca,
         n_trajectories=payload.n_trajectories,
     )
     return GoalSolveOut(**result)

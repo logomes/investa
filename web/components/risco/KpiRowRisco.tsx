@@ -4,6 +4,7 @@ import { Target, BarChart3, TrendingDown, Activity } from "lucide-react";
 import { KpiCard } from "@/components/kpi/KpiCard";
 import type { RiskStats } from "@/lib/risco-derive";
 import { formatPercent, formatRsK } from "@/lib/format";
+import { useScenarioStore } from "@/lib/store";
 
 type Props = {
   pfStats: RiskStats;
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export function KpiRowRisco({ pfStats, benchmarkFinal, hasTarget }: Props) {
+  const isReal = useScenarioStore((s) => s.displayMode) === "real";
   const probMetaValue = hasTarget ? formatPercent(pfStats.probTarget!, 1) : "—";
   const probMetaSub = hasTarget ? "trajetórias acima da meta" : "configure meta no Drawer";
   const probMetaColor = hasTarget && pfStats.probTarget! >= 0.7 ? "green" : "default";
@@ -29,7 +31,7 @@ export function KpiRowRisco({ pfStats, benchmarkFinal, hasTarget }: Props) {
       <KpiCard
         label="Patrimônio mediano (p50)"
         value={formatRsK(pfStats.finalP50)}
-        sub={`Benchmark: ${formatRsK(benchmarkFinal)}`}
+        sub={`Benchmark: ${formatRsK(benchmarkFinal)}${isReal ? " · R$ de hoje" : ""}`}
         icon={BarChart3}
       />
       <KpiCard

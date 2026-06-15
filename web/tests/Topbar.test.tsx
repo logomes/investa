@@ -1,25 +1,46 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { Topbar } from "@/components/shell/Topbar";
+import type { DisplayMode } from "@/lib/api-types";
 
 const mocks = vi.hoisted(() => ({
   pathname: "/",
   horizon: 10,
+  displayMode: "real" as DisplayMode,
 }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => mocks.pathname,
 }));
 
-vi.mock("@/lib/store", () => ({
-  useScenarioStore: <T,>(selector: (s: { scenario: { horizon: number }; setDrawerOpen: (v: boolean) => void }) => T) =>
-    selector({ scenario: { horizon: mocks.horizon }, setDrawerOpen: () => {} }),
-}));
+vi.mock("@/lib/store", () => {
+  type StoreShape = {
+    scenario: { horizon: number };
+    setDrawerOpen: (v: boolean) => void;
+    displayMode: DisplayMode;
+    setDisplayMode: (m: DisplayMode) => void;
+  };
+
+  const selector = <T,>(fn: (s: StoreShape) => T): T =>
+    fn({
+      scenario: { horizon: mocks.horizon },
+      setDrawerOpen: () => {},
+      get displayMode() {
+        return mocks.displayMode;
+      },
+      setDisplayMode: (m: DisplayMode) => {
+        mocks.displayMode = m;
+      },
+    });
+
+  return { useScenarioStore: selector };
+});
 
 describe("Topbar", () => {
   beforeEach(() => {
     mocks.pathname = "/";
     mocks.horizon = 10;
+    mocks.displayMode = "real";
   });
 
   it("derives the title from the pathname (Visão Geral on root)", () => {
@@ -57,5 +78,13 @@ describe("Topbar", () => {
     mocks.horizon = 25;
     render(<Topbar />);
     expect(screen.getByText(/Carteira vs Benchmark · 25 anos/)).toBeInTheDocument();
+  });
+
+  it("display-mode toggle flips the store", () => {
+    render(<Topbar />);
+    fireEvent.click(screen.getByRole("button", { name: /^Nominal$/i }));
+    expect(mocks.displayMode).toBe("nominal");
+    fireEvent.click(screen.getByRole("button", { name: /R\$ de hoje/i }));
+    expect(mocks.displayMode).toBe("real");
   });
 });
