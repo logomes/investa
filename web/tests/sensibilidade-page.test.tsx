@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SensibilidadePageContent } from "@/components/sensibilidade/SensibilidadePageContent";
 import type { SimulateOut } from "@/lib/api-types";
+import { MOCK_TAX_PROJECTION } from "./fixtures";
 
 type MockScenario = { horizon: number; expectedInflation: number };
 type MockStore = { scenario: MockScenario; displayMode: "nominal" | "real" };
@@ -35,7 +36,7 @@ const fakeSimOut: SimulateOut = {
     { parameter: "Aporte mensal (±25%)",       pessimistic: 410_000, optimistic: 380_000 },
     { parameter: "IR efetivo (±5pp)",          pessimistic: 400_000, optimistic: 385_000 },
   ],
-  taxComparison: [] as never,
+  taxProjection: MOCK_TAX_PROJECTION,
 };
 
 let mockSimReturn: { data: SimulateOut | undefined; isLoading: boolean; error: Error | null; refetch: () => void };

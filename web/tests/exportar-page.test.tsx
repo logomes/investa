@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ExportarPageContent } from "@/components/exportar/ExportarPageContent";
 import type { SimulateOut } from "@/lib/api-types";
+import { MOCK_TAX_PROJECTION } from "./fixtures";
 
 type MockStore = { scenario: { horizon: number; expectedInflation: number }; displayMode: "nominal" | "real" };
 
@@ -35,7 +36,7 @@ const fakeSimOut: SimulateOut = {
     exitTax: Array.from({ length: 11 }, () => 0),
   },
   sensitivity: [],
-  taxComparison: [],
+  taxProjection: MOCK_TAX_PROJECTION,
 };
 
 let mockSim: { data: SimulateOut | undefined; isLoading: boolean; error: Error | null; refetch: () => void };

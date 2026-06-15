@@ -75,14 +75,6 @@ export type SensitivityRowOut = {
   optimistic: number;
 };
 
-export type TaxComparisonRowOut = {
-  scenario: string;
-  grossIncome: number;
-  annualTax: number;
-  netIncome: number;
-  effectiveTaxBurden: number;
-};
-
 export type TaxProjectionRowOut = {
   name: string; taxProfile: string; taxPaidPath: number;
   exitTax: number; netFinal: number; grossFinal: number;
@@ -97,7 +89,7 @@ export type SimulateOut = {
   portfolio: SimulationResultOut;
   benchmark: SimulationResultOut;
   sensitivity: SensitivityRowOut[];
-  taxComparison: TaxComparisonRowOut[];
+  taxProjection: TaxProjectionOut;
 };
 
 export type MonteCarloResultOut = {

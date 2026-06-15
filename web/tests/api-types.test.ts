@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { SimulateInput, SimulateOut, GoalSolveOut } from "@/lib/api-types";
+import { MOCK_TAX_PROJECTION } from "./fixtures";
 
 describe("api-types JSON parity with Pydantic", () => {
   it("SimulateInput accepts a fixture mirroring the API contract", () => {
@@ -47,7 +48,7 @@ describe("api-types JSON parity with Pydantic", () => {
         exitTax: [0, 0, 0],
       },
       sensitivity: [],
-      taxComparison: [],
+      taxProjection: MOCK_TAX_PROJECTION,
     };
     expect(fixture.portfolio.years).toHaveLength(3);
   });

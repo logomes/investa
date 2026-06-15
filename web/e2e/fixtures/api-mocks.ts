@@ -30,7 +30,18 @@ export const simulateOut = {
     exitTax: years.map(() => 0),
   },
   sensitivity: [],
-  taxComparison: [],
+  taxProjection: {
+    rows: [
+      { name: "Tesouro IPCA+", taxProfile: "rf_regressiva", taxPaidPath: 0, exitTax: 18_400, netFinal: 142_000, grossFinal: 160_400 },
+      { name: "Fundo Multimercado", taxProfile: "come_cotas", taxPaidPath: 9_200, exitTax: 1_100, netFinal: 88_000, grossFinal: 98_300 },
+      { name: "FIIs", taxProfile: "fii", taxPaidPath: 0, exitTax: 6_400, netFinal: 121_000, grossFinal: 127_400 },
+      { name: "Ações BR", taxProfile: "acoes_br", taxPaidPath: 0, exitTax: 14_700, netFinal: 145_000, grossFinal: 159_700 },
+      { name: "CDI (líquido)", taxProfile: "rf_regressiva", taxPaidPath: 0, exitTax: 31_500, netFinal: 193_500, grossFinal: 225_000 },
+    ],
+    taxPaidByYear: [0, 1_500, 3_100, 4_800, 6_700, 8_800, 11_100, 13_700, 16_500, 19_700, 23_200],
+    exitTaxByYear: [0, 4_200, 8_900, 14_100, 19_900, 26_300, 33_400, 41_300, 50_000, 59_700, 70_400],
+    allTaxedFinal: 521_000,
+  },
 };
 
 const finalDistribution = Array.from({ length: 100 }, (_, i) => 400_000 + i * 4_000);

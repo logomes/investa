@@ -5,6 +5,7 @@ import { KpiRow } from "@/components/visao-geral/KpiRow";
 import { useScenarioStore } from "@/lib/store";
 import { DEFAULT_SCENARIO } from "@/lib/defaults";
 import type { SimulateOut, SimulateMonteCarloOut } from "@/lib/api-types";
+import { MOCK_TAX_PROJECTION } from "./fixtures";
 
 const years = Array.from({ length: 11 }, (_, i) => i);
 const portfolioPatrimony = [230_000, 252_000, 277_000, 304_000, 334_000, 367_000, 403_000, 443_000, 487_000, 535_000, 588_000];
@@ -14,7 +15,7 @@ const fakeSim: SimulateOut = {
   portfolio: { label: "PF", color: "#0f0", years, patrimony: portfolioPatrimony, annualIncome, cumulativeIncome: years.map(() => 0), grossPatrimony: portfolioPatrimony, taxPaidCumulative: years.map(() => 0), exitTax: years.map(() => 0) },
   benchmark: { label: "BM", color: "#00f", years, patrimony: portfolioPatrimony.map((v) => v * 1.1), annualIncome: years.map((y) => y * 4_500), cumulativeIncome: years.map(() => 0), grossPatrimony: portfolioPatrimony.map((v) => v * 1.1), taxPaidCumulative: years.map(() => 0), exitTax: years.map(() => 0) },
   sensitivity: [],
-  taxComparison: [],
+  taxProjection: MOCK_TAX_PROJECTION,
 };
 
 const fakeMc: SimulateMonteCarloOut = {

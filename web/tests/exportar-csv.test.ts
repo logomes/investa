@@ -7,6 +7,7 @@ import {
   type LongRow,
 } from "@/lib/exportar-csv";
 import type { SimulateOut } from "@/lib/api-types";
+import { MOCK_TAX_PROJECTION } from "./fixtures";
 
 const SIM: SimulateOut = {
   portfolio: {
@@ -32,7 +33,7 @@ const SIM: SimulateOut = {
     exitTax: [0, 0, 0],
   },
   sensitivity: [],
-  taxComparison: [],
+  taxProjection: MOCK_TAX_PROJECTION,
 };
 
 describe("exportar-csv — buildLongFormatRows", () => {
