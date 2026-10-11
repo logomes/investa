@@ -11,4 +11,4 @@ services:
     autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
-        value: 3.12.7
+        value: 3.15.0
