@@ -16,7 +16,7 @@ See [openapi.json](http://localhost:8000/openapi.json) when running locally for 
 ## Local dev
 
 ```bash
-python3.12 -m venv .venv
+python3.15 -m venv .venv
 .venv/bin/pip install -r requirements.txt -r requirements-dev.txt
 .venv/bin/uvicorn main:app --reload --port 8000
 ```
